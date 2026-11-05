@@ -1,18 +1,43 @@
 /**
  * Course : piste + participants + chronométrage, avancée à pas fixe.
  * Déterministe : même graine + mêmes commandes ⇒ même résultat.
+ * Les bots font partie de la simulation (même physique que le joueur, sans triche de vitesse).
  */
-import type { Balance } from '../data';
-import { createMooseState, NO_COMMANDS, stepMoose, type Commands, type MooseState } from './moose';
-import { getRacingLine, type RacingLine } from './racingLine';
+import type { Balance, DifficultyId } from '../data';
+import { botCommand, createBotBrain, type BotBrain } from './bots';
+import { createMooseState, NO_COMMANDS, stepMoose, type Commands, type MooseParams, type MooseState } from './moose';
+import { getRacingLine, speedProfile, type RacingLine } from './racingLine';
 import { createRng, type Rng } from './rng';
 import { buildTrack, projectOnTrack, type Track, type TrackDef, type TrackProjection } from './track';
 
 export type RacePhase = 'countdown' | 'running' | 'finished';
 
+/** Participant inscrit à une course. */
+export interface Entrant {
+  name: string;
+  /** Identifiant de l'orignal (catalogue) pour le rendu. */
+  mooseId?: string;
+  coat?: string;
+  size?: number;
+  accessory?: string;
+  rating?: number;
+  params?: MooseParams;
+  /** Absent : participant piloté de l'extérieur (joueur). Présent : bot de ce talent (0..1). */
+  botTalent?: number;
+}
+
 export interface Racer {
   id: number;
   name: string;
+  mooseId: string;
+  coat: string;
+  size: number;
+  accessory: string;
+  rating: number;
+  params: MooseParams;
+  /** Profil de vitesse de la ligne de course pour ces paramètres. */
+  profile: Float64Array;
+  bot: BotBrain | null;
   moose: MooseState;
   proj: TrackProjection;
   /** Distance parcourue depuis la ligne de départ (m), négative sur la grille. */
@@ -29,6 +54,10 @@ export interface Racer {
   cordeCount: number;
   /** Pas de simulation de la dernière corde parfaite, -1 si aucune. */
   lastCordeTick: number;
+  /** Pas du dernier choc, -1 si aucun (pour la secousse à l'écran). */
+  lastContactTick: number;
+  /** Pas du dernier étourdissement par choc (évite les étourdissements en chaîne). */
+  lastStunTick: number;
 }
 
 export interface Race {
@@ -42,6 +71,7 @@ export interface Race {
   countdownTicks: number;
   laps: number;
   racers: Racer[];
+  difficulty: DifficultyId;
   /** Ligne de course du circuit (ligne idéale, points de corde, profil de vitesse). */
   line: RacingLine;
 }
@@ -49,32 +79,65 @@ export interface Race {
 export interface RaceOptions {
   seed?: number;
   laps?: number;
+  /** Raccourci : n participants pilotés de l'extérieur, paramètres de base. */
   racerCount?: number;
+  /** Participants : le premier est le joueur. */
+  entrants?: Entrant[];
+  /** Place du joueur sur la grille (0 = pole). Par défaut au milieu. */
+  playerGridSlot?: number;
+  difficulty?: DifficultyId;
 }
 
 export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = {}): Race {
   const track = buildTrack(def, 1);
   const line = getRacingLine(track, balance.moose, balance.surfaces);
   const seed = opts.seed ?? 1;
-  const count = opts.racerCount ?? 1;
-  const racers: Racer[] = [];
-  for (let i = 0; i < count; i++) {
+  const rng = createRng(seed);
+  const entrants: Entrant[] =
+    opts.entrants ?? Array.from({ length: opts.racerCount ?? 1 }, (_, i) => ({ name: i === 0 ? 'Joueur' : `Bot ${i}` }));
+  const count = entrants.length;
+  const playerSlot = Math.min(count - 1, opts.playerGridSlot ?? Math.floor(count / 2));
+  // Places sur la grille : le joueur à sa place, les autres dans l'ordre.
+  const slots: number[] = [];
+  for (let i = 0, s = 0; i < count; i++) {
+    if (i === 0) slots.push(playerSlot);
+    else {
+      if (s === playerSlot) s++;
+      slots.push(s++);
+    }
+  }
+  const profiles = new Map<string, Float64Array>();
+  const racers: Racer[] = entrants.map((e, i) => {
+    const slot = slots[i];
     // Grille en quinconce derrière la ligne : 2 colonnes, 8 m entre rangées.
-    const row = Math.floor(i / 2);
-    const col = i % 2;
+    const row = Math.floor(slot / 2);
+    const col = slot % 2;
     const back = 6 + row * 8 + col * 4;
-    const lateral = count === 1 ? 0 : (col === 0 ? 1 : -1) * track.samples[track.samples.length - Math.round(back / track.spacing)].hw * 0.4;
     const s0 = track.samples[track.samples.length - Math.round(back / track.spacing)];
+    const lateral = count === 1 ? 0 : (col === 0 ? 1 : -1) * s0.hw * 0.4;
     const x = s0.x + s0.nx * lateral;
     const y = s0.y + s0.ny * lateral;
     const heading = Math.atan2(s0.ty, s0.tx);
-    const moose = createMooseState(x, y, heading, balance.moose.startSpeed);
-    const proj = projectOnTrack(track, x, y);
-    racers.push({
+    const params = e.params ?? balance.moose;
+    const key = `${params.topSpeed.toFixed(3)}|${params.accel.toFixed(3)}|${params.aLat.toFixed(3)}`;
+    let profile = profiles.get(key);
+    if (!profile) {
+      profile = params === balance.moose ? line.speed : speedProfile(track, line.x, line.y, line.k, params, balance.surfaces);
+      profiles.set(key, profile);
+    }
+    return {
       id: i,
-      name: i === 0 ? 'Joueur' : `Bot ${i}`,
-      moose,
-      proj,
+      name: e.name,
+      mooseId: e.mooseId ?? 'bucheron',
+      coat: e.coat ?? '#5B3A29',
+      size: e.size ?? 1,
+      accessory: e.accessory ?? 'tuque',
+      rating: e.rating ?? 40,
+      params,
+      profile,
+      bot: e.botTalent !== undefined ? createBotBrain(e.botTalent, rng) : null,
+      moose: createMooseState(x, y, heading, balance.moose.startSpeed),
+      proj: projectOnTrack(track, x, y),
       distance: -back,
       lapsDone: 0,
       lapTimes: [],
@@ -85,12 +148,14 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
       cordeHits: new Int32Array(line.apexes.length).fill(-1),
       cordeCount: 0,
       lastCordeTick: -1,
-    });
-  }
+      lastContactTick: -1,
+      lastStunTick: -100000,
+    };
+  });
   return {
     track,
     balance,
-    rng: createRng(seed),
+    rng,
     seed,
     tick: 0,
     dt: 1 / balance.sim.hz,
@@ -98,6 +163,7 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
     countdownTicks: Math.round(balance.sim.countdownSeconds * balance.sim.hz),
     laps: opts.laps ?? balance.sim.laps,
     racers,
+    difficulty: opts.difficulty ?? 'moyen',
     line,
   };
 }
@@ -118,7 +184,7 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   const absD = Math.abs(racer.proj.d);
   racer.onVerge = absD > track.samples[racer.proj.index].hw;
   const surfaceId = racer.onVerge ? track.def.vergeSurface : track.samples[racer.proj.index].surface;
-  stepMoose(m, cmd, balance.surfaces[surfaceId], balance.moose, r.dt);
+  stepMoose(m, cmd, balance.surfaces[surfaceId], racer.params, r.dt);
 
   let proj = projectOnTrack(track, m.x, m.y, racer.proj.index);
 
@@ -144,7 +210,12 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
     }
     proj = projectOnTrack(track, m.x, m.y, proj.index);
   }
+  updateProgress(r, racer, proj);
+}
 
+function updateProgress(r: Race, racer: Racer, proj: TrackProjection): void {
+  const { track, balance } = r;
+  const m = racer.moose;
   // Progression le long de la piste, robuste au demi-tour.
   let ds = proj.s - racer.proj.s;
   const L = track.length;
@@ -167,7 +238,7 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
       racer.cordeHits[ai] = lapNow;
       racer.cordeCount++;
       racer.lastCordeTick = r.tick;
-      m.cordeTime = balance.moose.cordeSeconds;
+      m.cordeTime = racer.params.cordeSeconds;
     });
   }
 
@@ -207,24 +278,108 @@ function updateDrafting(r: Race): void {
   }
 }
 
-/** Avance la course d'un pas. `commands[i]` pilote `racers[i]`. */
+/**
+ * Contacts entre orignaux : on les sépare selon leur masse (Robustesse), celui qui arrive
+ * par derrière perd de la vitesse, l'autre est un peu poussé. Gros choc : étourdissement bref.
+ * Jamais d'arrêt net.
+ */
+function resolveContacts(r: Race): void {
+  const c = r.balance.contact;
+  const racers = r.racers;
+  for (let i = 0; i < racers.length; i++) {
+    for (let j = i + 1; j < racers.length; j++) {
+      const A = racers[i];
+      const B = racers[j];
+      const a = A.moose;
+      const b = B.moose;
+      // Gabarit elliptique (long et étroit) dans le repère du cap moyen des deux orignaux.
+      let dx = b.x - a.x;
+      let dy = b.y - a.y;
+      const hx = Math.cos(a.heading) + Math.cos(b.heading);
+      const hy = Math.sin(a.heading) + Math.sin(b.heading);
+      const hl = Math.hypot(hx, hy) || 1;
+      const fx = hx / hl;
+      const fy = hy / hl;
+      const lon = dx * fx + dy * fy;
+      const lat = -dx * fy + dy * fx;
+      const L = c.halfLength * (A.size + B.size);
+      const W = c.halfWidth * (A.size + B.size);
+      const e2 = (lon / L) * (lon / L) + (lat / W) * (lat / W);
+      if (e2 >= 1) continue;
+      const e = Math.sqrt(e2) || 0.001;
+      // Normale de séparation : gradient de l'ellipse, ramené en coordonnées du monde.
+      const gl = lon / (L * L);
+      const gt = lat / (W * W);
+      let nx = gl * fx - gt * fy;
+      let ny = gl * fy + gt * fx;
+      const nl = Math.hypot(nx, ny) || 1;
+      nx /= nl;
+      ny /= nl;
+      const d = Math.hypot(dx, dy) || 0.001;
+      const overlap = d * (1 / e - 1);
+      dx = nx;
+      dy = ny;
+      const ma = A.params.mass;
+      const mb = B.params.mass;
+      const wa = mb / (ma + mb);
+      const wb = ma / (ma + mb);
+      a.x -= dx * overlap * wa;
+      a.y -= dy * overlap * wa;
+      b.x += dx * overlap * wb;
+      b.y += dy * overlap * wb;
+      // Vitesse de rapprochement le long de la normale.
+      const vax = a.speed * Math.cos(a.heading);
+      const vay = a.speed * Math.sin(a.heading);
+      const vbx = b.speed * Math.cos(b.heading);
+      const vby = b.speed * Math.sin(b.heading);
+      const closing = (vax - vbx) * dx + (vay - vby) * dy;
+      if (closing <= 0) continue;
+      const keepA = a.speed * c.minSpeedKeep;
+      const keepB = b.speed * c.minSpeedKeep;
+      // Projection de la normale sur le cap de chacun : qui pousse, qui est poussé.
+      const pa = Math.cos(a.heading) * dx + Math.sin(a.heading) * dy;
+      const pb = Math.cos(b.heading) * dx + Math.sin(b.heading) * dy;
+      a.speed = Math.max(keepA, a.speed - closing * c.speedTransfer * wa * Math.max(0.2, pa));
+      b.speed = Math.max(keepB, b.speed + closing * c.speedTransfer * wb * 0.5 * Math.max(0, pb));
+      if (closing > c.stunClosingSpeed) {
+        const cooldown = Math.round(c.stunCooldown / r.dt);
+        for (const [R, M] of [[A, a], [B, b]] as const) {
+          if (r.tick - R.lastStunTick < cooldown) continue;
+          M.stunTime = Math.max(M.stunTime, R.params.stunSeconds * c.stunFraction);
+          R.lastStunTick = r.tick;
+        }
+      }
+      A.lastContactTick = r.tick;
+      B.lastContactTick = r.tick;
+    }
+  }
+  // Les positions ont bougé : on met à jour la projection sur la piste.
+  for (const R of racers) {
+    if (R.lastContactTick !== r.tick) continue;
+    const proj = projectOnTrack(r.track, R.moose.x, R.moose.y, R.proj.index);
+    updateProgress(r, R, proj);
+  }
+}
+
+/** Avance la course d'un pas. `commands[i]` pilote `racers[i]` (ignoré pour les bots). */
 export function stepRace(r: Race, commands: Commands[]): void {
   r.tick++;
   if (r.phase === 'countdown') {
     if (r.tick >= r.countdownTicks) r.phase = 'running';
     return;
   }
-  if (r.phase === 'finished') {
-    // Après l'arrivée, les orignaux continuent en roue libre (pour le rendu).
-    for (let i = 0; i < r.racers.length; i++) stepRacer(r, r.racers[i], { ...NO_COMMANDS, steer: commands[i]?.steer ?? 0, brake: 0.3 });
-    return;
-  }
   updateDrafting(r);
+  const finishedPhase = r.phase === 'finished';
   for (let i = 0; i < r.racers.length; i++) {
     const racer = r.racers[i];
-    stepRacer(r, racer, commands[i] ?? NO_COMMANDS);
+    let cmd: Commands;
+    if (racer.bot) cmd = botCommand(r, racer);
+    else if (finishedPhase) cmd = { ...NO_COMMANDS, steer: commands[i]?.steer ?? 0, brake: 0.3 };
+    else cmd = commands[i] ?? NO_COMMANDS;
+    stepRacer(r, racer, cmd);
   }
-  if (r.racers[0].finished) r.phase = 'finished';
+  if (r.racers.length > 1) resolveContacts(r);
+  if (!finishedPhase && r.racers[0].finished) r.phase = 'finished';
 }
 
 /** Classement courant : indices des participants, du premier au dernier. */
@@ -239,4 +394,21 @@ export function standings(r: Race): number[] {
       if (B.finished) return 1;
       return B.distance - A.distance;
     });
+}
+
+/** Rang (1 = premier) du participant d'indice i. */
+export function rankOf(r: Race, i: number): number {
+  return standings(r).indexOf(i) + 1;
+}
+
+/**
+ * Temps final estimé pour un participant qui n'a pas encore fini : distance restante
+ * à sa vitesse moyenne jusqu'ici (sert à afficher le classement à l'arrivée du joueur).
+ */
+export function estimatedFinishTime(r: Race, racer: Racer): number {
+  if (racer.finished) return racer.finishTime;
+  const t = raceTime(r);
+  const total = r.laps * r.track.length;
+  const avg = racer.distance > 0 && t > 0 ? racer.distance / t : 20;
+  return t + Math.max(0, total - racer.distance) / Math.max(5, avg);
 }

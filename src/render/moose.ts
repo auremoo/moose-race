@@ -10,7 +10,14 @@ export interface MooseView {
   update(state: MooseState, dt: number): void;
 }
 
-export function createMooseView(color = 0x5b3a29): MooseView {
+export interface MooseLook {
+  coat?: string;
+  size?: number;
+  accessory?: string;
+}
+
+export function createMooseView(look: MooseLook = {}): MooseView {
+  const color = new THREE.Color(look.coat ?? '#5B3A29');
   const root = new THREE.Group();
   const lean = new THREE.Group();
   const yawSlip = new THREE.Group();
@@ -18,7 +25,7 @@ export function createMooseView(color = 0x5b3a29): MooseView {
   yawSlip.add(lean);
 
   const fur = new THREE.MeshLambertMaterial({ color });
-  const dark = new THREE.MeshLambertMaterial({ color: 0x3a2418 });
+  const dark = new THREE.MeshLambertMaterial({ color: color.clone().multiplyScalar(0.6) });
   const antler = new THREE.MeshLambertMaterial({ color: 0xe8d3a8 });
 
   // Corps : capsule horizontale, garrot haut.
@@ -82,6 +89,36 @@ export function createMooseView(color = 0x5b3a29): MooseView {
   tail.rotation.z = Math.PI / 2 + 0.6;
   lean.add(tail);
 
+  // Accessoire : tuque, foulard ou clochette (visibles de dos).
+  const red = new THREE.MeshLambertMaterial({ color: 0xd80621 });
+  const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  if (look.accessory === 'tuque') {
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.55, 10), red);
+    hat.position.set(1.95, 3.35, 0);
+    const brim = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.08, 6, 12), white);
+    brim.rotation.x = Math.PI / 2;
+    brim.position.set(1.95, 3.1, 0);
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), white);
+    pom.position.set(1.95, 3.65, 0);
+    lean.add(hat, brim, pom);
+  } else if (look.accessory === 'foulard') {
+    const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.13, 6, 14), red);
+    scarf.rotation.y = Math.PI / 2;
+    scarf.rotation.x = 0.5;
+    scarf.position.set(1.25, 2.45, 0);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.25), red);
+    tail.position.set(0.85, 2.55, 0.3);
+    tail.rotation.z = 0.4;
+    lean.add(scarf, tail);
+  } else if (look.accessory === 'clochette') {
+    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshLambertMaterial({ color: 0xf5b301 }));
+    bell.position.set(1.45, 2.0, 0);
+    const strap = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 6, 14), dark);
+    strap.rotation.y = Math.PI / 2;
+    strap.position.set(1.35, 2.35, 0);
+    lean.add(bell, strap);
+  }
+
   // Ombre portée simple.
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(1.4, 16),
@@ -91,6 +128,9 @@ export function createMooseView(color = 0x5b3a29): MooseView {
   shadow.scale.set(1.6, 1, 1);
   shadow.position.y = 0.06;
   root.add(shadow);
+
+  const size = look.size ?? 1;
+  yawSlip.scale.setScalar(size);
 
   let phase = 0;
   let leanAngle = 0;

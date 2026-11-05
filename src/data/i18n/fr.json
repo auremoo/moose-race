@@ -83,5 +83,15 @@
   "corde": "Corde parfaite !",
   "boost": "Élan !",
   "idealLine": "Ligne idéale",
-  "lefty": "Gaucher (commandes inversées)"
+  "lefty": "Gaucher (commandes inversées)",
+  "you": "Toi",
+  "rank": "Rang",
+  "coinsWon": "Pièces gagnées",
+  "firstWin": "Première victoire !",
+  "rivalsRating": "Cote des adversaires",
+  "solo": "Contre la montre",
+  "place1": "1er",
+  "placeN": "{n}e",
+  "podium": "Podium",
+  "balanceLbl": "Solde"
 }

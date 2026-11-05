@@ -22,7 +22,7 @@ export class ChaseCamera {
     this.camera.updateProjectionMatrix();
   }
 
-  update(x: number, y: number, heading: number, speedRatio: number, dt: number, boosting = false): void {
+  update(x: number, y: number, heading: number, speedRatio: number, dt: number, boosting = false, shake = 0): void {
     const c = this.cfg;
     if (!this.initialized) {
       this.yaw = heading;
@@ -56,6 +56,7 @@ export class ChaseCamera {
       this.look.lerp(targetLook, Math.min(1, k * 1.5));
     }
     this.camera.position.copy(this.pos);
+    if (shake > 0) this.camera.position.add(new THREE.Vector3((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake));
     this.camera.lookAt(this.look);
 
     // Le champ s'élargit au galop et pendant l'élan, un peu avec la vitesse.

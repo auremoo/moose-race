@@ -102,3 +102,30 @@ describe('corde et aspiration en course', () => {
     expect(race.racers[0].moose.drafting).toBe(false);
   });
 });
+
+describe('peloton', () => {
+  it('11 orignaux terminent la course, de façon déterministe', async () => {
+    const { buildEntrants } = await import('../src/sim/roster');
+    const run = () => {
+      const entrants = buildEntrants({ playerName: 'J', playerMooseId: 'bucheron', playerLevel: 1, difficulty: 'moyen', botCount: 10, seed: 9, balance });
+      const race = createRace(trackById('cap-diamant')!, balance, { laps: 1, entrants, difficulty: 'moyen', seed: 9 });
+      for (let i = 0; i < 60 * 200 && !race.racers.every((r) => r.finished); i++)
+        stepRace(race, [autopilot(race.track, race.racers[0], race.racers[0].params, S.sentier, { line: { offset: race.line.offset, speed: race.racers[0].profile } })]);
+      return race.racers.map((r) => r.finishTime);
+    };
+    const a = run();
+    expect(a.every((t) => t > 0)).toBe(true);
+    expect(run()).toEqual(a);
+  });
+
+  it('la cote des bots suit la difficulté', async () => {
+    const { buildEntrants } = await import('../src/sim/roster');
+    const mean = (d: 'facile' | 'moyen' | 'difficile') => {
+      const e = buildEntrants({ playerName: 'J', playerMooseId: 'bucheron', playerLevel: 5, difficulty: d, botCount: 10, seed: 2, balance });
+      return e.slice(1).reduce((a, x) => a + (x.rating ?? 0), 0) / 10;
+    };
+    expect(Math.abs(mean('facile') - 42)).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(mean('moyen') - 48)).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(mean('difficile') - 52)).toBeLessThanOrEqual(1.5);
+  });
+});

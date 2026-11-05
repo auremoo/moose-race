@@ -11,7 +11,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "track:report": "tsx tools/track-report.ts",
-    "tracks:gen": "tsx tools/track-gen.ts"
+    "tracks:gen": "tsx tools/track-gen.ts",
+    "balance": "tsx tools/balance-sim.ts"
   },
   "dependencies": {
     "three": "0.186.1"

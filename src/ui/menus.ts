@@ -8,7 +8,9 @@ import {
   isAvailable,
   mooseCatalog,
   mooseRating,
+  balance,
   type CourseDef,
+  type DifficultyId,
   type FeatureId,
 } from '../data';
 import type { SaveData } from '../meta/settings';
@@ -17,8 +19,13 @@ import { getLang, t, type TextKey } from './i18n';
 
 export type MenuScreen = 'home' | 'map' | 'prep';
 
+export interface RaceSetup {
+  difficulty: DifficultyId;
+  botCount: number;
+}
+
 export interface MenuCallbacks {
-  onStart(course: CourseDef): void;
+  onStart(course: CourseDef, setup: RaceSetup): void;
   onScreen(screen: MenuScreen | null): void;
 }
 
@@ -67,7 +74,23 @@ export class Menus {
     document.querySelectorAll<HTMLElement>('[data-back]').forEach((b) =>
       b.addEventListener('click', () => this.show(b.dataset.back as MenuScreen)),
     );
-    $('btn-go').addEventListener('click', () => this.cb.onStart(this.selected));
+    $('btn-go').addEventListener('click', () =>
+      this.cb.onStart(this.selected, { difficulty: this.save.difficulty, botCount: this.save.botCount }),
+    );
+    document.querySelectorAll<HTMLButtonElement>('[data-diff]').forEach((b) =>
+      b.addEventListener('click', () => {
+        this.save.difficulty = b.dataset.diff as DifficultyId;
+        this.renderPrep();
+      }),
+    );
+    $('bots-minus').addEventListener('click', () => {
+      this.save.botCount = Math.max(0, this.save.botCount - 1);
+      this.renderPrep();
+    });
+    $('bots-plus').addEventListener('click', () => {
+      this.save.botCount = Math.min(10, this.save.botCount + 1);
+      this.renderPrep();
+    });
 
     this.applyLocks();
     this.applyTexts();
@@ -129,7 +152,7 @@ export class Menus {
     const m = this.activeMoose();
     $('active-name').textContent = m.name;
     this.rarityChip($('active-rarity'), m.rarity);
-    $('active-cote').textContent = `${t('rating')} ${mooseRating(m)}`;
+    $('active-cote').textContent = `${t('rating')} ${mooseRating(m, this.save.levels[m.id] ?? 1)}`;
     document.querySelectorAll<HTMLElement>('.coin-balance').forEach((c) => (c.textContent = String(this.save.coins)));
   }
 
@@ -174,8 +197,19 @@ export class Menus {
     const m = this.activeMoose();
     $('prep-moose-name').textContent = m.name;
     this.rarityChip($('prep-rarity'), m.rarity);
-    $('prep-cote').textContent = String(mooseRating(m));
-    $('bots-count').textContent = '0';
+    const level = this.save.levels[m.id] ?? 1;
+    $('prep-cote').textContent = String(mooseRating(m, level));
+    $('bots-count').textContent = String(this.save.botCount);
+    document.querySelectorAll<HTMLElement>('[data-diff]').forEach((b) =>
+      b.classList.toggle('on', b.dataset.diff === this.save.difficulty),
+    );
+    const off = balance.difficulties[this.save.difficulty].ratingOffset;
+    $('prep-rivals').textContent =
+      this.save.botCount === 0 ? t('solo') : `${t('rivalsRating')} : ${mooseRating(m, level) + off} (${off >= 0 ? '+' : ''}${off})`;
+  }
+
+  refreshCoins(): void {
+    document.querySelectorAll<HTMLElement>('.coin-balance').forEach((c) => (c.textContent = String(this.save.coins)));
   }
 
   toast(text: string): void {

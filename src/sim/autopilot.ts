@@ -19,6 +19,8 @@ export interface AutopilotOptions {
   cornerMargin?: number;
   /** Ligne et profil de vitesse à suivre (par exemple la ligne de course). */
   line?: { offset: Float64Array; speed: Float64Array };
+  /** Vitesse cible imposée (prioritaire sur le profil). */
+  speedTarget?: number;
 }
 
 /** Vitesse cible d'après un profil précalculé : on freine à temps pour chaque point à venir. */
@@ -88,7 +90,9 @@ export function autopilot(
   let throttle = 1;
   let brake = 0;
   if (opts.brakes !== false) {
-    const vt = opts.line ? targetSpeedFromProfile(track, racer, p, opts.line.speed) : targetSpeed(track, racer, p, surface, opts.cornerMargin);
+    const vt =
+      opts.speedTarget ??
+      (opts.line ? targetSpeedFromProfile(track, racer, p, opts.line.speed) : targetSpeed(track, racer, p, surface, opts.cornerMargin));
     if (m.speed > vt + 0.3) {
       throttle = 0;
       brake = Math.min(1, (m.speed - vt) / 3);

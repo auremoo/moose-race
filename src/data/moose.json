@@ -45,7 +45,10 @@
       "rarity": "commun",
       "stats": [40, 40, 40, 40, 40],
       "starter": true,
-      "style": "Équilibré"
+      "style": "Équilibré",
+      "coat": "#5B3A29",
+      "accessory": "tuque",
+      "size": 1.0
     },
     {
       "id": "ti-gus",
@@ -53,7 +56,10 @@
       "rarity": "commun",
       "stats": [34, 50, 46, 35, 35],
       "starter": true,
-      "style": "Vif et petit"
+      "style": "Vif et petit",
+      "coat": "#7A5230",
+      "accessory": "foulard",
+      "size": 0.88
     },
     {
       "id": "boreal",
@@ -61,7 +67,10 @@
       "rarity": "commun",
       "stats": [45, 30, 35, 50, 40],
       "starter": true,
-      "style": "Fond"
+      "style": "Fond",
+      "coat": "#3E2A1E",
+      "accessory": "clochette",
+      "size": 1.0
     },
     {
       "id": "poutine",
@@ -69,7 +78,10 @@
       "rarity": "commun",
       "stats": [36, 38, 36, 40, 50],
       "starter": true,
-      "style": "Costaud"
+      "style": "Costaud",
+      "coat": "#8B5A2B",
+      "accessory": "tuque",
+      "size": 1.1
     },
     {
       "id": "huard",
@@ -77,7 +89,10 @@
       "rarity": "commun",
       "stats": [38, 44, 48, 36, 34],
       "starter": true,
-      "style": "Agile"
+      "style": "Agile",
+      "coat": "#2F2F2F",
+      "accessory": "foulard",
+      "size": 0.92
     },
     {
       "id": "tuque",
@@ -85,105 +100,150 @@
       "rarity": "commun",
       "stats": [42, 36, 38, 44, 40],
       "starter": true,
-      "style": "Régulier"
+      "style": "Régulier",
+      "coat": "#6E4B35",
+      "accessory": "tuque",
+      "size": 1.0
     },
     {
       "id": "mistral",
       "name": "Mistral",
       "rarity": "peu-commun",
       "stats": [50, 48, 42, 40, 40],
-      "style": "Sprinteur"
+      "style": "Sprinteur",
+      "coat": "#9C6B3C",
+      "accessory": "foulard",
+      "size": 1.0
     },
     {
       "id": "sirop",
       "name": "Sirop",
       "rarity": "peu-commun",
       "stats": [40, 42, 58, 40, 40],
-      "style": "Roi de la corde"
+      "style": "Roi de la corde",
+      "coat": "#B5651D",
+      "accessory": "clochette",
+      "size": 1.0
     },
     {
       "id": "yukon",
       "name": "Yukon",
       "rarity": "peu-commun",
       "stats": [46, 36, 38, 60, 40],
-      "style": "Marathonien"
+      "style": "Marathonien",
+      "coat": "#4A3B2F",
+      "accessory": "tuque",
+      "size": 1.0
     },
     {
       "id": "chinook",
       "name": "Chinook",
       "rarity": "peu-commun",
       "stats": [52, 46, 40, 42, 40],
-      "style": "Vent chaud"
+      "style": "Vent chaud",
+      "coat": "#A0522D",
+      "accessory": "foulard",
+      "size": 1.0
     },
     {
       "id": "nordet",
       "name": "Nordet",
       "rarity": "peu-commun",
       "stats": [42, 40, 44, 46, 48],
-      "style": "Solide"
+      "style": "Solide",
+      "coat": "#5D4E45",
+      "accessory": "clochette",
+      "size": 1.0
     },
     {
       "id": "aurore",
       "name": "Aurore",
       "rarity": "rare",
       "stats": [56, 46, 54, 44, 40],
-      "style": "Rapide et précis"
+      "style": "Rapide et précis",
+      "coat": "#C08552",
+      "accessory": "foulard",
+      "size": 1.0
     },
     {
       "id": "mont-royal",
       "name": "Mont-Royal",
       "rarity": "rare",
       "stats": [48, 44, 44, 48, 56],
-      "style": "Bagarreur"
+      "style": "Bagarreur",
+      "coat": "#4B2E1F",
+      "accessory": "tuque",
+      "size": 1.1
     },
     {
       "id": "toundra",
       "name": "Toundra",
       "rarity": "rare",
       "stats": [46, 42, 46, 58, 48],
-      "style": "Infatigable"
+      "style": "Infatigable",
+      "coat": "#D8CFC4",
+      "accessory": "clochette",
+      "size": 1.05
     },
     {
       "id": "saguenay",
       "name": "Saguenay",
       "rarity": "rare",
       "stats": [50, 52, 56, 40, 42],
-      "style": "Virages serrés"
+      "style": "Virages serrés",
+      "coat": "#3B3B4F",
+      "accessory": "foulard",
+      "size": 1.0
     },
     {
       "id": "banff",
       "name": "Banff",
       "rarity": "epique",
       "stats": [64, 50, 56, 50, 40],
-      "style": "Vitesse pure"
+      "style": "Vitesse pure",
+      "coat": "#6B4423",
+      "accessory": "tuque",
+      "size": 1.0
     },
     {
       "id": "tempete",
       "name": "Tempête",
       "rarity": "epique",
       "stats": [54, 66, 62, 40, 38],
-      "style": "Technique"
+      "style": "Technique",
+      "coat": "#2E3440",
+      "accessory": "foulard",
+      "size": 1.0
     },
     {
       "id": "klondike",
       "name": "Klondike",
       "rarity": "epique",
       "stats": [58, 54, 48, 48, 52],
-      "style": "Chercheur d'or"
+      "style": "Chercheur d'or",
+      "coat": "#8C6D2F",
+      "accessory": "clochette",
+      "size": 1.08
     },
     {
       "id": "panache-dor",
       "name": "Panache d'Or",
       "rarity": "legendaire",
       "stats": [64, 58, 58, 52, 48],
-      "style": "Complet"
+      "style": "Complet",
+      "coat": "#C9A227",
+      "accessory": "foulard",
+      "size": 1.0
     },
     {
       "id": "polaris",
       "name": "Polaris",
       "rarity": "legendaire",
       "stats": [60, 56, 64, 50, 50],
-      "style": "Étoile du Nord"
+      "style": "Étoile du Nord",
+      "coat": "#EDEDED",
+      "accessory": "tuque",
+      "size": 1.0
     }
   ]
 }

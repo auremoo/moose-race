@@ -26,3 +26,10 @@ export function getLang(): Lang {
 export function t(key: TextKey): string {
   return DICTS[current][key] ?? DICTS.fr[key] ?? key;
 }
+
+/** Rang ordinal : 1er, 2e… / 1st, 2nd, 3rd, 4th… */
+export function ordinal(n: number): string {
+  if (current === 'fr') return n === 1 ? '1er' : `${n}e`;
+  const s = n % 100 >= 11 && n % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th');
+  return `${n}${s}`;
+}

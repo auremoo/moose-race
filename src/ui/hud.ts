@@ -2,8 +2,8 @@
  * Affichage en course et menus. Lit la simulation (lecture seule) et les réglages (meta/).
  */
 import type { SteerTouchVisual } from '../input/input';
-import { countdownRemaining, raceTime, type Race } from '../sim/race';
-import { getLang, t, type Lang, type TextKey } from './i18n';
+import { countdownRemaining, rankOf, raceTime, type Race } from '../sim/race';
+import { getLang, ordinal, t, type Lang, type TextKey } from './i18n';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -11,6 +11,15 @@ export function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec - m * 60;
   return `${m}:${s.toFixed(2).padStart(5, '0')}`;
+}
+
+export interface ResultsInfo {
+  rank: number;
+  participants: number;
+  coins: number;
+  bonus: number;
+  balance: number;
+  standings: { name: string; rating: number; coat: string; time: number; isPlayer: boolean }[];
 }
 
 export interface HudCallbacks {
@@ -59,6 +68,9 @@ export class Hud {
   private needle = document.getElementById('gauge-needle') as unknown as SVGLineElement;
   private lastGait = '';
   private gallopBtn = $('btn-gallop');
+  private rankEl = $('hud-rank');
+  private progress = $('hud-progress-track');
+  private dots: HTMLElement[] = [];
   private lastCordeTick = -1;
   private lastBoost = 0;
   private eventMsg = '';
@@ -203,8 +215,40 @@ export class Hud {
     this.pauseMenu.hidden = !on;
   }
 
-  showResults(race: Race, record: boolean): void {
+  showResults(race: Race, record: boolean, info?: ResultsInfo): void {
     const r = race.racers[0];
+    if (info) {
+      $('res-title').textContent = info.participants > 1 ? t('finish') : t('finish');
+      $('res-rank').textContent = info.participants > 1 ? `${ordinal(info.rank)} / ${info.participants}` : t('solo');
+      const list = $('res-standings');
+      list.replaceChildren();
+      if (info.participants > 1) {
+        info.standings.forEach((st, i) => {
+          const li = document.createElement('li');
+          li.className = st.isPlayer ? 'me' : '';
+          if (i < 3) li.classList.add(`podium-${i + 1}`);
+          li.innerHTML = `<span class="pos"></span><span class="dot"></span><span class="nm"></span><span class="rt"></span><span class="tm"></span>`;
+          (li.querySelector('.pos') as HTMLElement).textContent = ordinal(i + 1);
+          (li.querySelector('.dot') as HTMLElement).style.background = st.coat;
+          (li.querySelector('.nm') as HTMLElement).textContent = st.name;
+          (li.querySelector('.rt') as HTMLElement).textContent = String(st.rating);
+          (li.querySelector('.tm') as HTMLElement).textContent = formatTime(st.time);
+          list.appendChild(li);
+        });
+      }
+      const coinsEl = $('res-coins');
+      coinsEl.innerHTML = `<span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><b>+0</b><small></small>`;
+      (coinsEl.querySelector('small') as HTMLElement).textContent = info.bonus ? `${t('firstWin')} +${info.bonus}` : `${t('balanceLbl')} ${info.balance}`;
+      // Pièces qui défilent jusqu'au gain.
+      const b = coinsEl.querySelector('b') as HTMLElement;
+      const start = performance.now();
+      const anim = (now: number) => {
+        const k = Math.min(1, (now - start) / 900);
+        b.textContent = `+${Math.round(info.coins * (1 - Math.pow(1 - k, 3)))}`;
+        if (k < 1) requestAnimationFrame(anim);
+      };
+      requestAnimationFrame(anim);
+    }
     $('res-total').textContent = formatTime(r.finishTime);
     $('res-best').textContent = formatTime(Math.min(...r.lapTimes));
     const colon = getLang() === 'fr' ? ' : ' : ': ';
@@ -224,6 +268,25 @@ export class Hud {
 
   update(race: Race, steer: SteerTouchVisual, bestLap: number | undefined, debugText: string | null): void {
     const r = race.racers[0];
+    const N = race.racers.length;
+    this.rankEl.style.display = N > 1 ? '' : 'none';
+    if (N > 1) this.rankEl.textContent = `${ordinal(rankOf(race, 0))}/${N}`;
+    // Barre de progression : un point par orignal, le joueur en rouge.
+    if (this.dots.length !== N) {
+      this.progress.replaceChildren();
+      this.dots = race.racers.map((x, i) => {
+        const d = document.createElement('span');
+        d.className = i === 0 ? 'pdot me' : 'pdot';
+        d.style.background = i === 0 ? '' : x.coat;
+        this.progress.appendChild(d);
+        return d;
+      });
+    }
+    const total = race.laps * race.track.length;
+    race.racers.forEach((x, i) => {
+      const f = Math.max(0, Math.min(1, x.distance / total));
+      this.dots[i].style.left = `${(f * 100).toFixed(2)}%`;
+    });
     const lapNow = Math.min(race.laps, r.lapsDone + 1);
     this.lap.textContent = `${t('lap')} ${lapNow}/${race.laps}`;
     this.time.textContent = formatTime(r.finished ? r.finishTime : raceTime(race));

@@ -18,6 +18,7 @@
 
       <div id="hud">
         <div class="hud-row">
+          <div class="pill pill-rank" id="hud-rank"></div>
           <div class="pill" id="hud-lap">Tour 1/2</div>
           <div class="pill pill-time" id="hud-time">0:00.00</div>
           <button class="btn-icon" id="btn-pause" aria-label="Pause">
@@ -37,6 +38,7 @@
             <div class="gauge-gait" id="hud-gait"></div>
           </div>
         </div>
+        <div id="hud-progress"><div id="hud-progress-track"></div></div>
         <div id="hud-flash"></div>
       </div>
 
@@ -79,8 +81,11 @@
           <h2 id="res-title"></h2>
           <div class="res-line"><span id="res-total-lbl"></span><strong id="res-total"></strong></div>
           <div class="res-line"><span id="res-best-lbl"></span><strong id="res-best"></strong></div>
+          <div id="res-rank" class="res-rank"></div>
           <div id="res-laps"></div>
           <div id="res-record" class="record"></div>
+          <ol id="res-standings" class="standings"></ol>
+          <div id="res-coins" class="res-coins"></div>
           <button class="btn btn-red" id="btn-replay"></button>
           <button class="btn btn-white" id="btn-home"></button>
         </div>
@@ -150,17 +155,17 @@
           <div class="prep-card">
             <h3 data-t="difficulty"></h3>
             <div class="segmented">
-              <button class="seg" data-feature="difficulte" data-t="easy"></button>
-              <button class="seg on" data-feature="difficulte" data-t="medium"></button>
-              <button class="seg" data-feature="difficulte" data-t="hard"></button>
+              <button class="seg" data-feature="difficulte" data-diff="facile" data-t="easy"></button>
+              <button class="seg" data-feature="difficulte" data-diff="moyen" data-t="medium"></button>
+              <button class="seg" data-feature="difficulte" data-diff="difficile" data-t="hard"></button>
             </div>
           </div>
           <div class="prep-card prep-row">
             <h3 data-t="rivals"></h3>
             <div class="stepper">
-              <button class="step" data-feature="bots">−</button>
+              <button class="step" data-feature="bots" id="bots-minus">−</button>
               <span id="bots-count">0</span>
-              <button class="step" data-feature="bots">+</button>
+              <button class="step" data-feature="bots" id="bots-plus">+</button>
             </div>
           </div>
           <div class="prep-card prep-row">
@@ -170,6 +175,7 @@
             </div>
             <div class="cote-big"><small data-t="rating"></small><span id="prep-cote"></span></div>
           </div>
+          <p class="prep-desc prep-rivals" id="prep-rivals"></p>
         </div>
         <button class="btn btn-red btn-big" id="btn-go" data-t="start"></button>
       </section>

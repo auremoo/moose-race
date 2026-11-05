@@ -83,5 +83,15 @@
   "corde": "Perfect apex!",
   "boost": "Boost!",
   "idealLine": "Racing line",
-  "lefty": "Left-handed (swap controls)"
+  "lefty": "Left-handed (swap controls)",
+  "you": "You",
+  "rank": "Place",
+  "coinsWon": "Coins earned",
+  "firstWin": "First win!",
+  "rivalsRating": "Rivals' rating",
+  "solo": "Time trial",
+  "place1": "1st",
+  "placeN": "{n}th",
+  "podium": "Podium",
+  "balanceLbl": "Balance"
 }

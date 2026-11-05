@@ -38,7 +38,9 @@
     "cordeSpeedMul": 1.05,
     "cordeSeconds": 1.5,
     "draftSpeedMul": 1.04,
-    "draftDistance": 12
+    "draftDistance": 12,
+    "stunSeconds": 1.3,
+    "mass": 1.0
   },
   "surfaces": {
     "sentier": {
@@ -117,5 +119,85 @@
   "corde": {
     "zoneHalfLength": 6,
     "lateralTolerance": 3
+  },
+  "stats": {
+    "topSpeed": [
+      27,
+      33
+    ],
+    "accel": [
+      7,
+      13
+    ],
+    "aLat": [
+      15,
+      21
+    ],
+    "enduranceSeconds": [
+      3,
+      5
+    ],
+    "stunSeconds": [
+      1.8,
+      0.8
+    ],
+    "mass": [
+      0.8,
+      1.25
+    ]
+  },
+  "difficulties": {
+    "facile": {
+      "ratingOffset": -6,
+      "talent": [
+        0.3,
+        0.55
+      ],
+      "catchUp": 0.03,
+      "coinMul": 1,
+      "idealLine": true,
+      "assist": 0.35
+    },
+    "moyen": {
+      "ratingOffset": 0,
+      "talent": [
+        0.55,
+        0.78
+      ],
+      "catchUp": 0.03,
+      "coinMul": 1.5,
+      "idealLine": true,
+      "assist": 0
+    },
+    "difficile": {
+      "ratingOffset": 4,
+      "talent": [
+        0.8,
+        0.96
+      ],
+      "catchUp": 0,
+      "coinMul": 2,
+      "idealLine": false,
+      "assist": 0
+    }
+  },
+  "bots": {
+    "noiseAmplitude": 4,
+    "mistakeChance": 0.4,
+    "mistakeSpeedBonus": 0.12,
+    "cornerMarginMin": 0.86,
+    "overtakeDistance": 14,
+    "overtakeShift": 3.6,
+    "catchUpRange": 150,
+    "followLateral": 1.5
+  },
+  "contact": {
+    "speedTransfer": 0.6,
+    "stunClosingSpeed": 8,
+    "stunFraction": 0.25,
+    "minSpeedKeep": 0.5,
+    "stunCooldown": 3,
+    "halfLength": 1.6,
+    "halfWidth": 0.75
   }
 }

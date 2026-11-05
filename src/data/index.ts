@@ -6,8 +6,25 @@ import balanceJson from './balance.json';
 import { trackJsons } from './tracks';
 import coursesJson from './courses.json';
 import mooseJson from './moose.json';
+import botsJson from './bots.json';
 import type { MooseParams, SurfaceParams } from '../sim/moose';
 import type { SurfaceId, TrackDef } from '../sim/track';
+
+export type DifficultyId = 'facile' | 'moyen' | 'difficile';
+
+export interface DifficultyDef {
+  /** Écart de cote des bots par rapport au joueur. */
+  ratingOffset: number;
+  /** Plage de talent des bots (0 = maladroit, 1 = parfait). */
+  talent: [number, number];
+  /** Rattrapage maximal (fraction de vitesse). */
+  catchUp: number;
+  coinMul: number;
+  /** Ligne idéale affichée par défaut. */
+  idealLine: boolean;
+  /** Assistance de direction (0 = aucune). */
+  assist: number;
+}
 
 export interface Balance {
   version: number;
@@ -15,6 +32,21 @@ export interface Balance {
   moose: MooseParams;
   surfaces: Record<SurfaceId, SurfaceParams>;
   barrier: { speedLossPerSecond: number; headingAlignRate: number };
+  difficulties: Record<DifficultyId, DifficultyDef>;
+  bots: {
+    noiseAmplitude: number;
+    mistakeChance: number;
+    mistakeSpeedBonus: number;
+    cornerMarginMin: number;
+    overtakeDistance: number;
+    overtakeShift: number;
+    /** Écart latéral en dessous duquel un bot reste derrière plutôt que de percuter (m). */
+    followLateral: number;
+    catchUpRange: number;
+  };
+  contact: { halfLength: number; halfWidth: number; speedTransfer: number; stunClosingSpeed: number; stunFraction: number; minSpeedKeep: number; stunCooldown: number };
+  /** Plages stat 0 → stat 100 de chaque paramètre physique lié aux stats. */
+  stats: Record<'topSpeed' | 'accel' | 'aLat' | 'enduranceSeconds' | 'stunSeconds' | 'mass', [number, number]>;
   /** Zone de corde : demi-longueur le long de la piste et tolérance latérale (m). */
   corde: { zoneHalfLength: number; lateralTolerance: number };
   hud: {
@@ -63,11 +95,15 @@ export function validateBalance(b: unknown): Balance {
     'gallopSpeedMul', 'gallopAccelMul', 'enduranceSeconds', 'enduranceRecoverSeconds', 'gallopRestartMin',
     'driftMinSpeed', 'driftSteerMin', 'driftGripMul', 'driftDecel', 'driftChargeSeconds', 'driftMinCharge',
     'boostMinSeconds', 'boostMaxSeconds', 'boostSpeedMul', 'boostAccel', 'cordeSpeedMul', 'cordeSeconds',
-    'draftSpeedMul', 'draftDistance',
+    'draftSpeedMul', 'draftDistance', 'stunSeconds', 'mass',
   ]);
   for (const s of SURFACES) checkNumbers(o.surfaces?.[s], `balance.surfaces.${s}`, ['grip', 'vmax']);
   checkNumbers(o.barrier, 'balance.barrier', ['speedLossPerSecond', 'headingAlignRate']);
   checkNumbers(o.corde, 'balance.corde', ['zoneHalfLength', 'lateralTolerance']);
+  for (const id of ['facile', 'moyen', 'difficile'] as DifficultyId[])
+    checkNumbers(o.difficulties?.[id], `balance.difficulties.${id}`, ['ratingOffset', 'catchUp', 'coinMul', 'assist']);
+  checkNumbers(o.bots, 'balance.bots', ['noiseAmplitude', 'mistakeChance', 'mistakeSpeedBonus', 'cornerMarginMin', 'overtakeDistance', 'overtakeShift', 'followLateral', 'catchUpRange']);
+  checkNumbers(o.contact, 'balance.contact', ['halfLength', 'halfWidth', 'speedTransfer', 'stunClosingSpeed', 'stunFraction', 'minSpeedKeep', 'stunCooldown']);
   checkNumbers(o.hud, 'balance.hud', ['realTopKmh', 'gaugeMaxKmh', 'slideMessageSlip', 'slideMessageDelay']);
   if (!Array.isArray(o.hud.gaits) || o.hud.gaits.some((g) => typeof g[0] !== 'number' || typeof g[1] !== 'string'))
     fail('balance.hud.gaits', '[seuil, clé] attendus');
@@ -111,6 +147,11 @@ export interface MooseDef {
   starter?: boolean;
   /** Style de course, en une phrase courte (français). */
   style?: string;
+  /** Couleur de la robe. */
+  coat: string;
+  accessory: 'tuque' | 'foulard' | 'clochette';
+  /** Gabarit relatif. */
+  size: number;
 }
 
 export interface MooseCatalog {
@@ -161,7 +202,7 @@ export interface CourseDef {
 export type FeatureId = 'enclos' | 'comptoir' | 'didacticiel' | 'multijoueur' | 'modeSpecial' | 'difficulte' | 'bots' | 'pieces';
 
 /** Jalon actuellement livré : tout ce qui arrive plus tard est grisé. */
-export const CURRENT_MILESTONE = 1;
+export const CURRENT_MILESTONE = 3;
 
 export const courses: CourseDef[] = (coursesJson as { courses: CourseDef[] }).courses;
 export const featureMilestones = (coursesJson as { features: Record<FeatureId, number> }).features;
@@ -169,3 +210,30 @@ export const featureMilestones = (coursesJson as { features: Record<FeatureId, n
 export function isAvailable(milestone: number): boolean {
   return milestone <= CURRENT_MILESTONE;
 }
+
+/** Stats au niveau donné : +levelStatGain par niveau, plafonnées à 100. */
+export function mooseStats(m: MooseDef, level = 1): [number, number, number, number, number] {
+  const gain = mooseCatalog.levelStatGain * (level - 1);
+  return m.stats.map((v) => Math.min(100, v + gain)) as [number, number, number, number, number];
+}
+
+/** Paramètres physiques d'un orignal : les stats déplacent les valeurs de base dans les plages du cahier. */
+export function mooseParamsFor(m: MooseDef, level = 1, b: Balance = balance, statOffset = 0): MooseParams {
+  const [V, A, Vi, E, R] = mooseStats(m, level).map((v) => Math.max(0, Math.min(100, v + statOffset)));
+  const lerp = (r: [number, number], t: number) => r[0] + (r[1] - r[0]) * (t / 100);
+  return {
+    ...b.moose,
+    topSpeed: lerp(b.stats.topSpeed, V),
+    accel: lerp(b.stats.accel, A),
+    aLat: lerp(b.stats.aLat, Vi),
+    enduranceSeconds: lerp(b.stats.enduranceSeconds, E),
+    stunSeconds: lerp(b.stats.stunSeconds, R),
+    mass: lerp(b.stats.mass, R),
+  };
+}
+
+export function mooseById(id: string): MooseDef | undefined {
+  return mooseCatalog.moose.find((m) => m.id === id);
+}
+
+export const botNames: string[] = (botsJson as { names: string[] }).names;

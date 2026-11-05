@@ -2,7 +2,7 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalon 2 « art du virage »** — 20 circuits, accélérateur et frein, ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire, pas encore de bots.
+**État : jalon 3 « peloton »** — 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
 
 ## Jouer
 
@@ -30,6 +30,7 @@ npm run dev        # serveur local, accessible depuis le téléphone sur le mêm
 npm test           # tests de la simulation, sans navigateur
 npm run build      # vérification des types + build dans dist/
 npm run track:report -- src/data/tracks/boucle-grise.json piste.svg   # rapport d'une piste
+npm run balance -- 1000     # critères d'équilibrage du cahier (duels simulés sans rendu)
 npm run tracks:gen -- planche.html   # régénère les 19 circuits décrits par segments + planche de contrôle
 ```
 
@@ -65,3 +66,14 @@ sans bonus scripté (vérifié par `tests/sim.test.ts`).
 
 Dépôt → Settings → Pages → Build and deployment → Source : **GitHub Actions**.
 Chaque push sur `main` lance ensuite les tests, le build et le déploiement.
+
+## Bots et difficulté
+
+Les bots suivent la ligne de course avec une erreur propre à leur talent (bruit de trajectoire, virages
+ratés), dépassent du côté libre, évitent les contacts et galopent dans les lignes droites. Ils obéissent à la
+même physique que le joueur. Leur cote est calée sur la tienne : Facile −6, Moyen ±0, Difficile +4 (en dessous
+de la cote des communs, leurs stats sont abaissées). Rattrapage léger (≤ 3 %) en Facile et Moyen, aucun en
+Difficile. Facile ajoute une petite aide à la direction ; Difficile masque la ligne idéale.
+
+Critères d'équilibrage mesurés par `npm run balance` (200 duels chacun) : expert contre moyen à cote égale
+87 % (≥ 85 %), +10 de cote à pilotage égal 70,5 % (≤ 80 %), meilleur orignal à cote égale 60 % (≤ 60 %).

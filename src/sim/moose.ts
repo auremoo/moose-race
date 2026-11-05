@@ -59,6 +59,10 @@ export interface MooseParams {
   /** Aspiration : gain de vitesse dans le sillage d'un orignal à moins de draftDistance m. */
   draftSpeedMul: number;
   draftDistance: number;
+  /** Durée d'étourdissement après un gros choc (s), selon la Robustesse. */
+  stunSeconds: number;
+  /** Masse relative pour les contacts (Robustesse). */
+  mass: number;
 }
 
 export interface SurfaceParams {
@@ -120,6 +124,10 @@ export interface MooseState {
   cordeTime: number;
   /** Vrai dans le sillage d'un autre orignal (renseigné par la course). */
   drafting: boolean;
+  /** Temps d'étourdissement restant (s) après un choc. */
+  stunTime: number;
+  /** Multiplicateur de vitesse de pointe externe (rattrapage léger des bots), 1 par défaut. */
+  extraSpeedMul: number;
 }
 
 export function createMooseState(x: number, y: number, heading: number, speed = 0): MooseState {
@@ -145,6 +153,8 @@ export function createMooseState(x: number, y: number, heading: number, speed = 
     boostCharge: 0,
     cordeTime: 0,
     drafting: false,
+    stunTime: 0,
+    extraSpeedMul: 1,
   };
 }
 
@@ -174,6 +184,11 @@ export function stepMoose(
   p: MooseParams,
   dt: number,
 ): void {
+  // Étourdi : l'orignal ne pousse plus et se dirige mal, le temps de reprendre ses esprits.
+  if (s.stunTime > 0) {
+    s.stunTime = Math.max(0, s.stunTime - dt);
+    cmd = { ...cmd, steer: cmd.steer * 0.3, throttle: 0, brake: 0, gallop: false, slide: false };
+  }
   // Direction lissée : pas de changement instantané de braquage.
   const target = clamp(cmd.steer, -1, 1);
   const maxDelta = p.steerRate * dt;
@@ -237,6 +252,7 @@ export function stepMoose(
   }
   if (s.cordeTime > 0) speedMul *= p.cordeSpeedMul;
   if (s.drafting) speedMul *= p.draftSpeedMul;
+  speedMul *= s.extraSpeedMul;
 
   const aMax = p.aLat * surface.grip * (s.drifting ? p.driftGripMul : 1);
   const vTop = p.topSpeed * surface.vmax * speedMul;

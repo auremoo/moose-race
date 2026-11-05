@@ -396,13 +396,19 @@ body {
 .overlay {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
   background: rgba(40, 20, 10, 0.45);
-  padding: 16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  overflow-y: auto;
+  touch-action: pan-y;
+  z-index: 5;
+}
+.overlay > .card {
+  margin: auto;
 }
 .overlay[hidden] {
-  display: none;
+  display: none !important;
 }
 .card {
   width: 100%;
@@ -894,4 +900,100 @@ body {
 #toast.on {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+/* ---------- Rang, progression, classement ---------- */
+.pill-rank {
+  background: var(--rouge);
+  color: var(--blanc);
+  box-shadow: 0 4px 0 var(--rouge-sombre);
+}
+#hud-progress {
+  margin: 8px 6px 0;
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.55);
+  position: relative;
+}
+#hud-progress-track {
+  position: absolute;
+  inset: 0;
+}
+.pdot {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+.pdot.me {
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  background: var(--rouge);
+  z-index: 2;
+}
+.res-rank {
+  text-align: center;
+  font-family: var(--font-titre);
+  font-size: 30px;
+  color: var(--brun);
+}
+.standings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 14px;
+  font-weight: 800;
+}
+.standings li {
+  display: grid;
+  grid-template-columns: 34px 14px 1fr 28px 64px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 10px;
+}
+.standings li.me {
+  background: #ffe6ea;
+  color: var(--rouge);
+}
+.standings .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.standings .rt {
+  font-size: 12px;
+  opacity: 0.6;
+  text-align: right;
+}
+.standings .tm {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.standings .podium-1 .pos {
+  color: var(--or);
+}
+.res-coins {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-titre);
+  font-size: 30px;
+  color: var(--brun);
+}
+.res-coins small {
+  font-family: var(--font-texte);
+  font-weight: 800;
+  font-size: 13px;
+  opacity: 0.75;
+}
+.prep-rivals {
+  text-align: center;
 }

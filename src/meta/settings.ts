@@ -18,6 +18,14 @@ export interface SaveData {
   coins: number;
   activeMoose: string;
   owned: string[];
+  /** Niveau de chaque orignal possédé. */
+  levels: Record<string, number>;
+  difficulty: 'facile' | 'moyen' | 'difficile';
+  botCount: number;
+  /** Couples parcours|difficulté déjà gagnés (bonification de première victoire). */
+  firstWins: string[];
+  /** Nombre de courses lancées (sert de graine). */
+  raceCount: number;
   bestTimes: Record<string, number>;
   bestLaps: Record<string, number>;
 }
@@ -31,6 +39,11 @@ const DEFAULTS: SaveData = {
   coins: 0,
   activeMoose: 'bucheron',
   owned: ['bucheron'],
+  levels: { bucheron: 1 },
+  difficulty: 'moyen',
+  botCount: 10,
+  firstWins: [],
+  raceCount: 0,
   bestTimes: {},
   bestLaps: {},
 };

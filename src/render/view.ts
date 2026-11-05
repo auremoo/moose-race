@@ -55,7 +55,7 @@ export class GameView {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.chase = new ChaseCamera(balance.camera);
     this.buildTrackWorld(race);
-    this.addMoose(race.racers.length);
+    this.addMoose(race);
     this.scene.add(this.dust.points, this.sparks.points, this.breath.points);
     this.resize();
     // La taille réelle du canvas peut changer sans événement « resize » (barre d'adresse iOS,
@@ -71,20 +71,17 @@ export class GameView {
     this.ideal.mesh.visible = this.idealOn;
   }
 
-  private addMoose(count: number): void {
-    for (let i = 0; i < count; i++) {
-      const mv = createMooseView();
+  private addMoose(race: Race): void {
+    for (const r of race.racers) {
+      const mv = createMooseView({ coat: r.coat, size: r.size, accessory: r.accessory });
       this.moose.push(mv);
       this.scene.add(mv.root);
     }
   }
 
-  /** Change de circuit : le décor est reconstruit, l'ancien libéré de la mémoire graphique. */
-  setRace(race: Race): void {
-    const debugOn = this.debugLine.visible;
-    this.scene.remove(this.world);
-    this.world.traverse((o) => {
-      const mesh = o as THREE.Mesh;
+  private disposeObject(o: THREE.Object3D): void {
+    o.traverse((x) => {
+      const mesh = x as THREE.Mesh;
       mesh.geometry?.dispose();
       const mats = mesh.material ? (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) : [];
       for (const m of mats) {
@@ -92,11 +89,23 @@ export class GameView {
         m.dispose();
       }
     });
-    this.buildTrackWorld(race);
-    this.debugLine.visible = debugOn;
-    for (const mv of this.moose) this.scene.remove(mv.root);
+  }
+
+  /** Nouvelle course : participants recréés ; décor reconstruit seulement si le circuit change. */
+  setRace(race: Race, trackChanged = true): void {
+    if (trackChanged) {
+      const debugOn = this.debugLine.visible;
+      this.scene.remove(this.world);
+      this.disposeObject(this.world);
+      this.buildTrackWorld(race);
+      this.debugLine.visible = debugOn;
+    }
+    for (const mv of this.moose) {
+      this.scene.remove(mv.root);
+      this.disposeObject(mv.root);
+    }
     this.moose = [];
-    this.addMoose(race.racers.length);
+    this.addMoose(race);
     this.chase.reset();
   }
 
@@ -145,7 +154,8 @@ export class GameView {
         this.showcaseTime += dt;
         this.chase.showcase(x, y, heading, this.showcaseTime);
       } else if (i === 0) {
-        this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt, m.galloping || m.boostTime > 0);
+        const shake = race.tick - race.racers[0].lastContactTick < 12 || m.stunTime > 0 ? 0.25 : 0;
+        this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt, m.galloping || m.boostTime > 0, shake);
         this.effects(race, x, y, heading, dt);
       }
     }
