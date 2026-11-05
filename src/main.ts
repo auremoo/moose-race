@@ -10,6 +10,7 @@ import { createRace, stepRace, type Race } from './sim/race';
 import { GameView, type Pose } from './render/view';
 import { Hud } from './ui/hud';
 import { detectLang, setLang } from './ui/i18n';
+import { Menus } from './ui/menus';
 
 const save = loadSave();
 setLang(save.lang ?? detectLang());
@@ -35,16 +36,10 @@ const hud = new Hud(
     onPause: () => setPaused(true),
     onResume: () => setPaused(false),
     onRestart: () => restart(),
-    onPlay: () => {
-      onHome = false;
-      hud.showHome(false);
-      restart();
-    },
     onQuit: () => {
-      onHome = true;
       restart();
       paused = true;
-      hud.showHome(true);
+      menus.show('home');
     },
     onSensitivity: (v) => {
       save.sensitivity = v;
@@ -61,12 +56,29 @@ const hud = new Hud(
       setLang(l);
       save.lang = l;
       writeSave(save);
+      menus.applyTexts();
     },
   },
   save.sensitivity,
   debug,
 );
-hud.showHome(true);
+const menus = new Menus(save, {
+  onStart: () => {
+    // Un seul circuit jouable au jalon 1 : la boucle grise.
+    menus.show(null);
+    restart();
+  },
+  onScreen: (screen) => {
+    onHome = screen !== null;
+    view.setShowcase(onHome);
+    if (onHome) {
+      paused = true;
+      hud.showPause(false);
+      hud.hideResults();
+    }
+  },
+});
+menus.show('home');
 
 function setPaused(p: boolean): void {
   if (resultsShown || onHome) return;
@@ -158,7 +170,7 @@ function frame(now: number): void {
   }
 
   const alpha = paused ? 1 : acc / dt;
-  view.render(race, prev, alpha, paused ? 0 : real);
+  view.render(race, prev, alpha, paused && !onHome ? 0 : real);
 
   let dbg: string | null = null;
   if (debug) {

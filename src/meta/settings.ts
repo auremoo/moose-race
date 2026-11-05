@@ -10,11 +10,24 @@ export interface SaveData {
   debug: boolean;
   /** Langue choisie ; absente = langue du téléphone. */
   lang?: 'fr' | 'en';
+  /** Solde de pièces à feuille d'érable (l'économie arrive au jalon 7). */
+  coins: number;
+  activeMoose: string;
+  owned: string[];
   bestTimes: Record<string, number>;
   bestLaps: Record<string, number>;
 }
 
-const DEFAULTS: SaveData = { schema: 1, sensitivity: 1, debug: false, bestTimes: {}, bestLaps: {} };
+const DEFAULTS: SaveData = {
+  schema: 1,
+  sensitivity: 1,
+  debug: false,
+  coins: 0,
+  activeMoose: 'bucheron',
+  owned: ['bucheron'],
+  bestTimes: {},
+  bestLaps: {},
+};
 
 export function loadSave(): SaveData {
   try {

@@ -1,0 +1,21 @@
+{
+  "courses": [
+    { "id": "boucle-grise", "trackId": "boucle-grise", "name": "Boucle grise", "biome": "test", "province": "—", "lengthKm": 1.4, "milestone": 1 },
+    { "id": "promenade-glaciers", "name": "Promenade des Glaciers", "biome": "rocheuses", "province": "Alberta", "lengthKm": 3.0, "milestone": 5 },
+    { "id": "lacs-banff", "name": "Lacs de Banff", "biome": "rocheuses", "province": "Alberta", "lengthKm": 2.6, "milestone": 5 },
+    { "id": "ble-saskatchewan", "name": "Blé de Saskatchewan", "biome": "plaine", "province": "Saskatchewan", "lengthKm": 2.0, "milestone": 5 },
+    { "id": "crepuscule-manitoba", "name": "Crépuscule du Manitoba", "biome": "plaine", "province": "Manitoba", "lengthKm": 2.4, "milestone": 5 },
+    { "id": "sentiers-algonquin", "name": "Sentiers d'Algonquin", "biome": "foret", "province": "Ontario", "lengthKm": 2.2, "milestone": 5 },
+    { "id": "automne-mauricie", "name": "Automne en Mauricie", "biome": "foret", "province": "Québec", "lengthKm": 2.8, "milestone": 5 }
+  ],
+  "features": {
+    "enclos": 7,
+    "comptoir": 7,
+    "didacticiel": 8,
+    "multijoueur": 9,
+    "modeSpecial": 6,
+    "difficulte": 3,
+    "bots": 3,
+    "pieces": 7
+  }
+}

@@ -43,6 +43,8 @@ export class GameView {
   private dustVel = new Float32Array(DUST_COUNT * 3);
   private dustNext = 0;
   private dustAcc = 0;
+  private showcaseOn = false;
+  private showcaseTime = 0;
   private lastW = 0;
   private lastH = 0;
 
@@ -85,6 +87,12 @@ export class GameView {
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.resize()).observe(canvas);
   }
 
+  /** Menus : caméra vitrine devant l'orignal au lieu de la vue poursuite. */
+  setShowcase(on: boolean): void {
+    this.showcaseOn = on;
+    this.chase.reset();
+  }
+
   setDebug(on: boolean): void {
     this.debugLine.visible = on;
   }
@@ -115,7 +123,10 @@ export class GameView {
       view.root.position.set(simToWorldX(x), 0, simToWorldZ(y));
       view.root.rotation.y = heading;
       view.update(m, dt);
-      if (i === 0) {
+      if (i === 0 && this.showcaseOn) {
+        this.showcaseTime += dt;
+        this.chase.showcase(x, y, heading, this.showcaseTime);
+      } else if (i === 0) {
         this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt);
         const r = race.racers[0];
         const emit = m.sliding ? 60 * Math.max(0.3, m.slip) : r.onVerge && m.speed > 5 ? 25 : 0;

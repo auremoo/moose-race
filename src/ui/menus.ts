@@ -1,0 +1,186 @@
+/**
+ * Écrans hors course : Accueil, Carte du Canada, Préparation.
+ * Les fonctions pas encore livrées sont grisées et affichent le jalon prévu quand on les touche.
+ */
+import {
+  courses,
+  featureMilestones,
+  isAvailable,
+  mooseCatalog,
+  mooseRating,
+  type CourseDef,
+  type FeatureId,
+} from '../data';
+import type { SaveData } from '../meta/settings';
+import { formatTime } from './hud';
+import { getLang, t, type TextKey } from './i18n';
+
+export type MenuScreen = 'home' | 'map' | 'prep';
+
+export interface MenuCallbacks {
+  onStart(course: CourseDef): void;
+  onScreen(screen: MenuScreen | null): void;
+}
+
+const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const tk = (k: string) => t(k as TextKey);
+
+const BIOME_COLORS: Record<string, string> = {
+  test: '#8E8A85',
+  rocheuses: '#2C7BB6',
+  plaine: '#E0A100',
+  foret: '#2E8B57',
+};
+
+/** Jalon 9 = multijoueur (V2). */
+function soonText(milestone: number, key: 'soonBadge' | 'soonToast'): string {
+  if (milestone >= 9) return key === 'soonBadge' ? 'V2' : t('soonToastV2');
+  return t(key).replace('{n}', String(milestone));
+}
+
+export class Menus {
+  private current: MenuScreen | null = 'home';
+  private selected: CourseDef = courses[0];
+  private toastTimer = 0;
+
+  constructor(
+    private save: SaveData,
+    private cb: MenuCallbacks,
+  ) {
+    // Clic sur un élément verrouillé : on l'intercepte avant tout autre gestionnaire.
+    $('app').addEventListener(
+      'click',
+      (e) => {
+        const locked = (e.target as HTMLElement).closest<HTMLElement>('.locked');
+        if (!locked) return;
+        e.preventDefault();
+        e.stopPropagation();
+        this.toast(soonText(Number(locked.dataset.milestone), 'soonToast'));
+        locked.classList.remove('shake');
+        void locked.offsetWidth;
+        locked.classList.add('shake');
+      },
+      true,
+    );
+
+    $('btn-play').addEventListener('click', () => this.show('map'));
+    document.querySelectorAll<HTMLElement>('[data-back]').forEach((b) =>
+      b.addEventListener('click', () => this.show(b.dataset.back as MenuScreen)),
+    );
+    $('btn-go').addEventListener('click', () => this.cb.onStart(this.selected));
+
+    this.applyLocks();
+    this.applyTexts();
+  }
+
+  show(screen: MenuScreen | null): void {
+    this.current = screen;
+    for (const s of ['home', 'map', 'prep'] as MenuScreen[]) $(`screen-${s}`).hidden = s !== screen;
+    $('app').classList.toggle('on-menu', screen !== null);
+    if (screen === 'map') this.renderCourses();
+    if (screen === 'prep') this.renderPrep();
+    if (screen === 'home') this.renderHome();
+    this.cb.onScreen(screen);
+  }
+
+  get screen(): MenuScreen | null {
+    return this.current;
+  }
+
+  /** Grise tout élément dont la fonctionnalité arrive à un jalon futur. */
+  private applyLocks(): void {
+    document.querySelectorAll<HTMLElement>('[data-feature]').forEach((el) => {
+      const m = featureMilestones[el.dataset.feature as FeatureId];
+      if (m === undefined || isAvailable(m)) return;
+      el.classList.add('locked');
+      el.dataset.milestone = String(m);
+      el.setAttribute('aria-disabled', 'true');
+      if (el.classList.contains('tile')) {
+        const badge = document.createElement('small');
+        badge.className = 'soon-badge';
+        el.appendChild(badge);
+      }
+    });
+  }
+
+  applyTexts(): void {
+    document.querySelectorAll<HTMLElement>('[data-t]').forEach((el) => (el.textContent = tk(el.dataset.t!)));
+    document.querySelectorAll<HTMLElement>('[data-t-aria]').forEach((el) => el.setAttribute('aria-label', tk(el.dataset.tAria!)));
+    document.querySelectorAll<HTMLElement>('.soon-badge').forEach((b) => {
+      const m = Number(b.closest<HTMLElement>('.locked')?.dataset.milestone ?? 0);
+      b.textContent = soonText(m, 'soonBadge');
+    });
+    document.querySelectorAll<HTMLElement>('.coins').forEach((c) => c.setAttribute('aria-label', t('coinsLabel')));
+    if (this.current === 'map') this.renderCourses();
+    if (this.current === 'prep') this.renderPrep();
+    this.renderHome();
+  }
+
+  private activeMoose() {
+    return mooseCatalog.moose.find((m) => m.id === this.save.activeMoose) ?? mooseCatalog.moose[0];
+  }
+
+  private rarityChip(el: HTMLElement, rarity: string): void {
+    el.textContent = tk(`rarity_${rarity}`);
+    el.style.background = mooseCatalog.rarities[rarity as keyof typeof mooseCatalog.rarities].color;
+  }
+
+  private renderHome(): void {
+    const m = this.activeMoose();
+    $('active-name').textContent = m.name;
+    this.rarityChip($('active-rarity'), m.rarity);
+    $('active-cote').textContent = `${t('rating')} ${mooseRating(m)}`;
+    document.querySelectorAll<HTMLElement>('.coin-balance').forEach((c) => (c.textContent = String(this.save.coins)));
+  }
+
+  private renderCourses(): void {
+    const list = $('course-list');
+    list.replaceChildren();
+    const nf = new Intl.NumberFormat(getLang() === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    for (const c of courses) {
+      const card = document.createElement('button');
+      card.className = 'course-card';
+      card.style.setProperty('--biome', BIOME_COLORS[c.biome] ?? '#8E8A85');
+      const open = isAvailable(c.milestone) && !!c.trackId;
+      if (!open) {
+        card.classList.add('locked');
+        card.dataset.milestone = String(c.milestone);
+        card.setAttribute('aria-disabled', 'true');
+      }
+      const best = this.save.bestTimes[c.trackId ?? c.id];
+      const right = open
+        ? `<span class="course-best"><small>${t('record2')}</small>${best !== undefined ? formatTime(best) : '—'}</span>`
+        : `<span class="course-lock"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#i-lock"/></svg>${soonText(c.milestone, 'soonBadge')}</span>`;
+      const province = c.province === '—' ? '' : `${c.province} · `;
+      card.innerHTML = `
+        <span class="course-info">
+          <strong></strong>
+          <small>${province}${tk(`biome_${c.biome}`)} · ${nf.format(c.lengthKm)} km</small>
+        </span>${right}`;
+      card.querySelector('strong')!.textContent = c.name;
+      if (open)
+        card.addEventListener('click', () => {
+          this.selected = c;
+          this.show('prep');
+        });
+      list.appendChild(card);
+    }
+  }
+
+  private renderPrep(): void {
+    $('prep-title').textContent = this.selected.name;
+    const m = this.activeMoose();
+    $('prep-moose-name').textContent = m.name;
+    this.rarityChip($('prep-rarity'), m.rarity);
+    $('prep-cote').textContent = String(mooseRating(m));
+    $('bots-count').textContent = '0';
+  }
+
+  toast(text: string): void {
+    const el = $('toast');
+    el.textContent = text;
+    el.classList.add('on');
+    clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => el.classList.remove('on'), 1800);
+  }
+}

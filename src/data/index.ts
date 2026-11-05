@@ -4,6 +4,8 @@
  */
 import balanceJson from './balance.json';
 import boucleGrise from './tracks/boucle-grise.json';
+import coursesJson from './courses.json';
+import mooseJson from './moose.json';
 import type { MooseParams, SurfaceParams } from '../sim/moose';
 import type { SurfaceId, TrackDef } from '../sim/track';
 
@@ -84,3 +86,69 @@ export function validateTrack(t: unknown): TrackDef {
 
 export const balance: Balance = validateBalance(balanceJson);
 export const tracks: TrackDef[] = [validateTrack(boucleGrise)];
+
+// ---------- Orignaux ----------
+
+export type RarityId = 'commun' | 'peu-commun' | 'rare' | 'epique' | 'legendaire';
+
+export interface MooseDef {
+  id: string;
+  name: string;
+  rarity: RarityId;
+  /** Stats au niveau 1 : Vitesse, Accélération, Virage, Endurance, Robustesse. */
+  stats: [number, number, number, number, number];
+  starter?: boolean;
+}
+
+export interface MooseCatalog {
+  rarities: Record<RarityId, { avgLevel1: number; costMultiplier: number; price: number; fragments: number; color: string }>;
+  levelStatGain: number;
+  maxLevel: number;
+  moose: MooseDef[];
+}
+
+export function validateMooseCatalog(c: unknown): MooseCatalog {
+  const o = c as MooseCatalog;
+  checkNumbers(o, 'moose', ['levelStatGain', 'maxLevel']);
+  const ids = new Set<string>();
+  for (const m of o.moose) {
+    if (ids.has(m.id)) fail(`moose.${m.id}`, 'identifiant en double');
+    ids.add(m.id);
+    if (!o.rarities[m.rarity]) fail(`moose.${m.id}`, `rareté inconnue ${m.rarity}`);
+    if (m.stats.length !== 5 || m.stats.some((v) => v < 1 || v > 100)) fail(`moose.${m.id}`, '5 stats de 1 à 100');
+  }
+  return o;
+}
+
+export const mooseCatalog: MooseCatalog = validateMooseCatalog(mooseJson);
+
+/** Cote : moyenne arrondie des 5 stats au niveau donné. */
+export function mooseRating(m: MooseDef, level = 1): number {
+  const gain = mooseCatalog.levelStatGain * (level - 1);
+  return Math.round(m.stats.reduce((a, b) => a + Math.min(100, b + gain), 0) / 5);
+}
+
+// ---------- Parcours et fonctionnalités ----------
+
+export interface CourseDef {
+  id: string;
+  trackId?: string;
+  name: string;
+  biome: string;
+  province: string;
+  lengthKm: number;
+  /** Jalon où ce parcours devient jouable. */
+  milestone: number;
+}
+
+export type FeatureId = 'enclos' | 'comptoir' | 'didacticiel' | 'multijoueur' | 'modeSpecial' | 'difficulte' | 'bots' | 'pieces';
+
+/** Jalon actuellement livré : tout ce qui arrive plus tard est grisé. */
+export const CURRENT_MILESTONE = 1;
+
+export const courses: CourseDef[] = (coursesJson as { courses: CourseDef[] }).courses;
+export const featureMilestones = (coursesJson as { features: Record<FeatureId, number> }).features;
+
+export function isAvailable(milestone: number): boolean {
+  return milestone <= CURRENT_MILESTONE;
+}

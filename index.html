@@ -71,16 +71,95 @@
         </div>
       </div>
 
-      <div class="overlay overlay-home" id="home">
-        <div class="home">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M12,1.5 L13.5,4.8 L15.6,3.9 L15.1,8.6 L17.9,6.1 L18.5,7.9 L21.7,7.2 L20.5,10.3 L22.3,11.2 L17.7,15 L18.3,16.8 L12.5,16 L12.5,21.5 L11.5,21.5 L11.5,16 L5.7,16.8 L6.3,15 L1.7,11.2 L3.5,10.3 L2.3,7.2 L5.5,7.9 L6.1,6.1 L8.9,8.6 L8.4,3.9 L10.5,4.8Z" fill="currentColor"/></symbol>
+        <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></g></symbol>
+        <symbol id="i-fence" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M5 21V7l2-3 2 3v14M15 21V7l2-3 2 3v14M3 10h18M3 16h18"/></g></symbol>
+        <symbol id="i-shop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 9l1.5-5h15L21 9M3 9h18M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3M5 12.5V21h14v-8.5M10 21v-5h4v5"/></g></symbol>
+        <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20M8 8h8"/></g></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.7 3 2.6 3.5 5.2"/></g></symbol>
+        <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></g></symbol>
+      </svg>
+
+      <section class="screen screen-home" id="screen-home">
+        <header class="topbar">
+          <div class="coins" data-feature="pieces"><span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><span class="coin-balance">0</span></div>
+          <button class="btn-icon" id="btn-settings" data-t-aria="settings"><svg viewBox="0 0 24 24" width="24" height="24"><use href="#i-gear"/></svg></button>
+        </header>
+        <div class="home-title">
           <h1 class="logo">Panache</h1>
-          <p class="tagline" id="lbl-tagline"></p>
-          <div class="home-buttons">
-            <button class="btn btn-red btn-big" id="btn-play"></button>
-            <button class="btn btn-white" id="btn-settings"></button>
+          <p class="tagline" data-t="tagline"></p>
+        </div>
+        <div class="home-bottom">
+          <div class="active-moose">
+            <span class="rarity-chip" id="active-rarity"></span>
+            <strong id="active-name"></strong>
+            <span class="cote" id="active-cote"></span>
+          </div>
+          <button class="btn btn-red btn-big" id="btn-play" data-t="play"></button>
+          <div class="tile-grid">
+            <button class="tile" data-feature="enclos"><svg viewBox="0 0 24 24"><use href="#i-fence"/></svg><span data-t="enclos"></span></button>
+            <button class="tile" data-feature="comptoir"><svg viewBox="0 0 24 24"><use href="#i-shop"/></svg><span data-t="comptoir"></span></button>
+            <button class="tile" data-feature="didacticiel"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg><span data-t="didacticiel"></span></button>
+            <button class="tile" data-feature="multijoueur"><svg viewBox="0 0 24 24"><use href="#i-users"/></svg><span data-t="multijoueur"></span></button>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section class="screen screen-panel" id="screen-map" hidden>
+        <header class="topbar">
+          <button class="btn-icon" data-back="home" data-t-aria="back"><svg viewBox="0 0 24 24" width="24" height="24"><use href="#i-back"/></svg></button>
+          <h2 class="screen-title" data-t="mapTitle"></h2>
+          <div class="coins" data-feature="pieces"><span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><span class="coin-balance">0</span></div>
+        </header>
+        <p class="screen-sub" data-t="mapSub"></p>
+        <div class="course-list" id="course-list"></div>
+      </section>
+
+      <section class="screen screen-panel" id="screen-prep" hidden>
+        <header class="topbar">
+          <button class="btn-icon" data-back="map" data-t-aria="back"><svg viewBox="0 0 24 24" width="24" height="24"><use href="#i-back"/></svg></button>
+          <h2 class="screen-title" id="prep-title"></h2>
+          <div class="coins" data-feature="pieces"><span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><span class="coin-balance">0</span></div>
+        </header>
+        <div class="prep-body">
+          <div class="prep-card">
+            <h3 data-t="mode"></h3>
+            <div class="segmented">
+              <button class="seg on" data-t="modeClassic"></button>
+              <button class="seg" data-feature="modeSpecial" data-t="modeSpecial"></button>
+            </div>
+            <p class="prep-desc" data-t="modeClassicDesc"></p>
+          </div>
+          <div class="prep-card">
+            <h3 data-t="difficulty"></h3>
+            <div class="segmented">
+              <button class="seg" data-feature="difficulte" data-t="easy"></button>
+              <button class="seg on" data-feature="difficulte" data-t="medium"></button>
+              <button class="seg" data-feature="difficulte" data-t="hard"></button>
+            </div>
+          </div>
+          <div class="prep-card prep-row">
+            <h3 data-t="rivals"></h3>
+            <div class="stepper">
+              <button class="step" data-feature="bots">−</button>
+              <span id="bots-count">0</span>
+              <button class="step" data-feature="bots">+</button>
+            </div>
+          </div>
+          <div class="prep-card prep-row">
+            <div>
+              <h3 data-t="yourMoose"></h3>
+              <div class="prep-moose"><span class="rarity-chip" id="prep-rarity"></span> <strong id="prep-moose-name"></strong></div>
+            </div>
+            <div class="cote-big"><small data-t="rating"></small><span id="prep-cote"></span></div>
+          </div>
+        </div>
+        <button class="btn btn-red btn-big" id="btn-go" data-t="start"></button>
+      </section>
+
+      <div id="toast" role="status"></div>
 
       <div class="overlay" id="settings" hidden>
         <div class="card">

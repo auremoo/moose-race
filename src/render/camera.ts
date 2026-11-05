@@ -66,6 +66,21 @@ export class ChaseCamera {
     }
   }
 
+  /** Vue vitrine pour les menus : la caméra tourne lentement devant l'orignal. */
+  showcase(x: number, y: number, heading: number, time: number): void {
+    const a = heading + Math.PI * 0.8 + Math.sin(time * 0.25) * 0.5;
+    const dist = 8.5;
+    const wx = simToWorldX(x);
+    const wz = simToWorldZ(y);
+    this.camera.position.set(wx + simToWorldX(Math.cos(a)) * dist, 3.2, wz + simToWorldZ(Math.sin(a)) * dist);
+    this.camera.lookAt(wx, 2.6, wz);
+    if (this.camera.fov !== this.cfg.fov) {
+      this.camera.fov = this.cfg.fov;
+      this.camera.updateProjectionMatrix();
+    }
+    this.initialized = false;
+  }
+
   reset(): void {
     this.initialized = false;
   }
