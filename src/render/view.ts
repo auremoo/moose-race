@@ -1,0 +1,150 @@
+/**
+ * Rendu : lit l'état de la simulation (lecture seule) et l'interpole entre deux pas.
+ */
+import * as THREE from 'three';
+import type { Balance } from '../data';
+import type { Race } from '../sim/race';
+import { ChaseCamera } from './camera';
+import { simToWorldX, simToWorldZ } from './coords';
+import { createMooseView, type MooseView } from './moose';
+import { buildWorld } from './world';
+
+export interface Pose {
+  x: number;
+  y: number;
+  heading: number;
+}
+
+const DUST_COUNT = 80;
+
+/** Petite tache ronde et floue pour les particules de poussière. */
+function dotTexture(): THREE.Texture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+export class GameView {
+  readonly renderer: THREE.WebGLRenderer;
+  readonly scene = new THREE.Scene();
+  readonly chase: ChaseCamera;
+  private moose: MooseView[] = [];
+  private debugLine: THREE.Line;
+  private dust: THREE.Points;
+  private dustLife = new Float32Array(DUST_COUNT);
+  private dustVel = new Float32Array(DUST_COUNT * 3);
+  private dustNext = 0;
+  private dustAcc = 0;
+
+  constructor(
+    private canvas: HTMLCanvasElement,
+    race: Race,
+    balance: Balance,
+  ) {
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.chase = new ChaseCamera(balance.camera);
+    const { debugLine } = buildWorld(this.scene, race.track);
+    this.debugLine = debugLine;
+    for (let i = 0; i < race.racers.length; i++) {
+      const mv = createMooseView();
+      this.moose.push(mv);
+      this.scene.add(mv.root);
+    }
+
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(DUST_COUNT * 3), 3));
+    this.dust = new THREE.Points(
+      g,
+      new THREE.PointsMaterial({
+        color: 0xd9c19a,
+        size: 0.7,
+        map: dotTexture(),
+        transparent: true,
+        opacity: 0.75,
+        depthWrite: false,
+        alphaTest: 0.05,
+      }),
+    );
+    this.dust.frustumCulled = false;
+    this.scene.add(this.dust);
+    this.resize();
+  }
+
+  setDebug(on: boolean): void {
+    this.debugLine.visible = on;
+  }
+
+  resize(): void {
+    const w = this.canvas.clientWidth || 1;
+    const h = this.canvas.clientHeight || 1;
+    this.renderer.setSize(w, h, false);
+    this.chase.setAspect(w / h);
+  }
+
+  render(race: Race, prev: Pose[], alpha: number, dt: number): void {
+    for (let i = 0; i < race.racers.length; i++) {
+      const m = race.racers[i].moose;
+      const p = prev[i];
+      const x = p.x + (m.x - p.x) * alpha;
+      const y = p.y + (m.y - p.y) * alpha;
+      let dh = m.heading - p.heading;
+      if (dh > Math.PI) dh -= 2 * Math.PI;
+      else if (dh < -Math.PI) dh += 2 * Math.PI;
+      const heading = p.heading + dh * alpha;
+      const view = this.moose[i];
+      view.root.position.set(simToWorldX(x), 0, simToWorldZ(y));
+      view.root.rotation.y = heading;
+      view.update(m, dt);
+      if (i === 0) {
+        this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt);
+        const r = race.racers[0];
+        const emit = m.sliding ? 60 * Math.max(0.3, m.slip) : r.onVerge && m.speed > 5 ? 25 : 0;
+        this.updateDust(x, y, heading, emit, dt);
+      }
+    }
+    this.renderer.render(this.scene, this.chase.camera);
+  }
+
+  private updateDust(x: number, y: number, heading: number, rate: number, dt: number): void {
+    const pos = this.dust.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const arr = pos.array as Float32Array;
+    this.dustAcc += rate * dt;
+    while (this.dustAcc >= 1) {
+      this.dustAcc -= 1;
+      const i = this.dustNext;
+      this.dustNext = (this.dustNext + 1) % DUST_COUNT;
+      const back = -1.5 + Math.random() * 0.6;
+      const side = (Math.random() - 0.5) * 1.6;
+      const cx = x + Math.cos(heading) * back - Math.sin(heading) * side;
+      const cy = y + Math.sin(heading) * back + Math.cos(heading) * side;
+      arr[i * 3] = simToWorldX(cx);
+      arr[i * 3 + 1] = 0.3;
+      arr[i * 3 + 2] = simToWorldZ(cy);
+      this.dustVel[i * 3] = (Math.random() - 0.5) * 2;
+      this.dustVel[i * 3 + 1] = 1 + Math.random() * 1.5;
+      this.dustVel[i * 3 + 2] = (Math.random() - 0.5) * 2;
+      this.dustLife[i] = 0.7;
+    }
+    for (let i = 0; i < DUST_COUNT; i++) {
+      if (this.dustLife[i] <= 0) {
+        arr[i * 3 + 1] = -10;
+        continue;
+      }
+      this.dustLife[i] -= dt;
+      arr[i * 3] += this.dustVel[i * 3] * dt;
+      arr[i * 3 + 1] += this.dustVel[i * 3 + 1] * dt;
+      arr[i * 3 + 2] += this.dustVel[i * 3 + 2] * dt;
+    }
+    pos.needsUpdate = true;
+  }
+}

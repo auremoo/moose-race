@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "sim": {
+    "hz": 60,
+    "laps": 2,
+    "countdownSeconds": 3
+  },
+  "moose": {
+    "topSpeed": 30,
+    "accel": 10,
+    "aLat": 18,
+    "maxSteerCurvature": 0.085,
+    "steerRate": 4.0,
+    "scrubFactor": 0.35,
+    "scrubMaxExcess": 40,
+    "slideFlatDecel": 1.2,
+    "overTopDecelRate": 1.2,
+    "startSpeed": 0
+  },
+  "surfaces": {
+    "sentier": {
+      "grip": 1.0,
+      "vmax": 1.0
+    },
+    "herbe": {
+      "grip": 0.85,
+      "vmax": 0.75
+    },
+    "boue": {
+      "grip": 0.7,
+      "vmax": 0.6
+    },
+    "neige": {
+      "grip": 0.75,
+      "vmax": 0.95
+    },
+    "glace": {
+      "grip": 0.45,
+      "vmax": 1.0
+    }
+  },
+  "barrier": {
+    "speedLossPerSecond": 0.9,
+    "headingAlignRate": 3.0
+  },
+  "input": {
+    "touchRangePx": 70,
+    "touchCurve": 1.35,
+    "keyboardRampPerSecond": 3.0,
+    "sensitivity": 1.0
+  },
+  "camera": {
+    "distance": 11,
+    "height": 5.5,
+    "lookAhead": 28,
+    "lookHeight": 1.0,
+    "fov": 64,
+    "followRate": 9,
+    "yawRate": 6,
+    "galopFovBoost": 6
+  }
+}

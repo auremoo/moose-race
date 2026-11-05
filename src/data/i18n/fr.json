@@ -1,0 +1,23 @@
+{
+  "title": "Panache",
+  "lap": "Tour",
+  "time": "Temps",
+  "best": "Meilleur",
+  "kmh": "km/h",
+  "go": "Partez !",
+  "pause": "Pause",
+  "resume": "Reprendre",
+  "restart": "Recommencer",
+  "sensitivity": "Sensibilité de la direction",
+  "debug": "Mode débogage",
+  "sound": "Son : arrive au jalon 4",
+  "finish": "Arrivée !",
+  "total": "Temps total",
+  "bestLap": "Meilleur tour",
+  "record": "Nouveau record !",
+  "replay": "Rejouer",
+  "steerHint": "Glisse ton pouce à gauche ou à droite pour diriger",
+  "offTrack": "Bas-côté !",
+  "sliding": "Trop vite !",
+  "portraitOnly": "Tourne ton téléphone en portrait"
+}
