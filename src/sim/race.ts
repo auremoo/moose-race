@@ -5,12 +5,14 @@
  */
 import type { Balance, DifficultyId } from '../data';
 import { botCommand, createBotBrain, type BotBrain } from './bots';
+import { botWantsItem, createHazards, stepHazards, useItem, type Hazards, type ItemId } from './hazards';
 import { createMooseState, NO_COMMANDS, stepMoose, type Commands, type MooseParams, type MooseState } from './moose';
 import { getRacingLine, speedProfile, type RacingLine } from './racingLine';
 import { createRng, type Rng } from './rng';
 import { buildTrack, projectOnTrack, type Track, type TrackDef, type TrackProjection } from './track';
 
 export type RacePhase = 'countdown' | 'running' | 'finished';
+export type RaceMode = 'classique' | 'special';
 
 /** Participant inscrit à une course. */
 export interface Entrant {
@@ -58,6 +60,12 @@ export interface Racer {
   lastContactTick: number;
   /** Pas du dernier étourdissement par choc (évite les étourdissements en chaîne). */
   lastStunTick: number;
+  /** Aide de castor détenue (mode spécial). */
+  item: ItemId | null;
+  lastItemTick: number;
+  lastItemUseTick: number;
+  /** Bouton Castor tenu au pas précédent (déclenchement au front). */
+  castorHeld: boolean;
 }
 
 export interface Race {
@@ -72,6 +80,9 @@ export interface Race {
   laps: number;
   racers: Racer[];
   difficulty: DifficultyId;
+  mode: RaceMode;
+  /** Ours, castors et barrages : seulement en mode spécial. */
+  hazards: Hazards | null;
   /** Ligne de course du circuit (ligne idéale, points de corde, profil de vitesse). */
   line: RacingLine;
 }
@@ -86,6 +97,7 @@ export interface RaceOptions {
   /** Place du joueur sur la grille (0 = pole). Par défaut au milieu. */
   playerGridSlot?: number;
   difficulty?: DifficultyId;
+  mode?: RaceMode;
 }
 
 export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = {}): Race {
@@ -150,9 +162,13 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
       lastCordeTick: -1,
       lastContactTick: -1,
       lastStunTick: -100000,
+      item: null,
+      lastItemTick: -1,
+      lastItemUseTick: -1,
+      castorHeld: false,
     };
   });
-  return {
+  const race: Race = {
     track,
     balance,
     rng,
@@ -164,8 +180,12 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
     laps: opts.laps ?? balance.sim.laps,
     racers,
     difficulty: opts.difficulty ?? 'moyen',
+    mode: opts.mode ?? 'classique',
+    hazards: null,
     line,
   };
+  if (race.mode === 'special') race.hazards = createHazards(race, createRng(seed ^ 0x2545f491));
+  return race;
 }
 
 /** Temps de course écoulé (s), 0 pendant le compte à rebours. */
@@ -344,6 +364,11 @@ function resolveContacts(r: Race): void {
       if (closing > c.stunClosingSpeed) {
         const cooldown = Math.round(c.stunCooldown / r.dt);
         for (const [R, M] of [[A, a], [B, b]] as const) {
+          if (M.shieldTime > 0) {
+            // La hutte repousse le choc.
+            M.shieldTime = 0;
+            continue;
+          }
           if (r.tick - R.lastStunTick < cooldown) continue;
           M.stunTime = Math.max(M.stunTime, R.params.stunSeconds * c.stunFraction);
           R.lastStunTick = r.tick;
@@ -376,8 +401,14 @@ export function stepRace(r: Race, commands: Commands[]): void {
     if (racer.bot) cmd = botCommand(r, racer);
     else if (finishedPhase) cmd = { ...NO_COMMANDS, steer: commands[i]?.steer ?? 0, brake: 0.3 };
     else cmd = commands[i] ?? NO_COMMANDS;
+    if (r.hazards) {
+      const wants = racer.bot ? botWantsItem(r, r.hazards, racer) : cmd.castor && !racer.castorHeld;
+      racer.castorHeld = cmd.castor;
+      if (wants) useItem(r, r.hazards, racer);
+    }
     stepRacer(r, racer, cmd);
   }
+  if (r.hazards) stepHazards(r, r.hazards);
   if (r.racers.length > 1) resolveContacts(r);
   if (!finishedPhase && r.racers[0].finished) r.phase = 'finished';
 }

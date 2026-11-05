@@ -24,6 +24,7 @@ const zone = document.getElementById('steer-zone') as HTMLElement;
 
 let difficulty: DifficultyId = save.difficulty;
 let botCount = save.botCount;
+let mode: 'classique' | 'special' = save.mode;
 
 function newRace(): Race {
   const seed = 1 + save.raceCount * 7919;
@@ -36,7 +37,7 @@ function newRace(): Race {
     seed,
     balance,
   });
-  return createRace(trackDef, balance, { seed, laps: course.laps, entrants, difficulty });
+  return createRace(trackDef, balance, { seed, laps: course.laps, entrants, difficulty, mode });
 }
 
 let race: Race = newRace();
@@ -142,6 +143,8 @@ const menus = new Menus(save, {
     trackDef = def;
     difficulty = setup.difficulty;
     botCount = setup.botCount;
+    mode = setup.mode;
+    save.mode = mode;
     save.difficulty = difficulty;
     save.botCount = botCount;
     menus.show(null);
@@ -227,7 +230,7 @@ function onFinish(): void {
   const order = standings(race);
   const rank = order.indexOf(0) + 1;
   const N = race.racers.length;
-  let coins = coinsFor(rank, N, balance.difficulties[difficulty].coinMul, 1);
+  let coins = coinsFor(rank, N, balance.difficulties[difficulty].coinMul, mode === 'special' ? balance.special.coinMul : 1);
   const key = firstWinKey(trackDef.id, difficulty);
   let bonus = 0;
   if (rank === 1 && N > 1 && !save.firstWins.includes(key)) {

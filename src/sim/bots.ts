@@ -5,6 +5,7 @@
  */
 import { autopilot, targetSpeedFromProfile } from './autopilot';
 import type { Commands } from './moose';
+import { bearAvoidance } from './hazards';
 import type { Race, Racer } from './race';
 import type { Rng } from './rng';
 
@@ -81,6 +82,8 @@ export function botCommand(r: Race, racer: Racer): Commands {
     const away = (lat >= 0 ? 1 : -1) * (3.6 - Math.abs(lat));
     brain.laneTarget = Math.max(-8, Math.min(8, brain.laneTarget + away));
   }
+  // Mode spécial : on s'écarte d'un ours annoncé, d'autant mieux qu'on est talentueux.
+  if (r.hazards) brain.laneTarget = Math.max(-8, Math.min(8, brain.laneTarget + bearAvoidance(r, r.hazards, racer) * (0.5 + 0.5 * t)));
   const laneRate = 2.5 * r.dt;
   brain.lane += Math.max(-laneRate, Math.min(laneRate, brain.laneTarget - brain.lane));
 

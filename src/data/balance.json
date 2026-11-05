@@ -199,5 +199,55 @@
     "stunCooldown": 3,
     "halfLength": 1.6,
     "halfWidth": 0.75
+  },
+  "special": {
+    "coinMul": 1.25,
+    "bears": {
+      "facile": {
+        "count": [
+          2,
+          3
+        ],
+        "speedMul": 0.8
+      },
+      "moyen": {
+        "count": [
+          4,
+          5
+        ],
+        "speedMul": 1
+      },
+      "difficile": {
+        "count": [
+          6,
+          8
+        ],
+        "speedMul": 1.25
+      }
+    },
+    "bear": {
+      "warnSeconds": 2,
+      "crossSpeed": 4.5,
+      "chargeSpeed": 9,
+      "guardSway": 3.5,
+      "periodMin": 7,
+      "periodMax": 11,
+      "radius": 1.6,
+      "hitSpeedKeep": 0.45,
+      "minSpacing": 120
+    },
+    "beaver": {
+      "perTrack": 4,
+      "radius": 1.6,
+      "respawnSeconds": 5,
+      "lineOffset": 3.5
+    },
+    "items": {
+      "coupSeconds": 2.5,
+      "barrageSeconds": 15,
+      "barrageHalfWidth": 1.8,
+      "barrageSpeedKeep": 0.55,
+      "hutteSeconds": 10
+    }
   }
 }

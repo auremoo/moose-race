@@ -26,6 +26,26 @@ export interface DifficultyDef {
   assist: number;
 }
 
+export interface SpecialDef {
+  coinMul: number;
+  bears: Record<DifficultyId, { count: [number, number]; speedMul: number }>;
+  bear: {
+    warnSeconds: number;
+    crossSpeed: number;
+    chargeSpeed: number;
+    guardSway: number;
+    periodMin: number;
+    periodMax: number;
+    radius: number;
+    /** Part de vitesse conservée après un contact avec un ours. */
+    hitSpeedKeep: number;
+    /** Espacement minimal entre deux ours le long de la piste (m). */
+    minSpacing: number;
+  };
+  beaver: { perTrack: number; radius: number; respawnSeconds: number; lineOffset: number };
+  items: { coupSeconds: number; barrageSeconds: number; barrageHalfWidth: number; barrageSpeedKeep: number; hutteSeconds: number };
+}
+
 export interface Balance {
   version: number;
   sim: { hz: number; laps: number; countdownSeconds: number };
@@ -45,6 +65,7 @@ export interface Balance {
     catchUpRange: number;
   };
   contact: { halfLength: number; halfWidth: number; speedTransfer: number; stunClosingSpeed: number; stunFraction: number; minSpeedKeep: number; stunCooldown: number };
+  special: SpecialDef;
   /** Plages stat 0 → stat 100 de chaque paramètre physique lié aux stats. */
   stats: Record<'topSpeed' | 'accel' | 'aLat' | 'enduranceSeconds' | 'stunSeconds' | 'mass', [number, number]>;
   /** Zone de corde : demi-longueur le long de la piste et tolérance latérale (m). */
@@ -103,6 +124,10 @@ export function validateBalance(b: unknown): Balance {
   for (const id of ['facile', 'moyen', 'difficile'] as DifficultyId[])
     checkNumbers(o.difficulties?.[id], `balance.difficulties.${id}`, ['ratingOffset', 'catchUp', 'coinMul', 'assist']);
   checkNumbers(o.bots, 'balance.bots', ['noiseAmplitude', 'mistakeChance', 'mistakeSpeedBonus', 'cornerMarginMin', 'overtakeDistance', 'overtakeShift', 'followLateral', 'catchUpRange']);
+  checkNumbers(o.special, 'balance.special', ['coinMul']);
+  checkNumbers(o.special.bear, 'balance.special.bear', ['warnSeconds', 'crossSpeed', 'chargeSpeed', 'guardSway', 'periodMin', 'periodMax', 'radius', 'hitSpeedKeep', 'minSpacing']);
+  checkNumbers(o.special.beaver, 'balance.special.beaver', ['perTrack', 'radius', 'respawnSeconds', 'lineOffset']);
+  checkNumbers(o.special.items, 'balance.special.items', ['coupSeconds', 'barrageSeconds', 'barrageHalfWidth', 'barrageSpeedKeep', 'hutteSeconds']);
   checkNumbers(o.contact, 'balance.contact', ['halfLength', 'halfWidth', 'speedTransfer', 'stunClosingSpeed', 'stunFraction', 'minSpeedKeep', 'stunCooldown']);
   checkNumbers(o.hud, 'balance.hud', ['realTopKmh', 'gaugeMaxKmh', 'slideMessageSlip', 'slideMessageDelay']);
   if (!Array.isArray(o.hud.gaits) || o.hud.gaits.some((g) => typeof g[0] !== 'number' || typeof g[1] !== 'string'))

@@ -126,5 +126,12 @@
   "importSave": "Importer",
   "imported": "Sauvegarde importée",
   "importFailed": "Fichier non reconnu",
-  "starterOnly": "Ravitaillement ou fragments"
+  "starterOnly": "Ravitaillement ou fragments",
+  "castorBtn": "Castor",
+  "item_coup": "Coup de queue",
+  "item_barrage": "Barrage",
+  "item_hutte": "Hutte",
+  "bearAlert": "Ours !",
+  "modeSpecialDesc": "Ours noirs à éviter, castors à ramasser pour une aide. Pièces +25 %.",
+  "gotItem": "Castor : {n} !"
 }

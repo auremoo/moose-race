@@ -6,6 +6,7 @@ import type { Balance } from '../data';
 import type { Race } from '../sim/race';
 import { ChaseCamera } from './camera';
 import { simToWorldX, simToWorldZ } from './coords';
+import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
 import { createMooseView, type MooseView } from './moose';
 import { Particles } from './particles';
 import { buildWorld, type IdealLine } from './world';
@@ -40,6 +41,12 @@ export class GameView {
   private dust = new Particles(120, 0.7, false, -0.5);
   private sparks = new Particles(160, 0.4, true, 6);
   private breath = new Particles(40, 0.9, false, -0.3);
+  private hazardGroup = new THREE.Group();
+  private bearViews: { root: THREE.Group; warn: THREE.Sprite; lastD: number }[] = [];
+  private beaverViews: THREE.Group[] = [];
+  private barragePool: THREE.Group[] = [];
+  private shields: THREE.Mesh[] = [];
+  private clock = 0;
   private showcaseOn = false;
   private showcaseTime = 0;
   private lastW = 0;
@@ -56,7 +63,8 @@ export class GameView {
     this.chase = new ChaseCamera(balance.camera);
     this.buildTrackWorld(race);
     this.addMoose(race);
-    this.scene.add(this.dust.points, this.sparks.points, this.breath.points);
+    this.scene.add(this.dust.points, this.sparks.points, this.breath.points, this.hazardGroup);
+    this.buildHazards(race);
     this.resize();
     // La taille réelle du canvas peut changer sans événement « resize » (barre d'adresse iOS,
     // navigateur intégré d'une app) : on observe le canvas et on vérifie aussi à chaque image.
@@ -106,7 +114,86 @@ export class GameView {
     }
     this.moose = [];
     this.addMoose(race);
+    this.buildHazards(race);
     this.chase.reset();
+  }
+
+  /** Ours, castors, barrages et boucliers du mode spécial. */
+  private buildHazards(race: Race): void {
+    this.scene.remove(this.hazardGroup);
+    this.disposeObject(this.hazardGroup);
+    this.hazardGroup = new THREE.Group();
+    this.scene.add(this.hazardGroup);
+    this.bearViews = [];
+    this.beaverViews = [];
+    this.barragePool = [];
+    this.shields = [];
+    const h = race.hazards;
+    if (!h) return;
+    for (let i = 0; i < h.bears.length; i++) {
+      const root = createBearView();
+      const warn = createWarningSprite();
+      warn.visible = false;
+      this.hazardGroup.add(root, warn);
+      this.bearViews.push({ root, warn, lastD: 0 });
+    }
+    for (let i = 0; i < h.beavers.length; i++) {
+      const bv = createBeaverView();
+      this.hazardGroup.add(bv);
+      this.beaverViews.push(bv);
+    }
+    for (let i = 0; i < 12; i++) {
+      const b = createBarrageView(race.balance.special.items.barrageHalfWidth);
+      b.visible = false;
+      this.hazardGroup.add(b);
+      this.barragePool.push(b);
+    }
+    for (let i = 0; i < race.racers.length; i++) {
+      const sh = createShieldView();
+      sh.visible = false;
+      this.hazardGroup.add(sh);
+      this.shields.push(sh);
+    }
+  }
+
+  private renderHazards(race: Race, dt: number): void {
+    const h = race.hazards;
+    if (!h) return;
+    this.clock += dt;
+    h.bears.forEach((b, i) => {
+      const v = this.bearViews[i];
+      const s = race.track.samples[b.index];
+      v.root.position.set(simToWorldX(b.x), 0, simToWorldZ(b.y));
+      // L'ours regarde dans le sens de sa marche (à travers la piste).
+      const dir = b.d - v.lastD;
+      v.lastD = b.d;
+      const ang = Math.atan2(s.ny * Math.sign(dir || b.side * -1), s.nx * Math.sign(dir || b.side * -1));
+      v.root.rotation.y = ang;
+      v.root.position.y = b.active ? Math.abs(Math.sin(this.clock * 9)) * 0.15 : 0;
+      v.warn.visible = b.warning;
+      const ws = race.track.samples[b.index];
+      const lo = b.lineOffset;
+      v.warn.position.set(simToWorldX(ws.x + ws.nx * lo), 4.5 + Math.sin(this.clock * 8) * 0.3, simToWorldZ(ws.y + ws.ny * lo));
+    });
+    h.beavers.forEach((bv, i) => {
+      const v = this.beaverViews[i];
+      v.visible = bv.respawn <= 0;
+      v.position.set(simToWorldX(bv.x), Math.abs(Math.sin(this.clock * 3 + i)) * 0.25, simToWorldZ(bv.y));
+      v.rotation.y = this.clock * 1.5 + i;
+    });
+    this.barragePool.forEach((b, i) => {
+      const br = h.barrages[i];
+      b.visible = !!br;
+      if (br) {
+        b.position.set(simToWorldX(br.x), 0, simToWorldZ(br.y));
+        b.rotation.y = br.heading;
+      }
+    });
+    race.racers.forEach((r, i) => {
+      const sh = this.shields[i];
+      sh.visible = r.moose.shieldTime > 0;
+      if (sh.visible) sh.position.copy(this.moose[i].root.position);
+    });
   }
 
   /** Menus : caméra vitrine devant l'orignal au lieu de la vue poursuite. */
@@ -160,6 +247,7 @@ export class GameView {
       }
     }
     if (this.idealOn && !this.showcaseOn) this.colorIdealLine(race);
+    this.renderHazards(race, dt);
     this.dust.update(dt);
     this.sparks.update(dt);
     this.breath.update(dt);
@@ -230,8 +318,8 @@ export class GameView {
         this.sparks.emit(px, py, pz, rnd(3) - ch * 2, 2 + Math.random() * 2, rnd(3) + sh * 2, 0.45, col);
       }
     }
-    // Élan libéré : traînée dorée.
-    if (m.boostTime > 0) {
+    // Élan libéré ou coup de queue : traînée dorée.
+    if (m.boostTime > 0 || m.tailTime > 0) {
       for (let k = this.sparks.due(70, dt); k > 0; k--) {
         const [px, py, pz] = at(-2, rnd(1), 1 + Math.random());
         this.sparks.emit(px, py, pz, rnd(1), 0.5, rnd(1), 0.35, C.gold);

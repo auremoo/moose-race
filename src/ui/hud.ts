@@ -6,6 +6,7 @@ import { countdownRemaining, rankOf, raceTime, type Race } from '../sim/race';
 import { getLang, ordinal, t, type Lang, type TextKey } from './i18n';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const tk = (k: string) => t(k as TextKey);
 
 export function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -76,6 +77,7 @@ export class Hud {
   private eventMsg = '';
   private eventClass = '';
   private eventTimer = 0;
+  private lastItemTick = -1;
   private needleKmh = 0;
 
   constructor(
@@ -346,6 +348,31 @@ export class Hud {
       this.flash.classList.toggle('gold', cls === 'gold');
     }
     this.flash.classList.toggle('on', !!msg && race.phase === 'running');
+
+    // Mode spécial : bouton Castor, aide détenue, alerte ours.
+    const castorBtn = $('btn-castor');
+    castorBtn.hidden = !race.hazards;
+    if (race.hazards) {
+      const item = r.item;
+      castorBtn.classList.toggle('empty', !item);
+      $('castor-label').textContent = item ? tk(`item_${item}`) : t('castorBtn');
+      $('castor-icon').className = `castor-icon ${item ?? ''}`;
+      if (r.lastItemTick !== this.lastItemTick) {
+        if (item) this.showEvent(t('gotItem').replace('{n}', tk(`item_${item}`)), 'gold');
+        this.lastItemTick = r.lastItemTick;
+      }
+      const n = race.track.samples.length;
+      const near = race.hazards.bears.some((b) => {
+        let di = b.index - r.proj.index;
+        if (di < 0) di += n;
+        return (b.warning || (b.active && b.kind !== 'garde')) && di * race.track.spacing < 120;
+      });
+      if (near && this.eventTimer <= 0 && race.phase === 'running') {
+        this.flash.textContent = t('bearAlert');
+        this.flash.classList.add('on');
+        this.flash.classList.remove('good', 'gold');
+      }
+    }
 
     // Bouton Galop : anneau d'endurance.
     this.gallopBtn.style.setProperty('--endurance', r.moose.endurance.toFixed(3));

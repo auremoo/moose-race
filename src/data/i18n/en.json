@@ -126,5 +126,12 @@
   "importSave": "Import",
   "imported": "Save imported",
   "importFailed": "File not recognised",
-  "starterOnly": "Crates or fragments"
+  "starterOnly": "Crates or fragments",
+  "castorBtn": "Beaver",
+  "item_coup": "Tail slap",
+  "item_barrage": "Dam",
+  "item_hutte": "Lodge",
+  "bearAlert": "Bear!",
+  "modeSpecialDesc": "Dodge black bears, grab beavers for a power-up. Coins +25%.",
+  "gotItem": "Beaver: {n}!"
 }

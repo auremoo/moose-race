@@ -42,7 +42,7 @@ export class InputManager {
   private touchSteer = 0;
   readonly visual: SteerTouchVisual = { active: false, originX: 0, originY: 0, x: 0, y: 0, steer: 0 };
   /** Pédale sous chaque doigt posé sur la zone des pédales. */
-  private pedalTouches = new Map<number, 'gas' | 'brake' | 'gallop' | null>();
+  private pedalTouches = new Map<number, 'gas' | 'brake' | 'gallop' | 'castor' | null>();
 
   constructor(
     private zone: HTMLElement,
@@ -90,21 +90,23 @@ export class InputManager {
   };
 
   /** État des pédales tactiles (pour l'affichage). */
-  pedalState(): { gas: boolean; brake: boolean; gallop: boolean } {
+  pedalState(): { gas: boolean; brake: boolean; gallop: boolean; castor: boolean } {
     let gas = false;
     let brake = false;
     let gallop = false;
+    let castor = false;
     for (const p of this.pedalTouches.values()) {
       if (p === 'gas') gas = true;
       if (p === 'brake') brake = true;
       if (p === 'gallop') gallop = true;
+      if (p === 'castor') castor = true;
     }
-    return { gas, brake, gallop };
+    return { gas, brake, gallop, castor };
   }
 
-  private pedalAt(x: number, y: number): 'gas' | 'brake' | 'gallop' | null {
+  private pedalAt(x: number, y: number): 'gas' | 'brake' | 'gallop' | 'castor' | null {
     const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-pedal]');
-    return (el?.dataset.pedal as 'gas' | 'brake' | 'gallop' | undefined) ?? null;
+    return (el?.dataset.pedal as 'gas' | 'brake' | 'gallop' | 'castor' | undefined) ?? null;
   }
 
   private refreshPedals(): void {
@@ -161,7 +163,7 @@ export class InputManager {
       brake: brake ? 1 : 0,
       gallop: this.keys.has('Space') || pedals.gallop,
       slide: slideKey || (brake && Math.abs(steer) >= this.cfg.driftSteerMin),
-      castor: this.keys.has('KeyE'),
+      castor: this.keys.has('KeyE') || pedals.castor,
     };
   }
 

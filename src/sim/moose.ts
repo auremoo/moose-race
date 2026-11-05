@@ -128,6 +128,10 @@ export interface MooseState {
   stunTime: number;
   /** Multiplicateur de vitesse de pointe externe (rattrapage léger des bots), 1 par défaut. */
   extraSpeedMul: number;
+  /** Hutte de castor : bouclier restant (s). */
+  shieldTime: number;
+  /** Coup de queue de castor : poussée restante (s), sans consommer d'endurance. */
+  tailTime: number;
 }
 
 export function createMooseState(x: number, y: number, heading: number, speed = 0): MooseState {
@@ -155,6 +159,8 @@ export function createMooseState(x: number, y: number, heading: number, speed = 
     drafting: false,
     stunTime: 0,
     extraSpeedMul: 1,
+    shieldTime: 0,
+    tailTime: 0,
   };
 }
 
@@ -251,6 +257,10 @@ export function stepMoose(
     accelAdd += p.boostAccel;
   }
   if (s.cordeTime > 0) speedMul *= p.cordeSpeedMul;
+  if (s.tailTime > 0) {
+    speedMul *= p.boostSpeedMul;
+    accelAdd += p.boostAccel;
+  }
   if (s.drafting) speedMul *= p.draftSpeedMul;
   speedMul *= s.extraSpeedMul;
 

@@ -23,6 +23,7 @@ export type MenuScreen = 'home' | 'map' | 'prep' | 'enclos' | 'comptoir';
 export interface RaceSetup {
   difficulty: DifficultyId;
   botCount: number;
+  mode: 'classique' | 'special';
 }
 
 export interface MenuCallbacks {
@@ -90,11 +91,17 @@ export class Menus {
       b.addEventListener('click', () => this.show(b.dataset.back as MenuScreen)),
     );
     $('btn-go').addEventListener('click', () =>
-      this.cb.onStart(this.selected, { difficulty: this.save.difficulty, botCount: this.save.botCount }),
+      this.cb.onStart(this.selected, { difficulty: this.save.difficulty, botCount: this.save.botCount, mode: this.save.mode }),
     );
     document.querySelectorAll<HTMLButtonElement>('[data-diff]').forEach((b) =>
       b.addEventListener('click', () => {
         this.save.difficulty = b.dataset.diff as DifficultyId;
+        this.renderPrep();
+      }),
+    );
+    document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((b) =>
+      b.addEventListener('click', () => {
+        this.save.mode = b.dataset.mode as 'classique' | 'special';
         this.renderPrep();
       }),
     );
@@ -221,6 +228,8 @@ export class Menus {
     document.querySelectorAll<HTMLElement>('[data-diff]').forEach((b) =>
       b.classList.toggle('on', b.dataset.diff === this.save.difficulty),
     );
+    document.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === this.save.mode));
+    $('mode-desc').textContent = this.save.mode === 'special' ? t('modeSpecialDesc') : t('modeClassicDesc');
     const off = balance.difficulties[this.save.difficulty].ratingOffset;
     $('prep-rivals').textContent =
       this.save.botCount === 0 ? t('solo') : `${t('rivalsRating')} : ${mooseRating(m, level) + off} (${off >= 0 ? '+' : ''}${off})`;

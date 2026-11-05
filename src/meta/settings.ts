@@ -24,6 +24,7 @@ export interface SaveData {
   levels: Record<string, number>;
   difficulty: 'facile' | 'moyen' | 'difficile';
   botCount: number;
+  mode: 'classique' | 'special';
   /** Couples parcours|difficulté déjà gagnés (bonification de première victoire). */
   firstWins: string[];
   /** Nombre de courses lancées (sert de graine). */
@@ -49,6 +50,7 @@ const DEFAULTS: SaveData = {
   levels: { bucheron: 1 },
   difficulty: 'moyen',
   botCount: 10,
+  mode: 'classique',
   firstWins: [],
   raceCount: 0,
   fragments: 0,

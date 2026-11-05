@@ -2,7 +2,7 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalons 1, 2, 3 et 7** — collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
+**État : jalons 1, 2, 3, 6 et 7** — mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
 
 ## Jouer
 
@@ -87,3 +87,13 @@ Critères d'équilibrage mesurés par `npm run balance` (200 duels chacun) : exp
 - Coût d'un niveau : 55 × n × multiplicateur de rareté. **Écart assumé avec le cahier (60)** : avec 60, le
   joueur simulé mettait 42 à 45 courses pour améliorer un Commun ; avec 55, 33 à 39 (cible 25 à 40).
 - Sauvegarde locale versionnée (schéma 2, migration depuis le schéma 1), export et import dans les Réglages.
+
+## Mode Ours et castors
+
+Ours noirs placés juste après les points de corde, sur la ligne idéale : un « ! » rouge apparaît 2 s avant
+chaque passage (traversée, charge depuis le bas-côté) ; certains gardent une zone en patrouillant. Contact :
+étourdissement selon la Robustesse, aucune élimination. Facile 2–3 ours lents, Moyen 4–5, Difficile 6–8 plus
+rapides. Castors hors de la ligne idéale : en toucher un donne une aide (Coup de queue, Barrage, Hutte), d'autant
+plus offensive que tu es loin au classement ; réapparition après 5 s. Bouton Castor (ou E) pour l'utiliser.
+Les bots suivent les mêmes règles. Pièces +25 %. Tout est tiré avec la graine de la course (même comportement
+en multijoueur). Non fait : le Bief (raccourci d'eau), voir les issues.
