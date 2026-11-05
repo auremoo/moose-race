@@ -185,7 +185,7 @@
     "noiseAmplitude": 4,
     "mistakeChance": 0.4,
     "mistakeSpeedBonus": 0.12,
-    "cornerMarginMin": 0.86,
+    "cornerMarginMin": 0.84,
     "overtakeDistance": 14,
     "overtakeShift": 3.6,
     "catchUpRange": 150,

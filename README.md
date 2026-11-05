@@ -75,8 +75,14 @@ même physique que le joueur. Leur cote est calée sur la tienne : Facile −6, 
 de la cote des communs, leurs stats sont abaissées). Rattrapage léger (≤ 3 %) en Facile et Moyen, aucun en
 Difficile. Facile ajoute une petite aide à la direction ; Difficile masque la ligne idéale.
 
-Critères d'équilibrage mesurés par `npm run balance` (200 duels chacun) : expert contre moyen à cote égale
-87 % (≥ 85 %), +10 de cote à pilotage égal 70,5 % (≤ 80 %), meilleur orignal à cote égale 60 % (≤ 60 %).
+Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000 duels simulés sans rendu) :
+
+| Critère | Mesuré | Cible |
+| --- | --- | --- |
+| Expert contre moyen à cote égale | 93,7 % | ≥ 85 % |
+| +10 de cote, pilotage identique | 71,2 % | ≤ 80 % |
+| Meilleur orignal à cote égale (Ti-Gus) | 54 % | ≤ 60 % |
+| Courses pour améliorer un Commun au niveau 10 | 33,8 en moyenne (30 à 39) | 25 à 40 |
 
 ## Collection et économie
 
