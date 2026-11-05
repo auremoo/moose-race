@@ -54,6 +54,37 @@
           <h2 id="pause-title"></h2>
           <button class="btn btn-red" id="btn-resume"></button>
           <button class="btn btn-white" id="btn-restart"></button>
+          <button class="btn btn-white" id="btn-quit"></button>
+          <p class="muted" id="lbl-sound"></p>
+        </div>
+      </div>
+
+      <div class="overlay" id="results" hidden>
+        <div class="card">
+          <h2 id="res-title"></h2>
+          <div class="res-line"><span id="res-total-lbl"></span><strong id="res-total"></strong></div>
+          <div class="res-line"><span id="res-best-lbl"></span><strong id="res-best"></strong></div>
+          <div id="res-laps"></div>
+          <div id="res-record" class="record"></div>
+          <button class="btn btn-red" id="btn-replay"></button>
+          <button class="btn btn-white" id="btn-home"></button>
+        </div>
+      </div>
+
+      <div class="overlay overlay-home" id="home">
+        <div class="home">
+          <h1 class="logo">Panache</h1>
+          <p class="tagline" id="lbl-tagline"></p>
+          <div class="home-buttons">
+            <button class="btn btn-red btn-big" id="btn-play"></button>
+            <button class="btn btn-white" id="btn-settings"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="settings" hidden>
+        <div class="card">
+          <h2 id="settings-title"></h2>
           <label class="setting">
             <span id="lbl-sensitivity"></span>
             <input type="range" id="rng-sensitivity" min="0.5" max="2" step="0.05" />
@@ -69,18 +100,7 @@
               <button class="seg" data-lang="en">English</button>
             </div>
           </div>
-          <p class="muted" id="lbl-sound"></p>
-        </div>
-      </div>
-
-      <div class="overlay" id="results" hidden>
-        <div class="card">
-          <h2 id="res-title"></h2>
-          <div class="res-line"><span id="res-total-lbl"></span><strong id="res-total"></strong></div>
-          <div class="res-line"><span id="res-best-lbl"></span><strong id="res-best"></strong></div>
-          <div id="res-laps"></div>
-          <div id="res-record" class="record"></div>
-          <button class="btn btn-red" id="btn-replay"></button>
+          <button class="btn btn-red" id="btn-settings-back"></button>
         </div>
       </div>
     </div>

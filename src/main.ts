@@ -23,7 +23,8 @@ const input = new InputManager(zone, { ...balance.input, sensitivity: save.sensi
 let debug = save.debug || new URLSearchParams(location.search).has('debug');
 view.setDebug(debug);
 
-let paused = false;
+let paused = true;
+let onHome = true;
 let resultsShown = false;
 const prev: Pose[] = race.racers.map((r) => ({ x: r.moose.x, y: r.moose.y, heading: r.moose.heading }));
 
@@ -34,6 +35,17 @@ const hud = new Hud(
     onPause: () => setPaused(true),
     onResume: () => setPaused(false),
     onRestart: () => restart(),
+    onPlay: () => {
+      onHome = false;
+      hud.showHome(false);
+      restart();
+    },
+    onQuit: () => {
+      onHome = true;
+      restart();
+      paused = true;
+      hud.showHome(true);
+    },
     onSensitivity: (v) => {
       save.sensitivity = v;
       input.setSensitivity(v);
@@ -54,9 +66,10 @@ const hud = new Hud(
   save.sensitivity,
   debug,
 );
+hud.showHome(true);
 
 function setPaused(p: boolean): void {
-  if (resultsShown) return;
+  if (resultsShown || onHome) return;
   paused = p;
   input.reset();
   hud.showPause(p);
@@ -101,7 +114,7 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Escape' || e.code === 'KeyP') setPaused(!paused);
-  if (e.code === 'KeyR' && (paused || resultsShown)) restart();
+  if (e.code === 'KeyR' && !onHome && (paused || resultsShown)) restart();
 });
 
 const dt = race.dt;

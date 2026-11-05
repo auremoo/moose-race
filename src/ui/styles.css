@@ -394,3 +394,50 @@ body {
 .record:empty {
   display: none;
 }
+
+/* ---------- Accueil ---------- */
+#app.on-home #hud,
+#app.on-home #steer-zone,
+#app.on-home #countdown,
+#app.on-home #debug {
+  visibility: hidden;
+}
+.overlay-home {
+  background: linear-gradient(180deg, rgba(216, 6, 33, 0.85) 0%, rgba(216, 6, 33, 0.35) 45%, rgba(40, 20, 10, 0.1) 100%);
+  align-items: stretch;
+}
+.home {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 40px) 8px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  height: 100%;
+}
+.logo {
+  margin: 0;
+  font-family: var(--font-titre);
+  font-weight: 400;
+  font-size: 68px;
+  color: var(--blanc);
+  text-shadow: 0 6px 0 var(--rouge-sombre);
+  animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.tagline {
+  margin: -8px 0 0;
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--blanc);
+}
+.home-buttons {
+  margin-top: auto;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.btn-big {
+  min-height: 68px;
+  font-size: 30px;
+}

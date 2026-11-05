@@ -27,5 +27,11 @@
   "gaitGallop": "Gallop",
   "gaitSuper": "Super-moose!",
   "language": "Language",
-  "speedNote": "Speed scaled to a real moose"
+  "speedNote": "Speed scaled to a real moose",
+  "play": "Play",
+  "settings": "Settings",
+  "back": "Back",
+  "quit": "Quit",
+  "home": "Home",
+  "tagline": "Canada's moose race"
 }

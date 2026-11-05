@@ -17,6 +17,8 @@ export interface HudCallbacks {
   onPause(): void;
   onResume(): void;
   onRestart(): void;
+  onPlay(): void;
+  onQuit(): void;
   onSensitivity(v: number): void;
   onDebug(on: boolean): void;
   onLang(l: Lang): void;
@@ -81,6 +83,11 @@ export class Hud {
     $('btn-resume').addEventListener('click', () => cb.onResume());
     $('btn-restart').addEventListener('click', () => cb.onRestart());
     $('btn-replay').addEventListener('click', () => cb.onRestart());
+    $('btn-play').addEventListener('click', () => cb.onPlay());
+    $('btn-quit').addEventListener('click', () => cb.onQuit());
+    $('btn-home').addEventListener('click', () => cb.onQuit());
+    $('btn-settings').addEventListener('click', () => this.showSettings(true));
+    $('btn-settings-back').addEventListener('click', () => this.showSettings(false));
     this.sens.addEventListener('input', () => cb.onSensitivity(Number(this.sens.value)));
     this.dbg.addEventListener('change', () => {
       this.debugEl.style.display = this.dbg.checked ? 'block' : 'none';
@@ -101,6 +108,13 @@ export class Hud {
     set('lbl-debug', 'debug');
     set('lbl-language', 'language');
     set('lbl-sound', 'sound');
+    set('btn-quit', 'quit');
+    set('btn-home', 'home');
+    set('btn-play', 'play');
+    set('btn-settings', 'settings');
+    set('settings-title', 'settings');
+    set('btn-settings-back', 'back');
+    set('lbl-tagline', 'tagline');
     set('res-title', 'finish');
     set('res-total-lbl', 'total');
     set('res-best-lbl', 'bestLap');
@@ -157,6 +171,19 @@ export class Hud {
         ticks.appendChild(label);
       }
     }
+  }
+
+  showHome(on: boolean): void {
+    $('home').hidden = !on;
+    $('app').classList.toggle('on-home', on);
+    if (on) {
+      this.pauseMenu.hidden = true;
+      this.results.hidden = true;
+    }
+  }
+
+  showSettings(on: boolean): void {
+    $('settings').hidden = !on;
   }
 
   showPause(on: boolean): void {

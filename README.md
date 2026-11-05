@@ -10,7 +10,7 @@ Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le c
 - Tactile : pose le pouce sur la moitié basse de l'écran et glisse à gauche ou à droite. La course est automatique.
 - Clavier : flèches ← → (ou A / D), Échap ou P pour la pause, R pour recommencer en pause.
 - Débogage : ajouter `?debug` à l'adresse, ou cocher « Mode débogage » dans la pause.
-- Langue : français ou anglais, selon le téléphone par défaut, modifiable dans la pause.
+- Langue : français ou anglais, selon le téléphone par défaut, modifiable dans Réglages (écran d'accueil).
 - Compteur : la vitesse affichée est ramenée à celle d'un vrai orignal (pointe ≈ 56 km/h, valeur
   la plus citée mais incertaine). Le jeu tourne en réalité plus vite pour le plaisir ; le facteur est dans
   `balance.json` (`hud.realTopKmh`).

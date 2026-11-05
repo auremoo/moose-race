@@ -27,5 +27,11 @@
   "gaitGallop": "Galop",
   "gaitSuper": "Super-orignal !",
   "language": "Langue",
-  "speedNote": "Vitesse ramenée à celle d'un vrai orignal"
+  "speedNote": "Vitesse ramenée à celle d'un vrai orignal",
+  "play": "Jouer",
+  "settings": "Réglages",
+  "back": "Retour",
+  "quit": "Quitter",
+  "home": "Accueil",
+  "tagline": "La course d'orignaux du Canada"
 }
