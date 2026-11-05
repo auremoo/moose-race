@@ -14,6 +14,10 @@ export interface SaveData {
   idealLine: boolean;
   /** Commandes inversées pour les gauchers. */
   lefty: boolean;
+  soundOn: boolean;
+  musicOn: boolean;
+  hapticsOn: boolean;
+  reduceMotion: boolean;
   /** Langue choisie ; absente = langue du téléphone. */
   lang?: 'fr' | 'en';
   /** Solde de pièces à feuille d'érable (l'économie arrive au jalon 7). */
@@ -44,6 +48,10 @@ const DEFAULTS: SaveData = {
   debug: false,
   idealLine: true,
   lefty: false,
+  soundOn: true,
+  musicOn: true,
+  hapticsOn: true,
+  reduceMotion: false,
   coins: 0,
   activeMoose: 'bucheron',
   owned: ['bucheron'],

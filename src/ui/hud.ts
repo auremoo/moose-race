@@ -140,7 +140,6 @@ export class Hud {
     set('lbl-sensitivity', 'sensitivity');
     set('lbl-debug', 'debug');
     set('lbl-language', 'language');
-    set('lbl-sound', 'sound');
     set('btn-quit', 'quit');
     set('btn-home', 'home');
     set('settings-title', 'settings');

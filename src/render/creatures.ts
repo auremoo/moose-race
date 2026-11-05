@@ -2,8 +2,11 @@
  * Ours noir, castor, barrage et hutte, en formes simples générées par le code (remplaçables par des GLB).
  */
 import * as THREE from 'three';
+import { modelInstance } from './models';
 
 export function createBearView(): THREE.Group {
+  const glb = modelInstance('bear');
+  if (glb) return glb;
   const g = new THREE.Group();
   const fur = new THREE.MeshLambertMaterial({ color: 0x1d1b1a });
   const muzzle = new THREE.MeshLambertMaterial({ color: 0xc9a77c });
@@ -35,6 +38,8 @@ export function createBearView(): THREE.Group {
 }
 
 export function createBeaverView(): THREE.Group {
+  const glb = modelInstance('beaver');
+  if (glb) return glb;
   const g = new THREE.Group();
   const fur = new THREE.MeshLambertMaterial({ color: 0x7a4a26 });
   const tailMat = new THREE.MeshLambertMaterial({ color: 0x3b2a1e });

@@ -69,7 +69,7 @@ export class ChaseCamera {
 
   /** Vue vitrine pour les menus : la caméra tourne lentement devant l'orignal. */
   showcase(x: number, y: number, heading: number, time: number): void {
-    const a = heading + Math.PI * 0.8 + Math.sin(time * 0.25) * 0.5;
+    const a = heading + Math.PI * 0.22 + Math.sin(time * 0.25) * 0.45;
     const dist = 8.5;
     const wx = simToWorldX(x);
     const wz = simToWorldZ(y);

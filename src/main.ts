@@ -14,8 +14,19 @@ import { GameView, type Pose } from './render/view';
 import { Hud } from './ui/hud';
 import { detectLang, setLang, t } from './ui/i18n';
 import { Menus } from './ui/menus';
+import { SoundEngine } from './audio/sound';
+import { preloadModels } from './render/models';
 
 const save = loadSave();
+const sound = new SoundEngine();
+sound.sfxOn = save.soundOn;
+sound.musicOn = save.musicOn;
+sound.hapticsOn = save.hapticsOn;
+document.documentElement.classList.toggle('reduce-motion', save.reduceMotion);
+// iOS n'autorise le son qu'après un geste de l'utilisateur.
+const unlockAudio = () => sound.unlock();
+window.addEventListener('pointerdown', unlockAudio);
+window.addEventListener('keydown', unlockAudio);
 setLang(save.lang ?? detectLang());
 let course: CourseDef = courses[0];
 let trackDef = trackById(course.trackId ?? '') ?? tracks[0];
@@ -69,6 +80,38 @@ const hud = new Hud(
 document.getElementById('btn-improve')?.addEventListener('click', () => {
   menus.show('enclos');
   menus.collection.openDetail(save.activeMoose, 'enclos');
+});
+
+// Réglages du son, des vibrations et des animations.
+const bindCheck = (id: string, get: () => boolean, set: (v: boolean) => void) => {
+  const el = document.getElementById(id) as HTMLInputElement;
+  el.checked = get();
+  el.addEventListener('change', () => {
+    set(el.checked);
+    writeSave(save);
+    refreshSoundButton();
+  });
+};
+bindCheck('chk-sound', () => save.soundOn, (v) => { save.soundOn = sound.sfxOn = v; sound.applyToggles(); });
+bindCheck('chk-music', () => save.musicOn, (v) => { save.musicOn = sound.musicOn = v; sound.applyToggles(); });
+bindCheck('chk-haptics', () => save.hapticsOn, (v) => { save.hapticsOn = sound.hapticsOn = v; });
+bindCheck('chk-motion', () => save.reduceMotion, (v) => {
+  save.reduceMotion = v;
+  document.documentElement.classList.toggle('reduce-motion', v);
+});
+const soundBtn = document.getElementById('btn-sound-toggle') as HTMLButtonElement;
+function refreshSoundButton(): void {
+  soundBtn.textContent = save.soundOn || save.musicOn ? t('soundOn') : t('soundOff');
+}
+refreshSoundButton();
+soundBtn.addEventListener('click', () => {
+  const on = !(save.soundOn || save.musicOn);
+  save.soundOn = save.musicOn = sound.sfxOn = sound.musicOn = on;
+  sound.applyToggles();
+  (document.getElementById('chk-sound') as HTMLInputElement).checked = on;
+  (document.getElementById('chk-music') as HTMLInputElement).checked = on;
+  writeSave(save);
+  refreshSoundButton();
 });
 
 // Export et import de la sauvegarde (le navigateur peut effacer le stockage local).
@@ -173,6 +216,38 @@ document.getElementById('btn-improve')?.addEventListener('click', () => {
   menus.collection.openDetail(save.activeMoose, 'enclos');
 });
 
+// Réglages du son, des vibrations et des animations.
+const bindCheck = (id: string, get: () => boolean, set: (v: boolean) => void) => {
+  const el = document.getElementById(id) as HTMLInputElement;
+  el.checked = get();
+  el.addEventListener('change', () => {
+    set(el.checked);
+    writeSave(save);
+    refreshSoundButton();
+  });
+};
+bindCheck('chk-sound', () => save.soundOn, (v) => { save.soundOn = sound.sfxOn = v; sound.applyToggles(); });
+bindCheck('chk-music', () => save.musicOn, (v) => { save.musicOn = sound.musicOn = v; sound.applyToggles(); });
+bindCheck('chk-haptics', () => save.hapticsOn, (v) => { save.hapticsOn = sound.hapticsOn = v; });
+bindCheck('chk-motion', () => save.reduceMotion, (v) => {
+  save.reduceMotion = v;
+  document.documentElement.classList.toggle('reduce-motion', v);
+});
+const soundBtn = document.getElementById('btn-sound-toggle') as HTMLButtonElement;
+function refreshSoundButton(): void {
+  soundBtn.textContent = save.soundOn || save.musicOn ? t('soundOn') : t('soundOff');
+}
+refreshSoundButton();
+soundBtn.addEventListener('click', () => {
+  const on = !(save.soundOn || save.musicOn);
+  save.soundOn = save.musicOn = sound.sfxOn = sound.musicOn = on;
+  sound.applyToggles();
+  (document.getElementById('chk-sound') as HTMLInputElement).checked = on;
+  (document.getElementById('chk-music') as HTMLInputElement).checked = on;
+  writeSave(save);
+  refreshSoundButton();
+});
+
 // Export et import de la sauvegarde (le navigateur peut effacer le stockage local).
 document.getElementById('btn-export')?.addEventListener('click', () => {
   const blob = new Blob([exportSave(save)], { type: 'application/json' });
@@ -233,6 +308,7 @@ function onFinish(): void {
   let coins = coinsFor(rank, N, balance.difficulties[difficulty].coinMul, mode === 'special' ? balance.special.coinMul : 1);
   const key = firstWinKey(trackDef.id, difficulty);
   let bonus = 0;
+  if (rank === 1) sound.brame();
   if (rank === 1 && N > 1 && !save.firstWins.includes(key)) {
     bonus = FIRST_WIN_BONUS;
     save.firstWins.push(key);
@@ -262,6 +338,7 @@ function onFinish(): void {
 // Pause automatique si la page passe en arrière-plan.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && race.phase !== 'finished') setPaused(true);
+  sound.suspend(document.hidden);
 });
 window.addEventListener('resize', () => view.resize());
 // Bloque le zoom par pincement et le menu contextuel sur iOS/Android.
@@ -343,7 +420,59 @@ function frame(now: number): void {
     ].join('\n');
   }
   hud.update(race, input.visual, save.bestLaps[trackDef.id], dbg);
+  soundEvents();
 }
+
+// ---------- Événements sonores, déduits de l'état de la course ----------
+let lastStride = 0;
+let lastCount = -1;
+let lastCorde = -1;
+let lastContact = -1;
+let lastItem = -1;
+let lastBoosting = false;
+let lastStun = 0;
+function soundEvents(): void {
+  sound.setMusic(onHome ? 'menu' : (race.biome ?? 'test'));
+  const me = race.racers[0];
+  const m = me.moose;
+  if (onHome || paused) {
+    sound.drift(false, 0);
+    return;
+  }
+  // Compte à rebours : un bip par seconde, un bip aigu au départ.
+  const remain = Math.ceil(Math.max(0, race.countdownTicks - race.tick) * race.dt);
+  if (remain !== lastCount) {
+    if (remain > 0) sound.beep(false);
+    else if (lastCount > 0) sound.beep(true);
+    lastCount = remain;
+  }
+  // Sabots : deux appuis par foulée, calés sur l'animation.
+  const stride = view.playerStride();
+  if (m.speed > 1 && Math.floor(stride / Math.PI) !== Math.floor(lastStride / Math.PI)) {
+    const surface = me.onVerge ? race.track.def.vergeSurface : race.track.samples[me.proj.index].surface;
+    sound.hoof(surface, m.speed / 30);
+  }
+  lastStride = stride;
+  sound.drift(m.drifting, m.boostCharge);
+  if (me.lastCordeTick !== lastCorde) {
+    if (me.lastCordeTick >= 0) sound.corde();
+    lastCorde = me.lastCordeTick;
+  }
+  const boosting = m.boostTime > 0 || m.tailTime > 0;
+  if (boosting && !lastBoosting) sound.boost();
+  lastBoosting = boosting;
+  if (me.lastItemTick !== lastItem) {
+    if (me.item) sound.pickup();
+    lastItem = me.lastItemTick;
+  }
+  if (m.stunTime > lastStun + 0.5 && race.hazards) sound.growl();
+  else if (me.lastContactTick !== lastContact && me.lastContactTick === race.tick) sound.thud();
+  lastContact = me.lastContactTick;
+  lastStun = m.stunTime;
+}
+
+// Modèles GLB éventuels : chargés une fois, puis appliqués dès la course suivante.
+void preloadModels().then(() => view.setRace(race, false));
 
 requestAnimationFrame(frame);
 

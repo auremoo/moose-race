@@ -133,5 +133,11 @@
   "item_hutte": "Hutte",
   "bearAlert": "Ours !",
   "modeSpecialDesc": "Ours noirs à éviter, castors à ramasser pour une aide. Pièces +25 %.",
-  "gotItem": "Castor : {n} !"
+  "gotItem": "Castor : {n} !",
+  "soundFx": "Bruitages",
+  "music": "Musique",
+  "haptics": "Vibrations",
+  "reduceMotion": "Réduire les animations",
+  "soundOn": "Son : activé",
+  "soundOff": "Son : coupé"
 }

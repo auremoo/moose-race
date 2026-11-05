@@ -2,7 +2,7 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalons 1, 2, 3, 5, 6 et 7** — décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
+**État : jalons 1 à 7** (orignal et sons générés par le code, sans le test graphique Meshy) — décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
 
 ## Jouer
 
@@ -106,3 +106,20 @@ l'horizon, lacs turquoise, inukshuks ; neige sur les circuits enneigés). Sur ch
 de virage, repères de freinage 100 / 50 avant les virages serrés, panneaux « Attention orignaux ». Tout est
 instancié et généré par le code (remplaçable par des modèles). Qualité auto-adaptative : la résolution de rendu
 baisse sous 45 FPS et remonte au-dessus de 58 FPS ; le décor s'allège sous 30 FPS.
+
+## Orignal vivant et son
+
+- Allures : trot (paires diagonales) puis galop rotatif ; foulée calée sur la vitesse (pas de sabots qui patinent),
+  inclinaison en virage, bois qui oscillent avec retard ; états attente (respiration), étourdi (étoiles),
+  victoire (il se cabre), défaite (tête basse) ; gros yeux visibles à l'accueil.
+- Robes, gabarits et accessoires (tuque, foulard, clochette) différents pour les 20 orignaux.
+- Son synthétisé par Web Audio, sans fichier externe : sabots selon la surface, glissade qui monte avec l'élan,
+  corde parfaite, élan, castor, ours, chocs, compte à rebours, bramé de victoire, musique légère par biome.
+  Vibrations si le navigateur le permet. Réglages : bruitages, musique, vibrations, réduire les animations.
+
+## Modèles 3D (GLB)
+
+Chaque forme générée par le code peut être remplacée par un fichier GLB sans toucher à la simulation :
+déposer le fichier dans `public/models/` et renseigner son chemin dans `src/data/models.json`
+(`moose`, `bear`, `beaver`). Conventions pour l'orignal : orienté vers +x, environ 3 m de long, pieds à y = 0,
+nœuds de pattes `leg_FL`, `leg_FR`, `leg_RL`, `leg_RR` (animés par le code), matériau `coat` teinté selon la robe.

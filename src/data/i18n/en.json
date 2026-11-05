@@ -133,5 +133,11 @@
   "item_hutte": "Lodge",
   "bearAlert": "Bear!",
   "modeSpecialDesc": "Dodge black bears, grab beavers for a power-up. Coins +25%.",
-  "gotItem": "Beaver: {n}!"
+  "gotItem": "Beaver: {n}!",
+  "soundFx": "Sound effects",
+  "music": "Music",
+  "haptics": "Vibration",
+  "reduceMotion": "Reduce motion",
+  "soundOn": "Sound: on",
+  "soundOff": "Sound: off"
 }

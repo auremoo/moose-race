@@ -3,7 +3,7 @@
  */
 import * as THREE from 'three';
 import type { Balance } from '../data';
-import type { Race } from '../sim/race';
+import { rankOf, type Race } from '../sim/race';
 import { ChaseCamera } from './camera';
 import { simToWorldX, simToWorldZ } from './coords';
 import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
@@ -213,6 +213,11 @@ export class GameView {
     this.debugLine.visible = on;
   }
 
+  /** Phase de foulée et vitesse de l'orignal du joueur (pour le son des sabots). */
+  playerStride(): number {
+    return this.moose[0]?.stridePhase ?? 0;
+  }
+
   setIdealLine(on: boolean): void {
     this.idealOn = on;
     this.ideal.mesh.visible = on;
@@ -267,14 +272,23 @@ export class GameView {
       else if (dh < -Math.PI) dh += 2 * Math.PI;
       const heading = p.heading + dh * alpha;
       const view = this.moose[i];
+      // Vitrine de l'accueil : seul l'orignal du joueur est montré.
+      view.root.visible = i === 0 || !this.showcaseOn;
       view.root.position.set(simToWorldX(x), 0, simToWorldZ(y));
       view.root.rotation.y = heading;
-      view.update(m, dt);
+      let pose: 'race' | 'idle' | 'victory' | 'defeat' = 'race';
+      if (this.showcaseOn) pose = 'idle';
+      else if (race.racers[i].finished && race.racers.length > 1) {
+        const rk = rankOf(race, i);
+        pose = rk === 1 ? 'victory' : rk > race.racers.length / 2 ? 'defeat' : 'race';
+      }
+      view.update(m, dt, pose);
       if (i === 0 && this.showcaseOn) {
         this.showcaseTime += dt;
         this.chase.showcase(x, y, heading, this.showcaseTime);
       } else if (i === 0) {
-        const shake = race.tick - race.racers[0].lastContactTick < 12 || m.stunTime > 0 ? 0.25 : 0;
+        const reduce = document.documentElement.classList.contains('reduce-motion');
+        const shake = !reduce && (race.tick - race.racers[0].lastContactTick < 12 || m.stunTime > 0) ? 0.25 : 0;
         this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt, m.galloping || m.boostTime > 0, shake);
         this.effects(race, x, y, heading, dt);
       }

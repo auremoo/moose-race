@@ -1185,3 +1185,11 @@ body {
   background: #8fd1ff;
   border-radius: 26px 26px 4px 4px;
 }
+
+/* Réduire les animations : pas de rebonds ni de pulsations. */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation: none !important;
+  transition: none !important;
+}

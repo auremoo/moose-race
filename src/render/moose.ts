@@ -4,10 +4,16 @@
  */
 import * as THREE from 'three';
 import type { MooseState } from '../sim/moose';
+import { legNodes, modelInstance } from './models';
+
+/** États animés du cahier : attente, départ, trot, galop, glissade, choc, étourdi, victoire, défaite. */
+export type MoosePose = 'race' | 'idle' | 'victory' | 'defeat';
 
 export interface MooseView {
   root: THREE.Group;
-  update(state: MooseState, dt: number): void;
+  /** Phase de la foulée (pour caler le bruit des sabots). */
+  readonly stridePhase: number;
+  update(state: MooseState, dt: number, pose?: MoosePose): void;
 }
 
 export interface MooseLook {
@@ -43,9 +49,20 @@ export function createMooseView(look: MooseLook = {}): MooseView {
   neck.rotation.z = -0.9;
   lean.add(neck);
   const head = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.7, 4, 8), dark);
-  head.rotation.z = Math.PI / 2 - 0.35;
+  head.geometry.rotateZ(Math.PI / 2 - 0.35);
   head.position.set(1.95, 2.85, 0);
   lean.add(head);
+
+  // Gros yeux expressifs (visibles à l'accueil et aux résultats).
+  const eyeWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const pupil = new THREE.MeshBasicMaterial({ color: 0x1a1210 });
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), eyeWhite);
+    eye.position.set(2.05, 3.0, side * 0.24);
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), pupil);
+    p.position.set(2.15, 3.0, side * 0.27);
+    lean.add(eye, p);
+  }
 
   // Panache : deux palettes larges, bien lisibles de dos.
   const panache = new THREE.Group();
@@ -132,25 +149,83 @@ export function createMooseView(look: MooseLook = {}): MooseView {
   const size = look.size ?? 1;
   yawSlip.scale.setScalar(size);
 
+  // Étoiles d'étourdissement autour de la tête.
+  const stars = new THREE.Group();
+  const starMat = new THREE.MeshBasicMaterial({ color: 0xffd34d });
+  for (let i = 0; i < 3; i++) {
+    const st = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), starMat);
+    st.position.set(Math.cos((i / 3) * Math.PI * 2) * 0.6, 0, Math.sin((i / 3) * Math.PI * 2) * 0.6);
+    stars.add(st);
+  }
+  stars.position.set(1.9, 3.9, 0);
+  stars.visible = false;
+  lean.add(stars);
+
+  // Modèle GLB fourni : il remplace les formes du code (les pattes sont animées si elles sont nommées).
+  const glb = modelInstance('moose', look.coat);
+  if (glb) {
+    const glbLegs = legNodes(glb);
+    lean.clear();
+    lean.add(glb, stars);
+    if (glbLegs) {
+      legs.length = 0;
+      for (const l of glbLegs) legs.push(l as THREE.Group);
+    }
+  }
+
   let phase = 0;
   let leanAngle = 0;
   let antlerLag = 0;
+  let time = 0;
+  let gallopBlend = 0;
+  // Décalages de phase par patte (avant gauche, avant droite, arrière gauche, arrière droite).
+  const TROT = [0, 0.5, 0.5, 0];
+  const GALLOP = [0, 0.12, 0.55, 0.67];
 
   return {
     root,
-    update(s: MooseState, dt: number) {
-      // Cadence liée à la vitesse : pas de sabots qui patinent (foulée ~4,5 m au galop).
-      const stride = 4.5;
+    get stridePhase() {
+      return phase;
+    },
+    update(s: MooseState, dt: number, pose: MoosePose = 'race') {
+      time += dt;
+      // Cadence liée à la vitesse : pas de sabots qui patinent.
+      // Foulée plus longue au galop (≈ 5 m) qu'au trot (≈ 3 m).
+      const galloping = s.speed > 17 || s.galloping;
+      gallopBlend += ((galloping ? 1 : 0) - gallopBlend) * Math.min(1, 4 * dt);
+      const stride = 3 + 2 * gallopBlend;
       phase += (s.speed / stride) * Math.PI * 2 * dt;
-      const amp = Math.min(0.75, 0.15 + s.speed / 40);
-      // Allure en galop rotatif simplifiée : antérieurs et postérieurs décalés.
-      const offsets = [0, 0.25, 0.55, 0.8];
+      const amp = s.speed < 0.3 ? 0 : Math.min(0.8, 0.22 + s.speed / 38);
       legs.forEach((l, i) => {
-        l.rotation.z = Math.sin(phase + offsets[i] * Math.PI * 2) * amp;
+        const off = TROT[i] * (1 - gallopBlend) + GALLOP[i] * gallopBlend;
+        l.rotation.z = Math.sin(phase + off * Math.PI * 2) * amp;
       });
+      // Galop : le corps tangue ; trot : petit rebond.
       const bob = Math.abs(Math.sin(phase)) * Math.min(0.18, s.speed / 160);
       lean.position.y = bob;
       body.rotation.x = 0;
+      let pitch = Math.sin(phase) * 0.06 * gallopBlend * Math.min(1, s.speed / 20);
+
+      // Attente : respiration, tête qui dodeline, queue qui bat.
+      if (s.speed < 0.3) {
+        lean.position.y = Math.sin(time * 2.2) * 0.03;
+        head.rotation.y = Math.sin(time * 0.7) * 0.15;
+        tail.rotation.y = Math.sin(time * 5) * 0.4;
+      } else {
+        head.rotation.y *= 0.9;
+        tail.rotation.y = Math.sin(phase * 2) * 0.2;
+      }
+      if (pose === 'victory') {
+        // Victoire : il se cabre à intervalles réguliers.
+        pitch = Math.max(0, Math.sin(time * 3)) * 0.45;
+        legs[0].rotation.z = legs[1].rotation.z = -0.8 * Math.max(0, Math.sin(time * 3));
+      } else if (pose === 'defeat') {
+        head.rotation.z = -0.35;
+      } else head.rotation.z = 0;
+      lean.rotation.z = pitch;
+
+      stars.visible = s.stunTime > 0;
+      if (stars.visible) stars.rotation.y = time * 6;
 
       // Inclinaison dans le virage (vers l'intérieur), proportionnelle à l'accélération latérale.
       const targetLean = -Math.max(-0.35, Math.min(0.35, s.lateralAccel * 0.016));
