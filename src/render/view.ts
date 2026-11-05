@@ -38,6 +38,7 @@ export class GameView {
   readonly chase: ChaseCamera;
   private moose: MooseView[] = [];
   private debugLine: THREE.Line;
+  private world: THREE.Group;
   private dust: THREE.Points;
   private dustLife = new Float32Array(DUST_COUNT);
   private dustVel = new Float32Array(DUST_COUNT * 3);
@@ -57,13 +58,10 @@ export class GameView {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.chase = new ChaseCamera(balance.camera);
-    const { debugLine } = buildWorld(this.scene, race.track);
+    const { group, debugLine } = buildWorld(this.scene, race.track);
+    this.world = group;
     this.debugLine = debugLine;
-    for (let i = 0; i < race.racers.length; i++) {
-      const mv = createMooseView();
-      this.moose.push(mv);
-      this.scene.add(mv.root);
-    }
+    this.addMoose(race.racers.length);
 
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(DUST_COUNT * 3), 3));
@@ -85,6 +83,37 @@ export class GameView {
     // La taille réelle du canvas peut changer sans événement « resize » (barre d'adresse iOS,
     // navigateur intégré d'une app) : on observe le canvas et on vérifie aussi à chaque image.
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.resize()).observe(canvas);
+  }
+
+  private addMoose(count: number): void {
+    for (let i = 0; i < count; i++) {
+      const mv = createMooseView();
+      this.moose.push(mv);
+      this.scene.add(mv.root);
+    }
+  }
+
+  /** Change de circuit : le décor est reconstruit, l'ancien libéré de la mémoire graphique. */
+  setRace(race: Race): void {
+    const debugOn = this.debugLine.visible;
+    this.scene.remove(this.world);
+    this.world.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      mesh.geometry?.dispose();
+      const mats = mesh.material ? (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) : [];
+      for (const m of mats) {
+        (m as THREE.MeshBasicMaterial).map?.dispose();
+        m.dispose();
+      }
+    });
+    const { group, debugLine } = buildWorld(this.scene, race.track);
+    this.world = group;
+    this.debugLine = debugLine;
+    this.debugLine.visible = debugOn;
+    for (const mv of this.moose) this.scene.remove(mv.root);
+    this.moose = [];
+    this.addMoose(race.racers.length);
+    this.chase.reset();
   }
 
   /** Menus : caméra vitrine devant l'orignal au lieu de la vue poursuite. */

@@ -7,8 +7,9 @@ Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le c
 ## Jouer
 
 - En ligne : https://auremoo.github.io/moose-race/ (après activation de Pages, voir plus bas)
-- Tactile : pose le pouce sur la moitié basse de l'écran et glisse à gauche ou à droite. La course est automatique.
-- Clavier : flèches ← → (ou A / D), Échap ou P pour la pause, R pour recommencer en pause.
+- Tactile : pouce gauche sur le bas de l'écran, glisse à gauche ou à droite pour diriger ;
+  pouce droit sur **Fonce** (accélérer) et **Freine**. Le pouce peut glisser d'un bouton à l'autre.
+- Clavier : ← → (ou A / D) pour diriger, ↑ (W) pour accélérer, ↓ (S) pour freiner, Échap ou P pour la pause.
 - Débogage : ajouter `?debug` à l'adresse, ou cocher « Mode débogage » dans la pause.
 - Langue : français ou anglais, selon le téléphone par défaut, modifiable dans Réglages (écran d'accueil).
 - Compteur : la vitesse affichée est ramenée à celle d'un vrai orignal (pointe ≈ 56 km/h, valeur
@@ -22,7 +23,8 @@ npm install
 npm run dev        # serveur local, accessible depuis le téléphone sur le même Wi-Fi
 npm test           # tests de la simulation, sans navigateur
 npm run build      # vérification des types + build dans dist/
-npm run track:report -- src/data/tracks/boucle-grise.json piste.svg   # rapport de piste
+npm run track:report -- src/data/tracks/boucle-grise.json piste.svg   # rapport d'une piste
+npm run tracks:gen -- planche.html   # régénère les 19 circuits décrits par segments + planche de contrôle
 ```
 
 ## Architecture
@@ -35,6 +37,12 @@ npm run track:report -- src/data/tracks/boucle-grise.json piste.svg   # rapport 
 | `src/ui/` | HUD, pause, résultats, textes. |
 | `src/meta/` | Réglages et records en `localStorage`. |
 | `src/data/` | Équilibrage (`balance.json`), parcours, textes FR/EN. Tous les chiffres réglables sont ici. |
+
+**Circuits** : 20, du plus facile (★) au plus corsé (★★★★★). 19 sont décrits par segments dans
+`tools/track-gen.ts` (`S200` ligne droite, `R90@40` virage à droite de 90° et 40 m de rayon,
+`CHL40@20` chicane, `ESL60@30` S, `W14` largeur). L'outil ferme la boucle, élargit les lignes droites
+(zones de dépassement), refuse tout circuit qui se croise, puis mesure le tour au pilote automatique pour
+fixer le nombre de tours (course d'environ 90 s). La Boucle grise est dessinée à la main.
 
 Un parcours est une liste de points `[x, y]` ou `[x, y, largeur]` : la largeur du sentier varie le long du tracé
 (lignes droites larges pour dépasser, passages étroits).

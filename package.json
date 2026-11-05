@@ -10,7 +10,8 @@
     "preview": "vite preview --host",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "track:report": "tsx tools/track-report.ts"
+    "track:report": "tsx tools/track-report.ts",
+    "tracks:gen": "tsx tools/track-gen.ts"
   },
   "dependencies": {
     "three": "0.186.1"

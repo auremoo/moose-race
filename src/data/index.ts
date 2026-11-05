@@ -3,7 +3,7 @@
  * Tous les chiffres réglables vivent dans les JSON de ce dossier.
  */
 import balanceJson from './balance.json';
-import boucleGrise from './tracks/boucle-grise.json';
+import { trackJsons } from './tracks';
 import coursesJson from './courses.json';
 import mooseJson from './moose.json';
 import type { MooseParams, SurfaceParams } from '../sim/moose';
@@ -85,7 +85,11 @@ export function validateTrack(t: unknown): TrackDef {
 }
 
 export const balance: Balance = validateBalance(balanceJson);
-export const tracks: TrackDef[] = [validateTrack(boucleGrise)];
+export const tracks: TrackDef[] = trackJsons.map(validateTrack);
+
+export function trackById(id: string): TrackDef | undefined {
+  return tracks.find((t) => t.id === id);
+}
 
 // ---------- Orignaux ----------
 
@@ -139,6 +143,10 @@ export interface CourseDef {
   biome: string;
   province: string;
   lengthKm: number;
+  /** Difficulté de 1 à 5 étoiles. */
+  stars: number;
+  /** Nombre de tours pour une course d'environ 90 s. */
+  laps: number;
   /** Jalon où ce parcours devient jouable. */
   milestone: number;
 }

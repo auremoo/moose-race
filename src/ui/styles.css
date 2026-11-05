@@ -286,6 +286,7 @@ body {
   filter: brightness(1.1);
 }
 #steer-hint {
+  white-space: pre-line;
   position: absolute;
   left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
@@ -701,6 +702,16 @@ body {
   font-family: var(--font-titre);
   font-weight: 400;
   font-size: 19px;
+}
+.stars {
+  color: var(--or);
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 0 #c98f00;
+}
+.stars-off {
+  color: #e4ddd5;
+  text-shadow: none;
 }
 .course-info small {
   font-weight: 800;

@@ -1,12 +1,225 @@
 {
   "courses": [
-    { "id": "boucle-grise", "trackId": "boucle-grise", "name": "Boucle grise", "biome": "test", "province": "—", "lengthKm": 1.4, "milestone": 1 },
-    { "id": "promenade-glaciers", "name": "Promenade des Glaciers", "biome": "rocheuses", "province": "Alberta", "lengthKm": 3.0, "milestone": 5 },
-    { "id": "lacs-banff", "name": "Lacs de Banff", "biome": "rocheuses", "province": "Alberta", "lengthKm": 2.6, "milestone": 5 },
-    { "id": "ble-saskatchewan", "name": "Blé de Saskatchewan", "biome": "plaine", "province": "Saskatchewan", "lengthKm": 2.0, "milestone": 5 },
-    { "id": "crepuscule-manitoba", "name": "Crépuscule du Manitoba", "biome": "plaine", "province": "Manitoba", "lengthKm": 2.4, "milestone": 5 },
-    { "id": "sentiers-algonquin", "name": "Sentiers d'Algonquin", "biome": "foret", "province": "Ontario", "lengthKm": 2.2, "milestone": 5 },
-    { "id": "automne-mauricie", "name": "Automne en Mauricie", "biome": "foret", "province": "Québec", "lengthKm": 2.8, "milestone": 5 }
+    {
+      "id": "prairie-tranquille",
+      "trackId": "prairie-tranquille",
+      "name": "Prairie tranquille",
+      "biome": "plaine",
+      "province": "SK",
+      "lengthKm": 1.4,
+      "stars": 1,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "champs-canola",
+      "trackId": "champs-canola",
+      "name": "Champs de canola",
+      "biome": "plaine",
+      "province": "MB",
+      "lengthKm": 1.2,
+      "stars": 1,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "riviere-rouge",
+      "trackId": "riviere-rouge",
+      "name": "Rivière Rouge",
+      "biome": "plaine",
+      "province": "MB",
+      "lengthKm": 1.3,
+      "stars": 1,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "sentier-bleuets",
+      "trackId": "sentier-bleuets",
+      "name": "Sentier des bleuets",
+      "biome": "foret",
+      "province": "QC",
+      "lengthKm": 1.1,
+      "stars": 2,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "ble-saskatchewan",
+      "trackId": "ble-saskatchewan",
+      "name": "Blé de Saskatchewan",
+      "biome": "plaine",
+      "province": "SK",
+      "lengthKm": 1.7,
+      "stars": 2,
+      "laps": 1,
+      "milestone": 1
+    },
+    {
+      "id": "lacs-banff",
+      "trackId": "lacs-banff",
+      "name": "Lacs de Banff",
+      "biome": "rocheuses",
+      "province": "AB",
+      "lengthKm": 1.1,
+      "stars": 2,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "crepuscule-manitoba",
+      "trackId": "crepuscule-manitoba",
+      "name": "Crépuscule du Manitoba",
+      "biome": "plaine",
+      "province": "MB",
+      "lengthKm": 1.5,
+      "stars": 3,
+      "laps": 1,
+      "milestone": 1
+    },
+    {
+      "id": "boucle-grise",
+      "trackId": "boucle-grise",
+      "name": "Boucle grise",
+      "biome": "test",
+      "province": "",
+      "lengthKm": 1.4,
+      "stars": 3,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "sentiers-algonquin",
+      "trackId": "sentiers-algonquin",
+      "name": "Sentiers d'Algonquin",
+      "biome": "foret",
+      "province": "ON",
+      "lengthKm": 1,
+      "stars": 3,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "automne-mauricie",
+      "trackId": "automne-mauricie",
+      "name": "Automne en Mauricie",
+      "biome": "foret",
+      "province": "QC",
+      "lengthKm": 1.2,
+      "stars": 3,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "promenade-glaciers",
+      "trackId": "promenade-glaciers",
+      "name": "Promenade des Glaciers",
+      "biome": "rocheuses",
+      "province": "AB",
+      "lengthKm": 1.4,
+      "stars": 4,
+      "laps": 1,
+      "milestone": 1
+    },
+    {
+      "id": "route-baleines",
+      "trackId": "route-baleines",
+      "name": "Route des baleines",
+      "biome": "foret",
+      "province": "QC",
+      "lengthKm": 1.1,
+      "stars": 4,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "badlands-drumheller",
+      "trackId": "badlands-drumheller",
+      "name": "Badlands de Drumheller",
+      "biome": "plaine",
+      "province": "AB",
+      "lengthKm": 1.2,
+      "stars": 4,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "chicanes-lac-saint-jean",
+      "trackId": "chicanes-lac-saint-jean",
+      "name": "Chicanes du Lac-Saint-Jean",
+      "biome": "foret",
+      "province": "QC",
+      "lengthKm": 1.4,
+      "stars": 4,
+      "laps": 1,
+      "milestone": 1
+    },
+    {
+      "id": "vallee-okanagan",
+      "trackId": "vallee-okanagan",
+      "name": "Vallée de l'Okanagan",
+      "biome": "rocheuses",
+      "province": "BC",
+      "lengthKm": 1,
+      "stars": 4,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "col-kicking-horse",
+      "trackId": "col-kicking-horse",
+      "name": "Col du Kicking Horse",
+      "biome": "rocheuses",
+      "province": "BC",
+      "lengthKm": 0.8,
+      "stars": 5,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "serpent-temiscamingue",
+      "trackId": "serpent-temiscamingue",
+      "name": "Serpent du Témiscamingue",
+      "biome": "foret",
+      "province": "QC",
+      "lengthKm": 1.3,
+      "stars": 5,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "cap-diamant",
+      "trackId": "cap-diamant",
+      "name": "Cap Diamant",
+      "biome": "foret",
+      "province": "QC",
+      "lengthKm": 1.2,
+      "stars": 5,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "tempete-yukon",
+      "trackId": "tempete-yukon",
+      "name": "Tempête du Yukon",
+      "biome": "rocheuses",
+      "province": "YT",
+      "lengthKm": 1.3,
+      "stars": 5,
+      "laps": 2,
+      "milestone": 1
+    },
+    {
+      "id": "grand-nord",
+      "trackId": "grand-nord",
+      "name": "Grand Nord",
+      "biome": "rocheuses",
+      "province": "NU",
+      "lengthKm": 1.1,
+      "stars": 5,
+      "laps": 2,
+      "milestone": 1
+    }
   ],
   "features": {
     "enclos": 7,

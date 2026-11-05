@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { balance, tracks } from '../src/data';
+import { balance, courses, trackById, tracks } from '../src/data';
 import { autopilot } from '../src/sim/autopilot';
 import { createMooseState, stepMoose, steerCurvatureRange, NO_COMMANDS } from '../src/sim/moose';
 import { createRace, raceTime, stepRace } from '../src/sim/race';
@@ -10,8 +10,9 @@ const SENTIER = balance.surfaces.sentier;
 const DT = 1 / balance.sim.hz;
 
 const FULL = { ...NO_COMMANDS, throttle: 1 };
+const BOUCLE = trackById('boucle-grise')!;
 
-function runRace(seed: number, opts: Parameters<typeof autopilot>[4] = {}, maxSeconds = 400, track = tracks[0]) {
+function runRace(seed: number, opts: Parameters<typeof autopilot>[4] = {}, maxSeconds = 400, track = BOUCLE) {
   const race = createRace(track, balance, { seed, laps: 2 });
   const max = Math.round(maxSeconds / DT);
   for (let i = 0; i < max && race.phase !== 'finished'; i++) {
@@ -22,7 +23,7 @@ function runRace(seed: number, opts: Parameters<typeof autopilot>[4] = {}, maxSe
 
 describe('piste', () => {
   it('construit une boucle fermée échantillonnée à ~1 m', () => {
-    const t = buildTrack(tracks[0], 1);
+    const t = buildTrack(BOUCLE, 1);
     expect(t.length).toBeGreaterThan(1000);
     expect(Math.abs(t.spacing - 1)).toBeLessThan(0.05);
     const a = t.samples[0];
@@ -132,8 +133,24 @@ describe('course', () => {
   });
 
   it('le demi-tour ne compte pas de tour', () => {
-    const race = createRace(tracks[0], balance, { laps: 1 });
+    const race = createRace(BOUCLE, balance, { laps: 1 });
     for (let i = 0; i < 60 * 60; i++) stepRace(race, [{ ...FULL, steer: 1 }]);
     expect(race.racers[0].lapsDone).toBe(0);
+  });
+});
+
+describe('les 20 circuits', () => {
+  it('existent et correspondent aux parcours de la carte', () => {
+    expect(tracks).toHaveLength(20);
+    expect(courses).toHaveLength(20);
+    for (const c of courses) expect(trackById(c.trackId ?? ''), c.id).toBeDefined();
+  });
+
+  it.each(courses.map((c) => [c.name, c] as const))('%s se termine sans blocage', (_name, c) => {
+    const race = createRace(trackById(c.trackId!)!, balance, { laps: c.laps });
+    for (let i = 0; i < 60 * 300 && race.phase !== 'finished'; i++)
+      stepRace(race, [autopilot(race.track, race.racers[0], P, SENTIER)]);
+    expect(race.phase).toBe('finished');
+    expect(raceTime(race)).toBeLessThan(140);
   });
 });

@@ -65,15 +65,17 @@ function ribbon(
   return g;
 }
 
-export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE.Line } {
+export function buildWorld(scene: THREE.Scene, track: Track): { group: THREE.Group; debugLine: THREE.Line } {
   scene.background = new THREE.Color(COLORS.sky);
   scene.fog = new THREE.Fog(COLORS.sky, 90, 420);
+  const group = new THREE.Group();
+  scene.add(group);
 
   const hemi = new THREE.HemisphereLight(0xdff3ff, 0x557a3a, 1.6);
-  scene.add(hemi);
+  group.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff1d6, 1.8);
   sun.position.set(-120, 200, 80);
-  scene.add(sun);
+  group.add(sun);
 
   const vc = (hex: number) => new THREE.Color(hex);
   const flat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
@@ -85,7 +87,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.05;
-  scene.add(ground);
+  group.add(ground);
 
   const S = track.samples;
   const verge = track.def.verge;
@@ -95,20 +97,20 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
 
   // Bas-côté (herbe), sentier, bordures blanches. La largeur varie le long de la piste.
   const vergeCol = vc(COLORS.verge);
-  scene.add(new THREE.Mesh(ribbon(track, off(limitAt, -1), limitAt, 0.0, () => vergeCol), flat));
+  group.add(new THREE.Mesh(ribbon(track, off(limitAt, -1), limitAt, 0.0, () => vergeCol), flat));
   const trailA = vc(COLORS.trail);
   const trailB = vc(COLORS.trail).offsetHSL(0, 0, -0.03);
-  scene.add(new THREE.Mesh(ribbon(track, off(hwAt, -1), hwAt, 0.02, (i) => (Math.floor(i / 6) % 2 ? trailA : trailB)), flat));
+  group.add(new THREE.Mesh(ribbon(track, off(hwAt, -1), hwAt, 0.02, (i) => (Math.floor(i / 6) % 2 ? trailA : trailB)), flat));
   const white = vc(COLORS.edge);
-  scene.add(new THREE.Mesh(ribbon(track, off(hwAt, 1, -0.5), off(hwAt, 1, -0.2), 0.04, () => white), flat));
-  scene.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, 0.2), off(hwAt, -1, 0.5), 0.04, () => white), flat));
+  group.add(new THREE.Mesh(ribbon(track, off(hwAt, 1, -0.5), off(hwAt, 1, -0.2), 0.04, () => white), flat));
+  group.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, 0.2), off(hwAt, -1, 0.5), 0.04, () => white), flat));
 
   // Vibreurs rouge et blanc sur les virages marqués, côté intérieur et extérieur.
   const red = vc(COLORS.curbRed);
   const curbMask = S.map((s) => Math.abs(s.k) > 1 / 70);
   const curbColor = (i: number) => (curbMask[i] ? (Math.floor(i / 3) % 2 ? red : white) : vergeCol);
-  scene.add(new THREE.Mesh(ribbon(track, hwAt, off(hwAt, 1, 1.4), 0.03, curbColor), flat));
-  scene.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, -1.4), off(hwAt, -1), 0.03, curbColor), flat));
+  group.add(new THREE.Mesh(ribbon(track, hwAt, off(hwAt, 1, 1.4), 0.03, curbColor), flat));
+  group.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, -1.4), off(hwAt, -1), 0.03, curbColor), flat));
 
   // Ligne de départ en damier.
   const startCanvas = document.createElement('canvas');
@@ -132,7 +134,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
   // La texture est allongée dans le sens de la largeur de piste.
   tex.rotation = Math.PI / 2;
   tex.center.set(0.5, 0.5);
-  scene.add(start);
+  group.add(start);
 
   // Arche de départ simple.
   const archMat = new THREE.MeshLambertMaterial({ color: COLORS.curbRed });
@@ -147,7 +149,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
   beam.position.set(simToWorldX(s0.x), 10, simToWorldZ(s0.y));
   beam.rotation.y = Math.atan2(s0.ty, s0.tx);
   arch.add(beam);
-  scene.add(arch);
+  group.add(arch);
 
   // Poteaux de clôture le long de la barrière.
   const postGeo = new THREE.CylinderGeometry(0.15, 0.18, 1.2, 6);
@@ -166,7 +168,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
     }
   }
   posts.count = pi;
-  scene.add(posts);
+  group.add(posts);
 
   // Arbres : cônes instanciés hors de la piste, graine fixe.
   const rng = createRng(1234);
@@ -206,7 +208,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
   }
   trunks.count = placed;
   crowns.count = placed;
-  scene.add(trunks, crowns);
+  group.add(trunks, crowns);
 
   // Ligne centrale de débogage (masquée par défaut).
   const linePts = S.map((s) => new THREE.Vector3(simToWorldX(s.x), 0.12, simToWorldZ(s.y)));
@@ -216,7 +218,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
     new THREE.LineBasicMaterial({ color: 0x00e5ff }),
   );
   debugLine.visible = false;
-  scene.add(debugLine);
+  group.add(debugLine);
 
-  return { debugLine };
+  return { group, debugLine };
 }

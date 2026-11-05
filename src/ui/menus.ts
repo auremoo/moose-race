@@ -151,11 +151,13 @@ export class Menus {
       const right = open
         ? `<span class="course-best"><small>${t('record2')}</small>${best !== undefined ? formatTime(best) : '—'}</span>`
         : `<span class="course-lock"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#i-lock"/></svg>${soonText(c.milestone, 'soonBadge')}</span>`;
-      const province = c.province === '—' ? '' : `${c.province} · `;
+      const province = c.province ? `${tk(`prov_${c.province}`)} · ` : '';
+      const laps = c.laps === 1 ? t('lap1') : t('lapsN').replace('{n}', String(c.laps));
       card.innerHTML = `
         <span class="course-info">
           <strong></strong>
-          <small>${province}${tk(`biome_${c.biome}`)} · ${nf.format(c.lengthKm)} km</small>
+          <span class="stars" aria-label="${c.stars}/5">${'★'.repeat(c.stars)}<span class="stars-off">${'★'.repeat(5 - c.stars)}</span></span>
+          <small>${province}${tk(`biome_${c.biome}`)} · ${nf.format(c.lengthKm)} km · ${laps}</small>
         </span>${right}`;
       card.querySelector('strong')!.textContent = c.name;
       if (open)

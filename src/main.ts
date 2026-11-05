@@ -2,7 +2,7 @@
  * Point d'entrée : relie entrées → simulation (pas fixe 60 Hz) → rendu interpolé → interface.
  */
 import './ui/styles.css';
-import { balance, tracks } from './data';
+import { balance, courses, trackById, tracks, type CourseDef } from './data';
 import { InputManager } from './input/input';
 import { loadSave, writeSave } from './meta/settings';
 import { NO_COMMANDS } from './sim/moose';
@@ -14,11 +14,12 @@ import { Menus } from './ui/menus';
 
 const save = loadSave();
 setLang(save.lang ?? detectLang());
-const trackDef = tracks[0];
+let course: CourseDef = courses[0];
+let trackDef = trackById(course.trackId ?? '') ?? tracks[0];
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const zone = document.getElementById('steer-zone') as HTMLElement;
 
-let race: Race = createRace(trackDef, balance, { seed: 1 });
+let race: Race = createRace(trackDef, balance, { seed: 1, laps: course.laps });
 const view = new GameView(canvas, race, balance);
 const input = new InputManager(zone, { ...balance.input, sensitivity: save.sensitivity }, document.getElementById('pedals'));
 let debug = save.debug || new URLSearchParams(location.search).has('debug');
@@ -63,10 +64,15 @@ const hud = new Hud(
   debug,
 );
 const menus = new Menus(save, {
-  onStart: () => {
-    // Un seul circuit jouable au jalon 1 : la boucle grise.
+  onStart: (c) => {
+    const def = trackById(c.trackId ?? '');
+    if (!def) return;
+    const changed = def.id !== trackDef.id;
+    course = c;
+    trackDef = def;
     menus.show(null);
     restart();
+    if (changed) view.setRace(race);
   },
   onScreen: (screen) => {
     onHome = screen !== null;
@@ -89,7 +95,7 @@ function setPaused(p: boolean): void {
 }
 
 function restart(): void {
-  race = createRace(trackDef, balance, { seed: 1 });
+  race = createRace(trackDef, balance, { seed: 1, laps: course.laps });
   race.racers.forEach((r, i) => {
     prev[i] = { x: r.moose.x, y: r.moose.y, heading: r.moose.heading };
   });
