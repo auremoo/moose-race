@@ -19,7 +19,26 @@
     "overTopDecelRate": 1.2,
     "coastDecel": 1.2,
     "brakeDecel": 14,
-    "startSpeed": 0
+    "startSpeed": 0,
+    "gallopSpeedMul": 1.22,
+    "gallopAccelMul": 1.3,
+    "enduranceSeconds": 4,
+    "enduranceRecoverSeconds": 8,
+    "gallopRestartMin": 0.15,
+    "driftMinSpeed": 12,
+    "driftSteerMin": 0.45,
+    "driftGripMul": 1.2,
+    "driftDecel": 3.5,
+    "driftChargeSeconds": 1.5,
+    "driftMinCharge": 0.35,
+    "boostMinSeconds": 0.5,
+    "boostMaxSeconds": 1.5,
+    "boostSpeedMul": 1.1,
+    "boostAccel": 5,
+    "cordeSpeedMul": 1.05,
+    "cordeSeconds": 1.5,
+    "draftSpeedMul": 1.04,
+    "draftDistance": 12
   },
   "surfaces": {
     "sentier": {
@@ -94,5 +113,9 @@
     ],
     "slideMessageSlip": 0.45,
     "slideMessageDelay": 0.25
+  },
+  "corde": {
+    "zoneHalfLength": 6,
+    "lateralTolerance": 3
   }
 }

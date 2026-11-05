@@ -3,9 +3,21 @@
  "name": "Grand Nord",
  "width": 16,
  "verge": 7,
- "surface": "sentier",
+ "surface": "neige",
  "vergeSurface": "herbe",
  "startOffset": 20,
+ "zones": [
+  {
+   "from": 0.24,
+   "to": 0.29,
+   "surface": "glace"
+  },
+  {
+   "from": 0.7,
+   "to": 0.75,
+   "surface": "glace"
+  }
+ ],
  "points": [
   [0, 0, 11],
   [32.6, 0, 15],

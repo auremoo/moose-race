@@ -149,7 +149,7 @@ describe('les 20 circuits', () => {
   it.each(courses.map((c) => [c.name, c] as const))('%s se termine sans blocage', (_name, c) => {
     const race = createRace(trackById(c.trackId!)!, balance, { laps: c.laps });
     for (let i = 0; i < 60 * 300 && race.phase !== 'finished'; i++)
-      stepRace(race, [autopilot(race.track, race.racers[0], P, SENTIER)]);
+      stepRace(race, [autopilot(race.track, race.racers[0], P, SENTIER, { line: race.line })]);
     expect(race.phase).toBe('finished');
     expect(raceTime(race)).toBeLessThan(140);
   });

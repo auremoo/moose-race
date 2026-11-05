@@ -17,6 +17,8 @@ export interface InputConfig {
   touchCurve: number;
   keyboardRampPerSecond: number;
   sensitivity: number;
+  /** Braquage à partir duquel Freine devient une glissade (même valeur que la simulation). */
+  driftSteerMin: number;
 }
 
 export interface SteerTouchVisual {
@@ -40,7 +42,7 @@ export class InputManager {
   private touchSteer = 0;
   readonly visual: SteerTouchVisual = { active: false, originX: 0, originY: 0, x: 0, y: 0, steer: 0 };
   /** Pédale sous chaque doigt posé sur la zone des pédales. */
-  private pedalTouches = new Map<number, 'gas' | 'brake' | null>();
+  private pedalTouches = new Map<number, 'gas' | 'brake' | 'gallop' | null>();
 
   constructor(
     private zone: HTMLElement,
@@ -88,19 +90,21 @@ export class InputManager {
   };
 
   /** État des pédales tactiles (pour l'affichage). */
-  pedalState(): { gas: boolean; brake: boolean } {
+  pedalState(): { gas: boolean; brake: boolean; gallop: boolean } {
     let gas = false;
     let brake = false;
+    let gallop = false;
     for (const p of this.pedalTouches.values()) {
       if (p === 'gas') gas = true;
       if (p === 'brake') brake = true;
+      if (p === 'gallop') gallop = true;
     }
-    return { gas, brake };
+    return { gas, brake, gallop };
   }
 
-  private pedalAt(x: number, y: number): 'gas' | 'brake' | null {
+  private pedalAt(x: number, y: number): 'gas' | 'brake' | 'gallop' | null {
     const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-pedal]');
-    return (el?.dataset.pedal as 'gas' | 'brake' | undefined) ?? null;
+    return (el?.dataset.pedal as 'gas' | 'brake' | 'gallop' | undefined) ?? null;
   }
 
   private refreshPedals(): void {
@@ -108,6 +112,7 @@ export class InputManager {
     const st = this.pedalState();
     this.pedals.querySelector('[data-pedal="gas"]')?.classList.toggle('pressed', st.gas);
     this.pedals.querySelector('[data-pedal="brake"]')?.classList.toggle('pressed', st.brake);
+    this.pedals.querySelector('[data-pedal="gallop"]')?.classList.toggle('pressed', st.gallop);
   }
 
   private onPedalDown = (e: PointerEvent): void => {
@@ -147,12 +152,15 @@ export class InputManager {
     const pedals = this.pedalState();
     const gasKey = this.keys.has('ArrowUp') || this.keys.has('KeyW');
     const brakeKey = this.keys.has('ArrowDown') || this.keys.has('KeyS');
+    const brake = pedals.brake || brakeKey;
+    // Freine en braquant fort = glissade (ou Maj au clavier) ; Freine en ligne droite = frein.
+    const slideKey = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
     return {
       steer,
       throttle: pedals.gas || gasKey ? 1 : 0,
-      brake: pedals.brake || brakeKey ? 1 : 0,
-      gallop: this.keys.has('Space'),
-      slide: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'),
+      brake: brake ? 1 : 0,
+      gallop: this.keys.has('Space') || pedals.gallop,
+      slide: slideKey || (brake && Math.abs(steer) >= this.cfg.driftSteerMin),
       castor: this.keys.has('KeyE'),
     };
   }

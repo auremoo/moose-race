@@ -4,6 +4,7 @@
  */
 import type { Balance } from '../data';
 import { createMooseState, NO_COMMANDS, stepMoose, type Commands, type MooseState } from './moose';
+import { getRacingLine, type RacingLine } from './racingLine';
 import { createRng, type Rng } from './rng';
 import { buildTrack, projectOnTrack, type Track, type TrackDef, type TrackProjection } from './track';
 
@@ -23,6 +24,11 @@ export interface Racer {
   finishTime: number;
   onVerge: boolean;
   onBarrier: boolean;
+  /** Tour (entier) où chaque point de corde a été touché pour la dernière fois, -1 sinon. */
+  cordeHits: Int32Array;
+  cordeCount: number;
+  /** Pas de simulation de la dernière corde parfaite, -1 si aucune. */
+  lastCordeTick: number;
 }
 
 export interface Race {
@@ -36,6 +42,8 @@ export interface Race {
   countdownTicks: number;
   laps: number;
   racers: Racer[];
+  /** Ligne de course du circuit (ligne idéale, points de corde, profil de vitesse). */
+  line: RacingLine;
 }
 
 export interface RaceOptions {
@@ -46,6 +54,7 @@ export interface RaceOptions {
 
 export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = {}): Race {
   const track = buildTrack(def, 1);
+  const line = getRacingLine(track, balance.moose, balance.surfaces);
   const seed = opts.seed ?? 1;
   const count = opts.racerCount ?? 1;
   const racers: Racer[] = [];
@@ -73,6 +82,9 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
       finishTime: 0,
       onVerge: false,
       onBarrier: false,
+      cordeHits: new Int32Array(line.apexes.length).fill(-1),
+      cordeCount: 0,
+      lastCordeTick: -1,
     });
   }
   return {
@@ -86,6 +98,7 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
     countdownTicks: Math.round(balance.sim.countdownSeconds * balance.sim.hz),
     laps: opts.laps ?? balance.sim.laps,
     racers,
+    line,
   };
 }
 
@@ -104,7 +117,7 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   const m = racer.moose;
   const absD = Math.abs(racer.proj.d);
   racer.onVerge = absD > track.samples[racer.proj.index].hw;
-  const surfaceId = racer.onVerge ? track.def.vergeSurface : track.def.surface;
+  const surfaceId = racer.onVerge ? track.def.vergeSurface : track.samples[racer.proj.index].surface;
   stepMoose(m, cmd, balance.surfaces[surfaceId], balance.moose, r.dt);
 
   let proj = projectOnTrack(track, m.x, m.y, racer.proj.index);
@@ -140,6 +153,24 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   racer.distance += ds;
   racer.proj = proj;
 
+  // Corde parfaite : passer dans la zone du point de corde sans déraper.
+  if (!m.sliding && m.speed > 5) {
+    const n = track.samples.length;
+    const half = Math.round(balance.corde.zoneHalfLength / track.spacing);
+    const lapNow = Math.floor(racer.distance / L);
+    r.line.apexes.forEach((ap, ai) => {
+      let di = proj.index - ap.index;
+      if (di > n / 2) di -= n;
+      else if (di < -n / 2) di += n;
+      if (Math.abs(di) > half || racer.cordeHits[ai] === lapNow) return;
+      if (Math.abs(proj.d - ap.offset) > balance.corde.lateralTolerance) return;
+      racer.cordeHits[ai] = lapNow;
+      racer.cordeCount++;
+      racer.lastCordeTick = r.tick;
+      m.cordeTime = balance.moose.cordeSeconds;
+    });
+  }
+
   const lapsNow = Math.max(0, Math.floor(racer.distance / L));
   const t = raceTime(r);
   while (lapsNow > racer.lapsDone && !racer.finished) {
@@ -149,6 +180,29 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
     if (racer.lapsDone >= r.laps) {
       racer.finished = true;
       racer.finishTime = t;
+    }
+  }
+}
+
+/** Aspiration : un orignal juste devant, dans l'axe, à moins de draftDistance mètres. */
+function updateDrafting(r: Race): void {
+  const dist = r.balance.moose.draftDistance;
+  for (const a of r.racers) {
+    const ma = a.moose;
+    ma.drafting = false;
+    if (ma.speed < 10) continue;
+    const ch = Math.cos(ma.heading);
+    const sh = Math.sin(ma.heading);
+    for (const b of r.racers) {
+      if (b === a) continue;
+      const dx = b.moose.x - ma.x;
+      const dy = b.moose.y - ma.y;
+      const fwd = dx * ch + dy * sh;
+      const lat = -dx * sh + dy * ch;
+      if (fwd > 2 && fwd < dist && Math.abs(lat) < 2.5) {
+        ma.drafting = true;
+        break;
+      }
     }
   }
 }
@@ -165,6 +219,7 @@ export function stepRace(r: Race, commands: Commands[]): void {
     for (let i = 0; i < r.racers.length; i++) stepRacer(r, r.racers[i], { ...NO_COMMANDS, steer: commands[i]?.steer ?? 0, brake: 0.3 });
     return;
   }
+  updateDrafting(r);
   for (let i = 0; i < r.racers.length; i++) {
     const racer = r.racers[i];
     stepRacer(r, racer, commands[i] ?? NO_COMMANDS);

@@ -6,6 +6,13 @@
  "surface": "sentier",
  "vergeSurface": "herbe",
  "startOffset": 20,
+ "zones": [
+  {
+   "from": 0.62,
+   "to": 0.68,
+   "surface": "boue"
+  }
+ ],
  "points": [
   [0, 0, 18],
   [30, 0, 18],

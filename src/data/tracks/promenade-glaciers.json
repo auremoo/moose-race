@@ -3,9 +3,21 @@
  "name": "Promenade des Glaciers",
  "width": 16,
  "verge": 8,
- "surface": "sentier",
+ "surface": "neige",
  "vergeSurface": "herbe",
  "startOffset": 20,
+ "zones": [
+  {
+   "from": 0.17,
+   "to": 0.23,
+   "surface": "glace"
+  },
+  {
+   "from": 0.56,
+   "to": 0.61,
+   "surface": "glace"
+  }
+ ],
  "points": [
   [0, 0, 15],
   [30.1, 0, 19],

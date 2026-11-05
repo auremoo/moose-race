@@ -17,6 +17,23 @@ export interface AutopilotOptions {
   brakes?: boolean;
   /** Part de l'adhérence visée en virage (1 = à la limite). */
   cornerMargin?: number;
+  /** Ligne et profil de vitesse à suivre (par exemple la ligne de course). */
+  line?: { offset: Float64Array; speed: Float64Array };
+}
+
+/** Vitesse cible d'après un profil précalculé : on freine à temps pour chaque point à venir. */
+export function targetSpeedFromProfile(track: Track, racer: Racer, p: MooseParams, profile: Float64Array): number {
+  const n = track.samples.length;
+  const decel = p.brakeDecel * 0.75;
+  let target = Infinity;
+  const steps = Math.round(150 / track.spacing);
+  for (let j = 0; j <= steps; j += 2) {
+    const v = profile[(racer.proj.index + j) % n];
+    const dist = Math.max(0, j * track.spacing - 3);
+    const vNow = Math.sqrt(v * v + 2 * decel * dist);
+    if (vNow < target) target = vNow;
+  }
+  return target;
 }
 
 /**
@@ -53,7 +70,7 @@ export function autopilot(
   const L = (opts.lookAheadBase ?? 6) + (opts.lookAheadPerSpeed ?? 0.45) * m.speed;
   const idx = (racer.proj.index + Math.round(L / track.spacing)) % n;
   const s = track.samples[idx];
-  const off = opts.offsetAt ? opts.offsetAt(idx) : (opts.offset ?? 0);
+  const off = opts.line ? opts.line.offset[idx] : opts.offsetAt ? opts.offsetAt(idx) : (opts.offset ?? 0);
   const tx = s.x + s.nx * off;
   const ty = s.y + s.ny * off;
   const dx = tx - m.x;
@@ -71,7 +88,7 @@ export function autopilot(
   let throttle = 1;
   let brake = 0;
   if (opts.brakes !== false) {
-    const vt = targetSpeed(track, racer, p, surface, opts.cornerMargin);
+    const vt = opts.line ? targetSpeedFromProfile(track, racer, p, opts.line.speed) : targetSpeed(track, racer, p, surface, opts.cornerMargin);
     if (m.speed > vt + 0.3) {
       throttle = 0;
       brake = Math.min(1, (m.speed - vt) / 3);

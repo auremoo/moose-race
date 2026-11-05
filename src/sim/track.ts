@@ -24,6 +24,11 @@ export interface TrackDef {
   vergeSurface: SurfaceId;
   /** Distance le long de la ligne centrale où se trouve la ligne de départ (m). */
   startOffset: number;
+  /**
+   * Zones de surface particulière sur le sentier, en fraction du tour (0 = départ, 1 = arrivée).
+   * Exemple : { from: 0.3, to: 0.36, surface: 'glace' }.
+   */
+  zones?: { from: number; to: number; surface: SurfaceId }[];
 }
 
 export interface TrackSample {
@@ -39,6 +44,8 @@ export interface TrackSample {
   k: number;
   /** Demi-largeur du sentier à cet endroit (m). */
   hw: number;
+  /** Surface du sentier à cet endroit. */
+  surface: SurfaceId;
   /** Abscisse curviligne (m). */
   s: number;
 }
@@ -173,7 +180,9 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
     const h = heading[i];
     const tx = Math.cos(h);
     const ty = Math.sin(h);
-    samples.push({ x: pos[i][0], y: pos[i][1], tx, ty, nx: -ty, ny: tx, k, hw: widSmooth[i] / 2, s: i * step });
+    const f = i / count;
+    const zone = def.zones?.find((z) => (z.from <= z.to ? f >= z.from && f < z.to : f >= z.from || f < z.to));
+    samples.push({ x: pos[i][0], y: pos[i][1], tx, ty, nx: -ty, ny: tx, k, hw: widSmooth[i] / 2, s: i * step, surface: zone?.surface ?? def.surface });
   }
 
   const maxHalfWidth = Math.max(...samples.map((x) => x.hw));

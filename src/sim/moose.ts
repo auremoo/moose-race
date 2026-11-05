@@ -31,6 +31,34 @@ export interface MooseParams {
   /** Décélération maximale au frein en ligne droite (m/s²). */
   brakeDecel: number;
   startSpeed: number;
+  /** Galop : multiplicateurs de vitesse de pointe et d'accélération. */
+  gallopSpeedMul: number;
+  gallopAccelMul: number;
+  /** Durée du galop endurance pleine (s), et temps pour la recharger hors galop (s). */
+  enduranceSeconds: number;
+  enduranceRecoverSeconds: number;
+  /** Une fois l'endurance vidée, part minimale à recharger avant de pouvoir regaloper. */
+  gallopRestartMin: number;
+  /** Glissade : vitesse et braquage minimaux, gain d'adhérence latérale, ralentissement. */
+  driftMinSpeed: number;
+  driftSteerMin: number;
+  driftGripMul: number;
+  driftDecel: number;
+  /** Durée de glissade qui charge l'élan au maximum (s). */
+  driftChargeSeconds: number;
+  /** Durée minimale de glissade pour obtenir un élan (s). */
+  driftMinCharge: number;
+  /** Élan libéré : durée de 0,5 à 1,5 s selon la charge, gain de vitesse et d'accélération. */
+  boostMinSeconds: number;
+  boostMaxSeconds: number;
+  boostSpeedMul: number;
+  boostAccel: number;
+  /** Corde parfaite : gain de vitesse et durée. */
+  cordeSpeedMul: number;
+  cordeSeconds: number;
+  /** Aspiration : gain de vitesse dans le sillage d'un orignal à moins de draftDistance m. */
+  draftSpeedMul: number;
+  draftDistance: number;
 }
 
 export interface SurfaceParams {
@@ -74,6 +102,24 @@ export interface MooseState {
   slip: number;
   /** Vrai pendant un freinage. */
   braking: boolean;
+  /** Endurance 0..1. */
+  endurance: number;
+  galloping: boolean;
+  /** Vrai après avoir vidé l'endurance, jusqu'à recharge minimale. */
+  exhausted: boolean;
+  drifting: boolean;
+  /** Sens de la glissade : +1 gauche, -1 droite. */
+  driftDir: number;
+  /** Durée de la glissade en cours (s). */
+  driftTime: number;
+  /** Temps d'élan restant (s). */
+  boostTime: number;
+  /** Charge de l'élan en cours, 0..1 (pour l'affichage). */
+  boostCharge: number;
+  /** Temps de bonus de corde restant (s). */
+  cordeTime: number;
+  /** Vrai dans le sillage d'un autre orignal (renseigné par la course). */
+  drafting: boolean;
 }
 
 export function createMooseState(x: number, y: number, heading: number, speed = 0): MooseState {
@@ -89,6 +135,16 @@ export function createMooseState(x: number, y: number, heading: number, speed = 
     sliding: false,
     slip: 0,
     braking: false,
+    endurance: 1,
+    galloping: false,
+    exhausted: false,
+    drifting: false,
+    driftDir: 0,
+    driftTime: 0,
+    boostTime: 0,
+    boostCharge: 0,
+    cordeTime: 0,
+    drafting: false,
   };
 }
 
@@ -104,6 +160,12 @@ export function steerCurvatureRange(speed: number, surface: SurfaceParams, p: Mo
   return Math.min(p.maxSteerCurvature, (p.steerGripMargin * p.aLat * surface.grip) / v2);
 }
 
+/** Charge 0..1 de l'élan pour une durée de glissade donnée. */
+export function driftCharge(driftTime: number, p: MooseParams): number {
+  if (driftTime < p.driftMinCharge) return 0;
+  return clamp(driftTime / p.driftChargeSeconds, 0, 1);
+}
+
 /** Avance l'état d'un pas `dt`. Mutation en place pour éviter les allocations à 60 Hz. */
 export function stepMoose(
   s: MooseState,
@@ -117,11 +179,72 @@ export function stepMoose(
   const maxDelta = p.steerRate * dt;
   s.steer += clamp(target - s.steer, -maxDelta, maxDelta);
 
-  const aMax = p.aLat * surface.grip;
-  const vTop = p.topSpeed * surface.vmax;
   const v = s.speed;
+  const throttleIn = clamp(cmd.throttle, 0, 1);
+  const brakeIn = clamp(cmd.brake, 0, 1);
 
-  const kCmd = s.steer * steerCurvatureRange(v, surface, p);
+  // ---- Glissade : commande maintenue en braquant fort, à bonne vitesse. ----
+  const wantsDrift = cmd.slide && Math.abs(target) >= p.driftSteerMin && v >= p.driftMinSpeed;
+  if (!s.drifting && wantsDrift) {
+    s.drifting = true;
+    s.driftDir = Math.sign(target);
+    s.driftTime = 0;
+  } else if (s.drifting) {
+    const keep = cmd.slide && target * s.driftDir > 0.2 && v > p.driftMinSpeed * 0.6;
+    if (keep) {
+      s.driftTime += dt;
+    } else {
+      // Relâchée : l'élan chargé est libéré.
+      const charge = driftCharge(s.driftTime, p);
+      if (charge > 0) s.boostTime = p.boostMinSeconds + (p.boostMaxSeconds - p.boostMinSeconds) * charge;
+      s.drifting = false;
+      s.driftTime = 0;
+    }
+  }
+  s.boostCharge = s.drifting ? driftCharge(s.driftTime, p) : 0;
+
+  // ---- Galop : vide l'endurance, qui se recharge hors galop. ----
+  if (s.exhausted && s.endurance >= p.gallopRestartMin) s.exhausted = false;
+  s.galloping = cmd.gallop && !s.exhausted && s.endurance > 0 && !s.drifting;
+  if (s.galloping) {
+    s.endurance -= dt / p.enduranceSeconds;
+    if (s.endurance <= 0) {
+      s.endurance = 0;
+      s.exhausted = true;
+      s.galloping = false;
+    }
+  } else {
+    s.endurance = Math.min(1, s.endurance + dt / p.enduranceRecoverSeconds);
+  }
+  // Galoper, c'est aussi accélérer.
+  const throttle = s.galloping ? 1 : throttleIn;
+  const brake = s.drifting || s.galloping ? 0 : brakeIn;
+
+  // ---- Effets temporaires ----
+  if (s.boostTime > 0) s.boostTime = Math.max(0, s.boostTime - dt);
+  if (s.cordeTime > 0) s.cordeTime = Math.max(0, s.cordeTime - dt);
+
+  let speedMul = 1;
+  let accelMul = 1;
+  let accelAdd = 0;
+  if (s.galloping) {
+    speedMul *= p.gallopSpeedMul;
+    accelMul *= p.gallopAccelMul;
+  }
+  if (s.boostTime > 0) {
+    speedMul *= p.boostSpeedMul;
+    accelAdd += p.boostAccel;
+  }
+  if (s.cordeTime > 0) speedMul *= p.cordeSpeedMul;
+  if (s.drafting) speedMul *= p.draftSpeedMul;
+
+  const aMax = p.aLat * surface.grip * (s.drifting ? p.driftGripMul : 1);
+  const vTop = p.topSpeed * surface.vmax * speedMul;
+
+  const range = steerCurvatureRange(v, surface, p) * (s.drifting ? p.driftGripMul : 1);
+  // En glissade, l'orignal garde un braquage minimal dans le sens de la glissade (il « pivote »).
+  const steerEff = s.drifting ? s.driftDir * Math.max(0.55, Math.abs(s.steer)) : s.steer;
+  const kCmd = steerEff * range;
   s.commandedCurvature = kCmd;
   const aDemand = v * v * Math.abs(kCmd);
 
@@ -134,34 +257,31 @@ export function stepMoose(
     k = Math.sign(kCmd) * (aSlide / (v * v));
     aUsed = aMax;
     excess = aDemand - aSlide;
-    s.sliding = true;
+    s.sliding = !s.drifting;
   } else {
     s.sliding = false;
   }
   s.curvature = k;
   s.lateralAccel = v * v * k;
-  const slipTarget = s.sliding ? clamp(excess / aMax, 0, 1) : 0;
+  const slipTarget = s.drifting ? 0.6 : s.sliding ? clamp(excess / aMax, 0, 1) : 0;
   s.slip += (slipTarget - s.slip) * clamp(8 * dt, 0, 1);
 
-  // Longitudinal : accélérateur, roue libre et frein, dans la limite du cercle de friction.
-  const throttle = clamp(cmd.throttle, 0, 1);
-  const brake = clamp(cmd.brake, 0, 1);
+  // ---- Longitudinal : accélérateur, roue libre et frein, dans la limite du cercle de friction. ----
   const budget = Math.sqrt(Math.max(0, aMax * aMax - aUsed * aUsed));
   let a: number;
   if (v > vTop) {
-    // Au-dessus de la vitesse permise par la surface : ralentissement progressif, jamais net.
+    // Au-dessus de la vitesse permise : ralentissement progressif, jamais net.
     a = -p.overTopDecelRate * (v - vTop) - p.coastDecel;
   } else if (throttle > 0 && brake === 0) {
-    const drive = throttle * p.accel * (1 - (v / vTop) * (v / vTop));
-    a = Math.min(drive, budget) - p.coastDecel * (1 - throttle);
+    const drive = throttle * p.accel * accelMul * (1 - (v / vTop) * (v / vTop)) + accelAdd;
+    a = Math.min(drive, budget + accelAdd) - p.coastDecel * (1 - throttle);
   } else {
-    a = -p.coastDecel * (1 - throttle);
+    a = -p.coastDecel * (1 - throttle) + accelAdd;
   }
   if (brake > 0 && v > 0) a -= Math.min(brake * p.brakeDecel, Math.max(budget, 0.25 * p.brakeDecel));
   s.braking = brake > 0 && v > 0.5;
-  if (s.sliding) {
-    a -= p.scrubFactor * Math.min(excess, p.scrubMaxExcess) + p.slideFlatDecel;
-  }
+  if (s.drifting) a -= p.driftDecel;
+  else if (s.sliding) a -= p.scrubFactor * Math.min(excess, p.scrubMaxExcess) + p.slideFlatDecel;
 
   let nv = v + a * dt;
   if (nv < 0) nv = 0;

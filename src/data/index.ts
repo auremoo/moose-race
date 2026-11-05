@@ -15,6 +15,8 @@ export interface Balance {
   moose: MooseParams;
   surfaces: Record<SurfaceId, SurfaceParams>;
   barrier: { speedLossPerSecond: number; headingAlignRate: number };
+  /** Zone de corde : demi-longueur le long de la piste et tolérance latérale (m). */
+  corde: { zoneHalfLength: number; lateralTolerance: number };
   hud: {
     /** Vitesse affichée quand l'orignal est à sa vitesse de pointe en course (km/h « réels »). */
     realTopKmh: number;
@@ -58,9 +60,14 @@ export function validateBalance(b: unknown): Balance {
   checkNumbers(o.moose, 'balance.moose', [
     'topSpeed', 'accel', 'aLat', 'maxSteerCurvature', 'steerGripMargin', 'steerRate', 'scrubFactor', 'slideGrip',
     'scrubMaxExcess', 'slideFlatDecel', 'overTopDecelRate', 'coastDecel', 'brakeDecel', 'startSpeed',
+    'gallopSpeedMul', 'gallopAccelMul', 'enduranceSeconds', 'enduranceRecoverSeconds', 'gallopRestartMin',
+    'driftMinSpeed', 'driftSteerMin', 'driftGripMul', 'driftDecel', 'driftChargeSeconds', 'driftMinCharge',
+    'boostMinSeconds', 'boostMaxSeconds', 'boostSpeedMul', 'boostAccel', 'cordeSpeedMul', 'cordeSeconds',
+    'draftSpeedMul', 'draftDistance',
   ]);
   for (const s of SURFACES) checkNumbers(o.surfaces?.[s], `balance.surfaces.${s}`, ['grip', 'vmax']);
   checkNumbers(o.barrier, 'balance.barrier', ['speedLossPerSecond', 'headingAlignRate']);
+  checkNumbers(o.corde, 'balance.corde', ['zoneHalfLength', 'lateralTolerance']);
   checkNumbers(o.hud, 'balance.hud', ['realTopKmh', 'gaugeMaxKmh', 'slideMessageSlip', 'slideMessageDelay']);
   if (!Array.isArray(o.hud.gaits) || o.hud.gaits.some((g) => typeof g[0] !== 'number' || typeof g[1] !== 'string'))
     fail('balance.hud.gaits', '[seuil, clé] attendus');

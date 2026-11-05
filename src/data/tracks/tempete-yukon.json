@@ -3,9 +3,16 @@
  "name": "Tempête du Yukon",
  "width": 16,
  "verge": 7,
- "surface": "sentier",
+ "surface": "neige",
  "vergeSurface": "herbe",
  "startOffset": 20,
+ "zones": [
+  {
+   "from": 0.4,
+   "to": 0.46,
+   "surface": "glace"
+  }
+ ],
  "points": [
   [0, 0, 11],
   [29.4, 0, 16],
