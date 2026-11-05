@@ -18,6 +18,7 @@ export interface SaveData {
   musicOn: boolean;
   hapticsOn: boolean;
   reduceMotion: boolean;
+  tutorialDone: boolean;
   /** Langue choisie ; absente = langue du téléphone. */
   lang?: 'fr' | 'en';
   /** Solde de pièces à feuille d'érable (l'économie arrive au jalon 7). */
@@ -52,6 +53,7 @@ const DEFAULTS: SaveData = {
   musicOn: true,
   hapticsOn: true,
   reduceMotion: false,
+  tutorialDone: false,
   coins: 0,
   activeMoose: 'bucheron',
   owned: ['bucheron'],

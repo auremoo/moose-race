@@ -139,5 +139,14 @@
   "haptics": "Vibration",
   "reduceMotion": "Reduce motion",
   "soundOn": "Sound: on",
-  "soundOff": "Sound: off"
+  "soundOff": "Sound: off",
+  "tuto1": "Hold “Go” with your right thumb to run.",
+  "tuto2": "Slide your left thumb left or right to steer.",
+  "tuto3": "Green line: you'll make it. Red line: hit “Brake”!",
+  "tuto4": "Aim for the green disc inside the corner: perfect apex, small speed bonus.",
+  "tuto5": "On straights, hold “Gallop”. Watch the stamina ring.",
+  "tuto6": "In a corner, brake while steering hard to drift. Let go: boost!",
+  "tuto7": "Well done, you know it all! Finish the lap.",
+  "tutoSkip": "Skip",
+  "tutoDone": "Tutorial complete!"
 }

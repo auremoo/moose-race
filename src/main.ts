@@ -14,6 +14,7 @@ import { GameView, type Pose } from './render/view';
 import { Hud } from './ui/hud';
 import { detectLang, setLang, t } from './ui/i18n';
 import { Menus } from './ui/menus';
+import { Tutorial } from './ui/tutorial';
 import { SoundEngine } from './audio/sound';
 import { preloadModels } from './render/models';
 
@@ -74,70 +75,10 @@ const hud = new Hud(
     onResume: () => setPaused(false),
     onRestart: () => restart(),
     onQuit: () => {
+      stopTutorial();
       restart();
       paused = true;
       menus.show('home');
-document.getElementById('btn-improve')?.addEventListener('click', () => {
-  menus.show('enclos');
-  menus.collection.openDetail(save.activeMoose, 'enclos');
-});
-
-// Réglages du son, des vibrations et des animations.
-const bindCheck = (id: string, get: () => boolean, set: (v: boolean) => void) => {
-  const el = document.getElementById(id) as HTMLInputElement;
-  el.checked = get();
-  el.addEventListener('change', () => {
-    set(el.checked);
-    writeSave(save);
-    refreshSoundButton();
-  });
-};
-bindCheck('chk-sound', () => save.soundOn, (v) => { save.soundOn = sound.sfxOn = v; sound.applyToggles(); });
-bindCheck('chk-music', () => save.musicOn, (v) => { save.musicOn = sound.musicOn = v; sound.applyToggles(); });
-bindCheck('chk-haptics', () => save.hapticsOn, (v) => { save.hapticsOn = sound.hapticsOn = v; });
-bindCheck('chk-motion', () => save.reduceMotion, (v) => {
-  save.reduceMotion = v;
-  document.documentElement.classList.toggle('reduce-motion', v);
-});
-const soundBtn = document.getElementById('btn-sound-toggle') as HTMLButtonElement;
-function refreshSoundButton(): void {
-  soundBtn.textContent = save.soundOn || save.musicOn ? t('soundOn') : t('soundOff');
-}
-refreshSoundButton();
-soundBtn.addEventListener('click', () => {
-  const on = !(save.soundOn || save.musicOn);
-  save.soundOn = save.musicOn = sound.sfxOn = sound.musicOn = on;
-  sound.applyToggles();
-  (document.getElementById('chk-sound') as HTMLInputElement).checked = on;
-  (document.getElementById('chk-music') as HTMLInputElement).checked = on;
-  writeSave(save);
-  refreshSoundButton();
-});
-
-// Export et import de la sauvegarde (le navigateur peut effacer le stockage local).
-document.getElementById('btn-export')?.addEventListener('click', () => {
-  const blob = new Blob([exportSave(save)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `panache-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-});
-const fileInput = document.getElementById('file-import') as HTMLInputElement;
-document.getElementById('btn-import')?.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', async () => {
-  const f = fileInput.files?.[0];
-  if (!f) return;
-  const loaded = importSave(await f.text());
-  if (!loaded) {
-    menus.toast(t('importFailed'));
-    return;
-  }
-  Object.assign(save, loaded);
-  writeSave(save);
-  menus.toast(t('imported'));
-  setTimeout(() => location.reload(), 600);
-});
     },
     onSensitivity: (v) => {
       save.sensitivity = v;
@@ -193,6 +134,7 @@ const menus = new Menus(save, {
     menus.show(null);
     restart(changed);
   },
+  onTutorial: () => startTutorial(),
   onCollectionChange: () => {
     // Nouvel orignal actif ou nouveau niveau : la vitrine et la prochaine course en tiennent compte.
     race = newRace();
@@ -211,6 +153,29 @@ const menus = new Menus(save, {
   },
 });
 menus.show('home');
+
+// Didacticiel : course guidée en solo, sur la Prairie tranquille, en Facile.
+const tutorial = new Tutorial(() => {
+  save.tutorialDone = true;
+  writeSave(save);
+});
+function stopTutorial(): void {
+  tutorial.stop();
+}
+function startTutorial(): void {
+  const c = courses.find((x) => x.id === 'prairie-tranquille') ?? courses[0];
+  const def = trackById(c.trackId ?? '')!;
+  const changed = def.id !== trackDef.id;
+  course = { ...c, laps: 1 };
+  trackDef = def;
+  difficulty = 'facile';
+  botCount = 0;
+  mode = 'classique';
+  menus.show(null);
+  restart(changed);
+  tutorial.start();
+}
+
 document.getElementById('btn-improve')?.addEventListener('click', () => {
   menus.show('enclos');
   menus.collection.openDetail(save.activeMoose, 'enclos');
@@ -375,6 +340,11 @@ function frame(now: number): void {
     let steps = 0;
     while (acc >= dt && steps < 8) {
       let cmd = race.phase === 'countdown' ? NO_COMMANDS : input.read(dt);
+      if (tutorial.active && tutorial.update(race, cmd, dt)) {
+        save.tutorialDone = true;
+        writeSave(save);
+        menus.toast(t('tutoDone'));
+      }
       const assist = balance.difficulties[difficulty].assist;
       if (assist > 0 && race.phase === 'running') cmd = assistCommand(race, cmd, assist);
       race.racers.forEach((r, i) => {
@@ -469,6 +439,11 @@ function soundEvents(): void {
   else if (me.lastContactTick !== lastContact && me.lastContactTick === race.tick) sound.thud();
   lastContact = me.lastContactTick;
   lastStun = m.stunTime;
+}
+
+// Application installable (PWA) : service worker en production seulement.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => void navigator.serviceWorker.register('./sw.js').catch(() => undefined));
 }
 
 // Modèles GLB éventuels : chargés une fois, puis appliqués dès la course suivante.

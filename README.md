@@ -2,7 +2,7 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalons 1 à 7** (orignal et sons générés par le code, sans le test graphique Meshy) — décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
+**État : jalons 1 à 8 (V1.0 hors test graphique Meshy)** — didacticiel, PWA, décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
 
 ## Jouer
 
@@ -123,3 +123,11 @@ Chaque forme générée par le code peut être remplacée par un fichier GLB san
 déposer le fichier dans `public/models/` et renseigner son chemin dans `src/data/models.json`
 (`moose`, `bear`, `beaver`). Conventions pour l'orignal : orienté vers +x, environ 3 m de long, pieds à y = 0,
 nœuds de pattes `leg_FL`, `leg_FR`, `leg_RL`, `leg_RR` (animés par le code), matériau `coat` teinté selon la robe.
+
+## Habillage
+
+- **Didacticiel** : première course guidée (Prairie tranquille, solo, Facile), mise en avant à la première visite,
+  ignorable. Étapes : courir, diriger, freiner selon la ligne idéale, corde, galop, glissade.
+- **PWA** : installable sur l'écran d'accueil (manifeste, icônes), jouable hors ligne après une première visite
+  (service worker : réseau d'abord pour la page, cache pour les fichiers versionnés).
+- Téléphone en paysage : invitation à repasser en portrait. Pause automatique et son coupé en arrière-plan.

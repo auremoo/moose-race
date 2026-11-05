@@ -31,6 +31,7 @@ export interface MenuCallbacks {
   onScreen(screen: MenuScreen | null): void;
   /** La collection a changé (orignal actif, niveau…). */
   onCollectionChange(): void;
+  onTutorial(): void;
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -87,6 +88,7 @@ export class Menus {
     $('btn-play').addEventListener('click', () => this.show('map'));
     document.querySelector('.tile[data-feature="enclos"]')?.addEventListener('click', () => this.show('enclos'));
     document.querySelector('.tile[data-feature="comptoir"]')?.addEventListener('click', () => this.show('comptoir'));
+    document.querySelector('.tile[data-feature="didacticiel"]')?.addEventListener('click', () => this.cb.onTutorial());
     document.querySelectorAll<HTMLElement>('[data-back]').forEach((b) =>
       b.addEventListener('click', () => this.show(b.dataset.back as MenuScreen)),
     );
@@ -174,6 +176,8 @@ export class Menus {
   }
 
   renderHome(): void {
+    // Première visite : le didacticiel est mis en avant.
+    document.querySelector('.tile[data-feature="didacticiel"]')?.classList.toggle('highlight', !this.save.tutorialDone);
     const m = this.activeMoose();
     $('active-name').textContent = m.name;
     this.rarityChip($('active-rarity'), m.rarity);

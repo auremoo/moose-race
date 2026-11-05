@@ -238,7 +238,7 @@ export interface CourseDef {
 export type FeatureId = 'enclos' | 'comptoir' | 'didacticiel' | 'multijoueur' | 'modeSpecial' | 'difficulte' | 'bots' | 'pieces';
 
 /** Jalon actuellement livré : tout ce qui arrive plus tard est grisé. */
-export const CURRENT_MILESTONE = 3;
+export const CURRENT_MILESTONE = 8;
 
 export const courses: CourseDef[] = (coursesJson as { courses: CourseDef[] }).courses;
 export const featureMilestones = (coursesJson as { features: Record<FeatureId, number> }).features;

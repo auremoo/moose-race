@@ -139,5 +139,14 @@
   "haptics": "Vibrations",
   "reduceMotion": "Réduire les animations",
   "soundOn": "Son : activé",
-  "soundOff": "Son : coupé"
+  "soundOff": "Son : coupé",
+  "tuto1": "Maintiens « Fonce » avec ton pouce droit pour courir.",
+  "tuto2": "Glisse ton pouce gauche à gauche ou à droite pour diriger.",
+  "tuto3": "Ligne verte : tu passes. Ligne rouge : freine avec « Freine » !",
+  "tuto4": "Vise le disque vert à l'intérieur du virage : corde parfaite, petit bonus de vitesse.",
+  "tuto5": "Dans les lignes droites, maintiens « Galop ». Surveille l'anneau d'endurance.",
+  "tuto6": "Dans un virage, freine en braquant fort pour glisser. Relâche : élan !",
+  "tuto7": "Bravo, tu sais tout ! Termine le tour.",
+  "tutoSkip": "Passer",
+  "tutoDone": "Didacticiel terminé !"
 }
