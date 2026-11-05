@@ -89,16 +89,76 @@ body {
 .pill-small:empty {
   visibility: hidden;
 }
-.pill-speed {
-  font-variant-numeric: tabular-nums;
-  min-width: 92px;
-  text-align: right;
+.hud-row-sub {
+  align-items: flex-start;
 }
-.pill-speed small {
+/* Compteur à aiguille, façon cadran en relief. */
+.gauge {
+  position: relative;
+  width: 122px;
+  padding: 5px 4px 5px;
+  background: var(--blanc);
+  border-radius: 18px;
+  box-shadow: 0 4px 0 var(--gris-levre);
+  text-align: center;
+}
+.gauge svg {
+  display: block;
+  margin: 0 auto;
+}
+#gauge-needle {
+  transform-origin: 70px 72px;
+  transition: transform 0.08s linear;
+}
+.gauge-value {
+  margin-top: -5px;
+  font-family: var(--font-titre);
+  font-size: 22px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.gauge-value small {
   font-family: var(--font-texte);
   font-weight: 800;
   font-size: 12px;
-  margin-left: 4px;
+  margin-left: 3px;
+}
+.gauge-gait {
+  margin-top: 2px;
+  font-weight: 900;
+  font-size: 12px;
+  color: var(--vert);
+  min-height: 17px;
+}
+.gauge-gait.super {
+  color: var(--rouge);
+  animation: pop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.segmented {
+  display: flex;
+  gap: 8px;
+}
+.seg {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 3px solid var(--gris-levre);
+  background: var(--blanc);
+  color: var(--brun);
+  font-family: var(--font-texte);
+  font-weight: 900;
+  font-size: 16px;
+  box-shadow: 0 4px 0 var(--gris-levre);
+  cursor: pointer;
+}
+.seg.on {
+  border-color: var(--vert);
+  background: #e7f6ee;
+  box-shadow: 0 4px 0 var(--vert);
+}
+.seg:active {
+  transform: translateY(4px);
+  box-shadow: none;
 }
 .btn-icon {
   pointer-events: auto;

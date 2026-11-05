@@ -2,8 +2,7 @@
  * Pilote automatique « poursuite pure » sur une ligne décalée de la ligne centrale.
  * Sert aux tests, à l'équilibrage sans rendu et, plus tard, de base aux bots.
  */
-import type { MooseParams } from './moose';
-import type { Commands } from './moose';
+import { steerCurvatureRange, type Commands, type MooseParams, type SurfaceParams } from './moose';
 import type { Racer } from './race';
 import type { Track } from './track';
 
@@ -16,7 +15,13 @@ export interface AutopilotOptions {
   lookAheadPerSpeed?: number;
 }
 
-export function autopilot(track: Track, racer: Racer, p: MooseParams, opts: AutopilotOptions = {}): Commands {
+export function autopilot(
+  track: Track,
+  racer: Racer,
+  p: MooseParams,
+  surface: SurfaceParams,
+  opts: AutopilotOptions = {},
+): Commands {
   const m = racer.moose;
   const n = track.samples.length;
   const L = (opts.lookAheadBase ?? 6) + (opts.lookAheadPerSpeed ?? 0.45) * m.speed;
@@ -33,7 +38,8 @@ export function autopilot(track: Track, racer: Racer, p: MooseParams, opts: Auto
   const left = -dx * sh + dy * ch;
   const d2 = dx * dx + dy * dy;
   // Courbure de l'arc qui rejoint le point visé : 2·y / d².
-  const k = fwd < -1 ? Math.sign(left || 1) * p.maxSteerCurvature : (2 * left) / Math.max(d2, 1);
-  const steer = Math.max(-1, Math.min(1, k / p.maxSteerCurvature));
+  const range = steerCurvatureRange(m.speed, surface, p);
+  const k = fwd < -1 ? Math.sign(left || 1) * range : (2 * left) / Math.max(d2, 1);
+  const steer = Math.max(-1, Math.min(1, k / range));
   return { steer, gallop: false, slide: false, castor: false };
 }

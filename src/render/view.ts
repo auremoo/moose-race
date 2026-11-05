@@ -43,6 +43,8 @@ export class GameView {
   private dustVel = new Float32Array(DUST_COUNT * 3);
   private dustNext = 0;
   private dustAcc = 0;
+  private lastW = 0;
+  private lastH = 0;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -78,6 +80,9 @@ export class GameView {
     this.dust.frustumCulled = false;
     this.scene.add(this.dust);
     this.resize();
+    // La taille réelle du canvas peut changer sans événement « resize » (barre d'adresse iOS,
+    // navigateur intégré d'une app) : on observe le canvas et on vérifie aussi à chaque image.
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.resize()).observe(canvas);
   }
 
   setDebug(on: boolean): void {
@@ -85,13 +90,18 @@ export class GameView {
   }
 
   resize(): void {
-    const w = this.canvas.clientWidth || 1;
-    const h = this.canvas.clientHeight || 1;
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+    if (w === 0 || h === 0) return;
+    this.lastW = w;
+    this.lastH = h;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setSize(w, h, false);
     this.chase.setAspect(w / h);
   }
 
   render(race: Race, prev: Pose[], alpha: number, dt: number): void {
+    if (this.canvas.clientWidth !== this.lastW || this.canvas.clientHeight !== this.lastH) this.resize();
     for (let i = 0; i < race.racers.length; i++) {
       const m = race.racers[i].moose;
       const p = prev[i];

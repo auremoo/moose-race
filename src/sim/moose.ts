@@ -14,6 +14,8 @@ export interface MooseParams {
   accel: number;
   aLat: number;
   maxSteerCurvature: number;
+  /** Braquage maximal exprimé en multiple de l'adhérence disponible à la vitesse courante. */
+  steerGripMargin: number;
   steerRate: number;
   scrubFactor: number;
   scrubMaxExcess: number;
@@ -76,6 +78,16 @@ export function createMooseState(x: number, y: number, heading: number, speed = 
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
+/**
+ * Courbure obtenue direction à fond, selon la vitesse (direction « sensible à la vitesse »,
+ * comme dans les jeux de course arcade). À fond, on demande `steerGripMargin` fois l'adhérence :
+ * un petit geste reste précis à haute vitesse, et braquer à fond fait encore déraper.
+ */
+export function steerCurvatureRange(speed: number, surface: SurfaceParams, p: MooseParams): number {
+  const v2 = Math.max(speed * speed, 1);
+  return Math.min(p.maxSteerCurvature, (p.steerGripMargin * p.aLat * surface.grip) / v2);
+}
+
 /** Avance l'état d'un pas `dt`. Mutation en place pour éviter les allocations à 60 Hz. */
 export function stepMoose(
   s: MooseState,
@@ -93,7 +105,7 @@ export function stepMoose(
   const vTop = p.topSpeed * surface.vmax;
   const v = s.speed;
 
-  const kCmd = s.steer * p.maxSteerCurvature;
+  const kCmd = s.steer * steerCurvatureRange(v, surface, p);
   s.commandedCurvature = kCmd;
   const aDemand = v * v * Math.abs(kCmd);
 

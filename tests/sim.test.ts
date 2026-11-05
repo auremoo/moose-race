@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { balance, tracks } from '../src/data';
 import { autopilot } from '../src/sim/autopilot';
-import { createMooseState, stepMoose, NO_COMMANDS } from '../src/sim/moose';
+import { createMooseState, stepMoose, steerCurvatureRange, NO_COMMANDS } from '../src/sim/moose';
 import { createRace, raceTime, stepRace } from '../src/sim/race';
 import { buildTrack } from '../src/sim/track';
 
@@ -13,7 +13,7 @@ function runRace(seed: number, offset = 0, maxSeconds = 400) {
   const race = createRace(tracks[0], balance, { seed, laps: 2 });
   const max = Math.round(maxSeconds / DT);
   for (let i = 0; i < max && race.phase !== 'finished'; i++) {
-    stepRace(race, [autopilot(race.track, race.racers[0], P, { offset })]);
+    stepRace(race, [autopilot(race.track, race.racers[0], P, SENTIER, { offset })]);
   }
   return race;
 }
@@ -39,8 +39,11 @@ describe('physique de l\'orignal', () => {
 
   it.each([20, 40, 60])('en virage stabilisé de rayon %i m, v → sqrt(a_lat × R)', (R) => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
-    const steer = 1 / R / P.maxSteerCurvature;
-    for (let i = 0; i < 60 * 30; i++) stepMoose(s, { ...NO_COMMANDS, steer }, SENTIER, P, DT);
+    // Direction maintenue à fond : le rayon visé est le plus serré permis (borné par R).
+    for (let i = 0; i < 60 * 30; i++) {
+      const steer = Math.min(1, 1 / R / steerCurvatureRange(s.speed, SENTIER, P));
+      stepMoose(s, { ...NO_COMMANDS, steer }, SENTIER, P, DT);
+    }
     const expected = Math.min(P.topSpeed, Math.sqrt(P.aLat * R));
     expect(Math.abs(s.speed - expected) / expected).toBeLessThan(0.03);
   });
@@ -48,13 +51,21 @@ describe('physique de l\'orignal', () => {
   it('un rayon plus large de 50 % donne environ 22 % de vitesse de passage', () => {
     const settle = (R: number) => {
       const s = createMooseState(0, 0, 0, 20);
-      const steer = 1 / R / P.maxSteerCurvature;
-      for (let i = 0; i < 60 * 30; i++) stepMoose(s, { ...NO_COMMANDS, steer }, SENTIER, P, DT);
+      for (let i = 0; i < 60 * 30; i++) {
+        const steer = Math.min(1, 1 / R / steerCurvatureRange(s.speed, SENTIER, P));
+        stepMoose(s, { ...NO_COMMANDS, steer }, SENTIER, P, DT);
+      }
       return s.speed;
     };
     const gain = settle(30) / settle(20) - 1;
     expect(gain).toBeGreaterThan(0.2);
     expect(gain).toBeLessThan(0.25);
+  });
+
+  it('à haute vitesse, un petit geste ne fait pas déraper', () => {
+    const s = createMooseState(0, 0, 0, P.topSpeed);
+    for (let i = 0; i < 30; i++) stepMoose(s, { ...NO_COMMANDS, steer: 0.4 }, SENTIER, P, DT);
+    expect(s.sliding).toBe(false);
   });
 
   it('la survitesse fait élargir : le rayon suivi dépasse le rayon demandé', () => {

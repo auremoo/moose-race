@@ -9,8 +9,10 @@ import { NO_COMMANDS } from './sim/moose';
 import { createRace, stepRace, type Race } from './sim/race';
 import { GameView, type Pose } from './render/view';
 import { Hud } from './ui/hud';
+import { detectLang, setLang } from './ui/i18n';
 
 const save = loadSave();
+setLang(save.lang ?? detectLang());
 const trackDef = tracks[0];
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const zone = document.getElementById('steer-zone') as HTMLElement;
@@ -27,6 +29,7 @@ const prev: Pose[] = race.racers.map((r) => ({ x: r.moose.x, y: r.moose.y, headi
 
 const hud = new Hud(
   zone,
+  race,
   {
     onPause: () => setPaused(true),
     onResume: () => setPaused(false),
@@ -40,6 +43,11 @@ const hud = new Hud(
       debug = on;
       save.debug = on;
       view.setDebug(on);
+      writeSave(save);
+    },
+    onLang: (l) => {
+      setLang(l);
+      save.lang = l;
       writeSave(save);
     },
   },
@@ -149,7 +157,7 @@ function frame(now: number): void {
     const k = race.track.samples[p.index].k;
     dbg = [
       `FPS      ${fps.toFixed(0)}`,
-      `vitesse  ${m.speed.toFixed(1)} m/s`,
+      `vitesse  ${m.speed.toFixed(1)} m/s (jeu)`,
       `rayon    ${Number.isFinite(R) ? R.toFixed(0) + ' m' : '∞'}`,
       `v limite ${Number.isFinite(vLim) ? vLim.toFixed(1) + ' m/s' : '—'}`,
       `a_lat    ${m.lateralAccel.toFixed(1)} m/s²`,

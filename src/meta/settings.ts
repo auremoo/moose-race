@@ -8,6 +8,8 @@ export interface SaveData {
   schema: 1;
   sensitivity: number;
   debug: boolean;
+  /** Langue choisie ; absente = langue du téléphone. */
+  lang?: 'fr' | 'en';
   bestTimes: Record<string, number>;
   bestLaps: Record<string, number>;
 }

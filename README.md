@@ -10,6 +10,10 @@ Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le c
 - Tactile : pose le pouce sur la moitié basse de l'écran et glisse à gauche ou à droite. La course est automatique.
 - Clavier : flèches ← → (ou A / D), Échap ou P pour la pause, R pour recommencer en pause.
 - Débogage : ajouter `?debug` à l'adresse, ou cocher « Mode débogage » dans la pause.
+- Langue : français ou anglais, selon le téléphone par défaut, modifiable dans la pause.
+- Compteur : la vitesse affichée est ramenée à celle d'un vrai orignal (pointe ≈ 56 km/h, valeur
+  la plus citée mais incertaine). Le jeu tourne en réalité plus vite pour le plaisir ; le facteur est dans
+  `balance.json` (`hud.realTopKmh`).
 
 ## Développer
 
@@ -30,11 +34,15 @@ npm run track:report -- src/data/tracks/boucle-grise.json piste.svg   # rapport 
 | `src/render/` | Scène Three.js, caméra poursuite, orignal provisoire ; lit la simulation et interpole. |
 | `src/ui/` | HUD, pause, résultats, textes. |
 | `src/meta/` | Réglages et records en `localStorage`. |
-| `src/data/` | Équilibrage (`balance.json`), parcours, textes. Tous les chiffres réglables sont ici. |
+| `src/data/` | Équilibrage (`balance.json`), parcours, textes FR/EN. Tous les chiffres réglables sont ici. |
+
+Un parcours est une liste de points `[x, y]` ou `[x, y, largeur]` : la largeur du sentier varie le long du tracé
+(lignes droites larges pour dépasser, passages étroits).
 
 ### Modèle de pilotage
 
-La direction commande une courbure. L'accélération latérale est plafonnée par `aLat × adhérence` :
+La direction commande une courbure, sensible à la vitesse : direction à fond = `steerGripMargin` × l'adhérence
+disponible (2 par défaut). À mi-course, le virage est propre ; à fond, l'orignal dérape et ralentit. L'accélération latérale est plafonnée par `aLat × adhérence` :
 au-delà, l'orignal élargit et frotte. L'accélération partage ce même budget (cercle de friction).
 En virage stabilisé, la vitesse tend donc vers `sqrt(aLat × R)` : un rayon plus large passe plus vite,
 sans bonus scripté (vérifié par `tests/sim.test.ts`).

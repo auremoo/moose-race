@@ -54,7 +54,7 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
     const row = Math.floor(i / 2);
     const col = i % 2;
     const back = 6 + row * 8 + col * 4;
-    const lateral = count === 1 ? 0 : (col === 0 ? 1 : -1) * track.halfWidth * 0.4;
+    const lateral = count === 1 ? 0 : (col === 0 ? 1 : -1) * track.samples[track.samples.length - Math.round(back / track.spacing)].hw * 0.4;
     const s0 = track.samples[track.samples.length - Math.round(back / track.spacing)];
     const x = s0.x + s0.nx * lateral;
     const y = s0.y + s0.ny * lateral;
@@ -103,14 +103,14 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   const { track, balance } = r;
   const m = racer.moose;
   const absD = Math.abs(racer.proj.d);
-  racer.onVerge = absD > track.halfWidth;
+  racer.onVerge = absD > track.samples[racer.proj.index].hw;
   const surfaceId = racer.onVerge ? track.def.vergeSurface : track.def.surface;
   stepMoose(m, cmd, balance.surfaces[surfaceId], balance.moose, r.dt);
 
   let proj = projectOnTrack(track, m.x, m.y, racer.proj.index);
 
   // Barrière souple au bord du bas-côté : repousse et ralentit, n'arrête jamais net.
-  const limit = track.halfWidth + track.def.verge;
+  const limit = track.samples[proj.index].hw + track.def.verge;
   racer.onBarrier = false;
   if (Math.abs(proj.d) > limit) {
     racer.onBarrier = true;

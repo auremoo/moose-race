@@ -10,6 +10,7 @@
     "accel": 10,
     "aLat": 18,
     "maxSteerCurvature": 0.085,
+    "steerGripMargin": 2.4,
     "steerRate": 4.0,
     "scrubFactor": 0.35,
     "scrubMaxExcess": 40,
@@ -58,5 +59,37 @@
     "followRate": 9,
     "yawRate": 6,
     "galopFovBoost": 6
+  },
+  "hud": {
+    "realTopKmh": 56,
+    "gaugeMaxKmh": 70,
+    "gaits": [
+      [
+        1,
+        "gaitStop"
+      ],
+      [
+        8,
+        "gaitWalk"
+      ],
+      [
+        25,
+        "gaitTrot"
+      ],
+      [
+        40,
+        "gaitBigTrot"
+      ],
+      [
+        57,
+        "gaitGallop"
+      ],
+      [
+        999,
+        "gaitSuper"
+      ]
+    ],
+    "slideMessageSlip": 0.45,
+    "slideMessageDelay": 0.25
   }
 }

@@ -9,9 +9,12 @@ export type SurfaceId = 'sentier' | 'herbe' | 'boue' | 'neige' | 'glace';
 export interface TrackDef {
   id: string;
   name: string;
-  /** Points de contrôle de la ligne centrale, boucle fermée, en mètres. */
-  points: [number, number][];
-  /** Largeur du sentier (m). */
+  /**
+   * Points de contrôle de la ligne centrale, boucle fermée, en mètres.
+   * Un 3e nombre facultatif fixe la largeur du sentier à ce point (sinon `width`).
+   */
+  points: ([number, number] | [number, number, number])[];
+  /** Largeur par défaut du sentier (m). */
   width: number;
   /** Largeur de la bande d'herbe de chaque côté avant la barrière (m). */
   verge: number;
@@ -34,6 +37,8 @@ export interface TrackSample {
   ny: number;
   /** Courbure signée (1/m), positive vers la gauche. */
   k: number;
+  /** Demi-largeur du sentier à cet endroit (m). */
+  hw: number;
   /** Abscisse curviligne (m). */
   s: number;
 }
@@ -43,7 +48,8 @@ export interface Track {
   samples: TrackSample[];
   length: number;
   spacing: number;
-  halfWidth: number;
+  /** Plus grande demi-largeur du sentier (m). */
+  maxHalfWidth: number;
 }
 
 export interface TrackProjection {
@@ -82,19 +88,28 @@ function catmullRomCentripetal(
 }
 
 export function buildTrack(def: TrackDef, spacing = 1): Track {
-  const pts = def.points;
+  const pts = def.points.map((p) => [p[0], p[1]] as [number, number]);
+  const widths = def.points.map((p) => (p.length > 2 ? (p[2] as number) : def.width));
   const n = pts.length;
   if (n < 4) throw new Error(`Piste ${def.id} : il faut au moins 4 points de contrôle`);
 
   // 1. Échantillonnage dense de la spline.
   const dense: [number, number][] = [];
+  const denseW: number[] = [];
   const perSeg = 40;
   for (let i = 0; i < n; i++) {
     const p0 = pts[(i - 1 + n) % n];
     const p1 = pts[i];
     const p2 = pts[(i + 1) % n];
     const p3 = pts[(i + 2) % n];
-    for (let j = 0; j < perSeg; j++) dense.push(catmullRomCentripetal(p0, p1, p2, p3, j / perSeg));
+    const w1 = widths[i];
+    const w2 = widths[(i + 1) % n];
+    for (let j = 0; j < perSeg; j++) {
+      const t = j / perSeg;
+      dense.push(catmullRomCentripetal(p0, p1, p2, p3, t));
+      const st = t * t * (3 - 2 * t);
+      denseW.push(w1 + (w2 - w1) * st);
+    }
   }
 
   // 2. Longueur cumulée.
@@ -110,6 +125,7 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
   const count = Math.max(8, Math.round(total / spacing));
   const step = total / count;
   const raw: [number, number][] = [];
+  const rawW: number[] = [];
   let seg = 0;
   for (let i = 0; i < count; i++) {
     const target = i * step;
@@ -119,11 +135,20 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
     const segLen = cum[seg + 1] - cum[seg];
     const w = segLen === 0 ? 0 : (target - cum[seg]) / segLen;
     raw.push([a[0] + (b[0] - a[0]) * w, a[1] + (b[1] - a[1]) * w]);
+    rawW.push(denseW[seg] + (denseW[(seg + 1) % dense.length] - denseW[seg]) * w);
   }
 
   // 4. Décalage pour placer la ligne de départ à l'indice 0.
   const shift = Math.round(((def.startOffset % total) + total) % total / step) % count;
   const pos = raw.slice(shift).concat(raw.slice(0, shift));
+  const wid = rawW.slice(shift).concat(rawW.slice(0, shift));
+  // Lissage de la largeur sur ±8 m pour des transitions douces.
+  const wr = Math.max(1, Math.round(8 / step));
+  const widSmooth = wid.map((_, i) => {
+    let acc = 0;
+    for (let j = -wr; j <= wr; j++) acc += wid[(i + j + count) % count];
+    return acc / (2 * wr + 1);
+  });
 
   // 5. Tangentes, normales, courbure (différences centrées, courbure lissée).
   const samples: TrackSample[] = [];
@@ -148,10 +173,11 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
     const h = heading[i];
     const tx = Math.cos(h);
     const ty = Math.sin(h);
-    samples.push({ x: pos[i][0], y: pos[i][1], tx, ty, nx: -ty, ny: tx, k, s: i * step });
+    samples.push({ x: pos[i][0], y: pos[i][1], tx, ty, nx: -ty, ny: tx, k, hw: widSmooth[i] / 2, s: i * step });
   }
 
-  return { def, samples, length: total, spacing: step, halfWidth: def.width / 2 };
+  const maxHalfWidth = Math.max(...samples.map((x) => x.hw));
+  return { def, samples, length: total, spacing: step, maxHalfWidth };
 }
 
 /**

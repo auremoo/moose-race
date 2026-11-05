@@ -19,5 +19,13 @@
   "steerHint": "Glisse ton pouce à gauche ou à droite pour diriger",
   "offTrack": "Bas-côté !",
   "sliding": "Trop vite !",
-  "portraitOnly": "Tourne ton téléphone en portrait"
+  "portraitOnly": "Tourne ton téléphone en portrait",
+  "gaitStop": "À l'arrêt",
+  "gaitWalk": "Au pas",
+  "gaitTrot": "Trot",
+  "gaitBigTrot": "Grand trot",
+  "gaitGallop": "Galop",
+  "gaitSuper": "Super-orignal !",
+  "language": "Langue",
+  "speedNote": "Vitesse ramenée à celle d'un vrai orignal"
 }

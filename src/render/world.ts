@@ -24,8 +24,8 @@ const COLORS = {
 /** Ruban entre deux décalages latéraux d1 < d2 le long de la piste, couleur par échantillon. */
 function ribbon(
   track: Track,
-  d1: number,
-  d2: number,
+  d1: (i: number) => number,
+  d2: (i: number) => number,
   y: number,
   color: (i: number) => THREE.Color,
 ): THREE.BufferGeometry {
@@ -38,7 +38,7 @@ function ribbon(
     const s = S[i];
     const c = color(i);
     for (let side = 0; side < 2; side++) {
-      const d = side === 0 ? d1 : d2;
+      const d = side === 0 ? d1(i) : d2(i);
       const o = (j * 2 + side) * 3;
       pos[o] = simToWorldX(s.x + s.nx * d);
       pos[o + 1] = y;
@@ -87,26 +87,28 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
   ground.position.y = -0.05;
   scene.add(ground);
 
-  const hw = track.halfWidth;
-  const limit = hw + track.def.verge;
+  const S = track.samples;
+  const verge = track.def.verge;
+  const hwAt = (i: number) => S[i].hw;
+  const limitAt = (i: number) => S[i].hw + verge;
+  const off = (f: (i: number) => number, k: number, c = 0) => (i: number) => k * f(i) + c;
 
-  // Bas-côté (herbe), sentier, bordures blanches.
+  // Bas-côté (herbe), sentier, bordures blanches. La largeur varie le long de la piste.
   const vergeCol = vc(COLORS.verge);
-  scene.add(new THREE.Mesh(ribbon(track, -limit, limit, 0.0, () => vergeCol), flat));
+  scene.add(new THREE.Mesh(ribbon(track, off(limitAt, -1), limitAt, 0.0, () => vergeCol), flat));
   const trailA = vc(COLORS.trail);
   const trailB = vc(COLORS.trail).offsetHSL(0, 0, -0.03);
-  scene.add(new THREE.Mesh(ribbon(track, -hw, hw, 0.02, (i) => (Math.floor(i / 6) % 2 ? trailA : trailB)), flat));
+  scene.add(new THREE.Mesh(ribbon(track, off(hwAt, -1), hwAt, 0.02, (i) => (Math.floor(i / 6) % 2 ? trailA : trailB)), flat));
   const white = vc(COLORS.edge);
-  scene.add(new THREE.Mesh(ribbon(track, hw - 0.5, hw - 0.2, 0.04, () => white), flat));
-  scene.add(new THREE.Mesh(ribbon(track, -hw + 0.2, -hw + 0.5, 0.04, () => white), flat));
+  scene.add(new THREE.Mesh(ribbon(track, off(hwAt, 1, -0.5), off(hwAt, 1, -0.2), 0.04, () => white), flat));
+  scene.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, 0.2), off(hwAt, -1, 0.5), 0.04, () => white), flat));
 
   // Vibreurs rouge et blanc sur les virages marqués, côté intérieur et extérieur.
   const red = vc(COLORS.curbRed);
-  const S = track.samples;
   const curbMask = S.map((s) => Math.abs(s.k) > 1 / 70);
   const curbColor = (i: number) => (curbMask[i] ? (Math.floor(i / 3) % 2 ? red : white) : vergeCol);
-  scene.add(new THREE.Mesh(ribbon(track, hw, hw + 1.4, 0.03, curbColor), flat));
-  scene.add(new THREE.Mesh(ribbon(track, -hw - 1.4, -hw, 0.03, curbColor), flat));
+  scene.add(new THREE.Mesh(ribbon(track, hwAt, off(hwAt, 1, 1.4), 0.03, curbColor), flat));
+  scene.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, -1.4), off(hwAt, -1), 0.03, curbColor), flat));
 
   // Ligne de départ en damier.
   const startCanvas = document.createElement('canvas');
@@ -121,8 +123,9 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
   const tex = new THREE.CanvasTexture(startCanvas);
   tex.magFilter = THREE.NearestFilter;
   tex.colorSpace = THREE.SRGBColorSpace;
-  const start = new THREE.Mesh(new THREE.PlaneGeometry(2, track.def.width), new THREE.MeshBasicMaterial({ map: tex }));
   const s0 = S[0];
+  const hw = s0.hw;
+  const start = new THREE.Mesh(new THREE.PlaneGeometry(2, hw * 2), new THREE.MeshBasicMaterial({ map: tex }));
   start.rotation.x = -Math.PI / 2;
   start.rotation.z = Math.atan2(s0.ty, s0.tx);
   start.position.set(simToWorldX(s0.x), 0.05, simToWorldZ(s0.y));
@@ -140,7 +143,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
     p.position.set(simToWorldX(s0.x + s0.nx * (hw + 1.5) * side), 5, simToWorldZ(s0.y + s0.ny * (hw + 1.5) * side));
     arch.add(p);
   }
-  const beam = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, track.def.width + 4), archMat);
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, hw * 2 + 4), archMat);
   beam.position.set(simToWorldX(s0.x), 10, simToWorldZ(s0.y));
   beam.rotation.y = Math.atan2(s0.ty, s0.tx);
   arch.add(beam);
@@ -157,6 +160,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
   for (let i = 0; i < S.length - postStep + 1 && pi < postCount; i += postStep) {
     for (const side of [-1, 1]) {
       const s = S[i];
+      const limit = limitAt(i);
       m4.makeTranslation(simToWorldX(s.x + s.nx * limit * side), 0.6, simToWorldZ(s.y + s.ny * limit * side));
       posts.setMatrixAt(pi++, m4);
     }
@@ -187,7 +191,7 @@ export function buildWorld(scene: THREE.Scene, track: Track): { debugLine: THREE
     const x = rng.range(minX, maxX);
     const y = rng.range(minY, maxY);
     const pr = projectOnTrack(track, x, y);
-    if (Math.abs(pr.d) < limit + 3) continue;
+    if (Math.abs(pr.d) < limitAt(pr.index) + 3) continue;
     const sc = rng.range(0.7, 1.4);
     q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rng.range(0, Math.PI * 2));
     scl.set(sc, sc, sc);

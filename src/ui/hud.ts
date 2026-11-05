@@ -3,7 +3,7 @@
  */
 import type { SteerTouchVisual } from '../input/input';
 import { countdownRemaining, raceTime, type Race } from '../sim/race';
-import { t } from './i18n';
+import { getLang, t, type Lang, type TextKey } from './i18n';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -19,6 +19,17 @@ export interface HudCallbacks {
   onRestart(): void;
   onSensitivity(v: number): void;
   onDebug(on: boolean): void;
+  onLang(l: Lang): void;
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const GAUGE_CX = 70;
+const GAUGE_CY = 72;
+const GAUGE_R = 56;
+
+function gaugePoint(frac: number, r: number): [number, number] {
+  const a = Math.PI * (1 - frac);
+  return [GAUGE_CX + r * Math.cos(a), GAUGE_CY - r * Math.sin(a)];
 }
 
 export class Hud {
@@ -39,25 +50,28 @@ export class Hud {
   private lastCount = '';
   private hintShown = true;
   private zoneRect: DOMRect | null = null;
+  private slideTimer = 0;
+  private lastUpdate = performance.now();
+  private gait = $('hud-gait');
+  private needle = document.getElementById('gauge-needle') as unknown as SVGLineElement;
+  private lastGait = '';
+  private needleKmh = 0;
 
   constructor(
     private zone: HTMLElement,
+    race: Race,
     cb: HudCallbacks,
     sensitivity: number,
     debug: boolean,
   ) {
-    $('hud-kmh').textContent = t('kmh');
-    this.hint.textContent = t('steerHint');
-    $('pause-title').textContent = t('pause');
-    $('btn-resume').textContent = t('resume');
-    $('btn-restart').textContent = t('restart');
-    $('lbl-sensitivity').textContent = t('sensitivity');
-    $('lbl-debug').textContent = t('debug');
-    $('lbl-sound').textContent = t('sound');
-    $('res-title').textContent = t('finish');
-    $('res-total-lbl').textContent = t('total');
-    $('res-best-lbl').textContent = t('bestLap');
-    $('btn-replay').textContent = t('replay');
+    this.applyTexts();
+    this.buildGauge(race.balance.hud);
+    document.querySelectorAll<HTMLButtonElement>('.seg[data-lang]').forEach((b) =>
+      b.addEventListener('click', () => {
+        cb.onLang(b.dataset.lang as Lang);
+        this.applyTexts();
+      }),
+    );
 
     this.sens.value = String(sensitivity);
     this.dbg.checked = debug;
@@ -75,6 +89,76 @@ export class Hud {
     window.addEventListener('resize', () => (this.zoneRect = null));
   }
 
+  /** (Ré)applique tous les textes fixes dans la langue courante. */
+  applyTexts(): void {
+    const set = (id: string, key: TextKey) => ($(id).textContent = t(key));
+    set('hud-kmh', 'kmh');
+    set('steer-hint', 'steerHint');
+    set('pause-title', 'pause');
+    set('btn-resume', 'resume');
+    set('btn-restart', 'restart');
+    set('lbl-sensitivity', 'sensitivity');
+    set('lbl-debug', 'debug');
+    set('lbl-language', 'language');
+    set('lbl-sound', 'sound');
+    set('res-title', 'finish');
+    set('res-total-lbl', 'total');
+    set('res-best-lbl', 'bestLap');
+    set('btn-replay', 'replay');
+    $('gauge').title = t('speedNote');
+    document.querySelectorAll<HTMLButtonElement>('.seg[data-lang]').forEach((b) =>
+      b.classList.toggle('on', b.dataset.lang === getLang()),
+    );
+    this.lastGait = '';
+  }
+
+  private buildGauge(cfg: Race['balance']['hud']): void {
+    const arcs = document.getElementById('gauge-arcs')!;
+    const ticks = document.getElementById('gauge-ticks')!;
+    const max = cfg.gaugeMaxKmh;
+    const zones: [number, number, string][] = [
+      [0, 8, '#cfc7bf'],
+      [8, 25, '#8fd1a8'],
+      [25, 40, '#2E8B57'],
+      [40, cfg.realTopKmh, '#F5B301'],
+      [cfg.realTopKmh, max, '#D80621'],
+    ];
+    for (const [a, b, color] of zones) {
+      const [x1, y1] = gaugePoint(a / max, GAUGE_R);
+      const [x2, y2] = gaugePoint(b / max, GAUGE_R);
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', `M${x1.toFixed(2)},${y1.toFixed(2)} A${GAUGE_R},${GAUGE_R} 0 0 1 ${x2.toFixed(2)},${y2.toFixed(2)}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', '11');
+      arcs.appendChild(path);
+    }
+    for (let k = 0; k <= max; k += 10) {
+      const [x1, y1] = gaugePoint(k / max, GAUGE_R - 9);
+      const [x2, y2] = gaugePoint(k / max, GAUGE_R - 15);
+      const line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('x1', x1.toFixed(2));
+      line.setAttribute('y1', y1.toFixed(2));
+      line.setAttribute('x2', x2.toFixed(2));
+      line.setAttribute('y2', y2.toFixed(2));
+      line.setAttribute('stroke', '#5B3A29');
+      line.setAttribute('stroke-width', k % 20 === 0 ? '2.5' : '1.5');
+      ticks.appendChild(line);
+      if (k % 20 === 0) {
+        const [tx, ty] = gaugePoint(k / max, GAUGE_R - 24);
+        const label = document.createElementNS(SVG_NS, 'text');
+        label.setAttribute('x', tx.toFixed(2));
+        label.setAttribute('y', (ty + 3.5).toFixed(2));
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('font-size', '10');
+        label.setAttribute('font-weight', '800');
+        label.setAttribute('fill', '#5B3A29');
+        label.textContent = String(k);
+        ticks.appendChild(label);
+      }
+    }
+  }
+
   showPause(on: boolean): void {
     this.pauseMenu.hidden = !on;
   }
@@ -83,7 +167,8 @@ export class Hud {
     const r = race.racers[0];
     $('res-total').textContent = formatTime(r.finishTime);
     $('res-best').textContent = formatTime(Math.min(...r.lapTimes));
-    $('res-laps').textContent = r.lapTimes.map((x, i) => `${t('lap')} ${i + 1} : ${formatTime(x)}`).join('  ·  ');
+    const colon = getLang() === 'fr' ? ' : ' : ': ';
+    $('res-laps').textContent = r.lapTimes.map((x, i) => `${t('lap')} ${i + 1}${colon}${formatTime(x)}`).join('  ·  ');
     $('res-record').textContent = record ? t('record') : '';
     this.results.hidden = false;
   }
@@ -103,7 +188,20 @@ export class Hud {
     this.lap.textContent = `${t('lap')} ${lapNow}/${race.laps}`;
     this.time.textContent = formatTime(r.finished ? r.finishTime : raceTime(race));
     this.best.textContent = bestLap ? `${t('best')} ${formatTime(bestLap)}` : '';
-    this.speed.textContent = String(Math.round(r.moose.speed * 3.6));
+
+    // Compteur : vitesse ramenée à celle d'un vrai orignal (pointe en course = realTopKmh).
+    const hudCfg = race.balance.hud;
+    const kmh = (r.moose.speed * hudCfg.realTopKmh) / race.balance.moose.topSpeed;
+    this.needleKmh += (kmh - this.needleKmh) * 0.35;
+    this.speed.textContent = String(Math.round(kmh));
+    const frac = Math.max(0, Math.min(1, this.needleKmh / hudCfg.gaugeMaxKmh));
+    this.needle.style.transform = `rotate(${(frac * 180 - 90).toFixed(1)}deg)`;
+    const gaitKey = (hudCfg.gaits.find((g) => kmh < g[0]) ?? hudCfg.gaits[hudCfg.gaits.length - 1])[1];
+    if (gaitKey !== this.lastGait) {
+      this.lastGait = gaitKey;
+      this.gait.textContent = t(gaitKey as TextKey);
+      this.gait.classList.toggle('super', gaitKey === 'gaitSuper');
+    }
 
     // Compte à rebours 3, 2, 1, Partez !
     let c = '';
@@ -117,8 +215,13 @@ export class Hud {
       if (c) this.countdown.classList.add('pop');
     }
 
-    // Message bref en cas de survitesse ou de bas-côté.
-    const msg = r.moose.sliding && r.moose.slip > 0.35 ? t('sliding') : r.onVerge ? t('offTrack') : '';
+    // Message bref en cas de vraie survitesse (dérapage fort et prolongé) ou de bas-côté.
+    const now = performance.now();
+    const dt = Math.min(0.1, (now - this.lastUpdate) / 1000);
+    this.lastUpdate = now;
+    const cfg = race.balance.hud;
+    this.slideTimer = r.moose.sliding && r.moose.slip > cfg.slideMessageSlip ? this.slideTimer + dt : 0;
+    const msg = this.slideTimer > cfg.slideMessageDelay ? t('sliding') : r.onVerge ? t('offTrack') : '';
     if (msg) this.flash.textContent = msg;
     this.flash.classList.toggle('on', !!msg && race.phase === 'running');
 
