@@ -16,7 +16,7 @@
   "bestLap": "Meilleur tour",
   "record": "Nouveau record !",
   "replay": "Rejouer",
-  "steerHint": "Pouce gauche : diriger\nPouce droit : foncer et freiner",
+  "steerHint": "Pouce gauche : diriger\nPouce droit : foncer, freiner, galoper\nFreine en braquant fort : glissade",
   "offTrack": "Bas-côté !",
   "sliding": "Trop vite !",
   "portraitOnly": "Tourne ton téléphone en portrait",
@@ -78,5 +78,10 @@
   "prov_YT": "Yukon",
   "prov_NU": "Nunavut",
   "lapsN": "{n} tours",
-  "lap1": "1 tour"
+  "lap1": "1 tour",
+  "gallopBtn": "Galop",
+  "corde": "Corde parfaite !",
+  "boost": "Élan !",
+  "idealLine": "Ligne idéale",
+  "lefty": "Gaucher (commandes inversées)"
 }

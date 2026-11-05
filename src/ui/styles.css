@@ -190,6 +190,14 @@ body {
 #hud-flash.on {
   opacity: 1;
 }
+#hud-flash.good {
+  color: #eaffef;
+  text-shadow: 0 3px 0 #1f6b40;
+}
+#hud-flash.gold {
+  color: #fff3c4;
+  text-shadow: 0 3px 0 #b8620a;
+}
 
 /* ---------- Compte à rebours ---------- */
 #countdown {
@@ -219,30 +227,25 @@ body {
 #steer-zone {
   position: absolute;
   left: 0;
-  right: 40%;
+  right: 48%;
   bottom: 0;
   height: 50%;
   touch-action: none;
 }
-/* Pédales sous le pouce droit : Fonce (grand, en bas) et Freine (au-dessus). */
+/* Pédales sous le pouce droit : Fonce (grand, en bas), Freine (à gauche), Galop (au-dessus). */
 #pedals {
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 40%;
+  width: 48%;
   height: 50%;
   touch-action: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-end;
-  gap: 14px;
-  padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 22px) 0;
 }
 #app.on-menu #pedals {
   visibility: hidden;
 }
 .pedal {
+  position: absolute;
   border: 0;
   border-radius: 50%;
   color: var(--blanc);
@@ -268,17 +271,65 @@ body {
   pointer-events: none;
 }
 .pedal-gas {
-  width: 104px;
-  height: 104px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  width: 96px;
+  height: 96px;
   background: var(--vert);
   box-shadow: 0 6px 0 #1f6b40;
 }
 .pedal-brake {
-  width: 80px;
-  height: 80px;
-  margin-right: 46px;
+  right: 104px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 66px);
+  width: 76px;
+  height: 76px;
   background: var(--rouge);
   box-shadow: 0 6px 0 var(--rouge-sombre);
+}
+/* Galop : l'anneau autour du bouton est la jauge d'endurance. */
+.pedal-gallop {
+  --endurance: 1;
+  right: 22px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 130px);
+  width: 76px;
+  height: 76px;
+  background:
+    radial-gradient(circle, #f28c18 58%, transparent 60%),
+    conic-gradient(#ffd34d calc(var(--endurance) * 360deg), rgba(255, 255, 255, 0.35) 0);
+  box-shadow: 0 6px 0 #b8620a;
+  font-size: 14px;
+}
+.pedal-gallop.tired {
+  filter: grayscale(0.7);
+}
+.pedal-gallop.on {
+  animation: gallopPulse 0.35s infinite alternate;
+}
+@keyframes gallopPulse {
+  to {
+    transform: scale(1.06);
+  }
+}
+/* Gaucher : direction à droite, pédales à gauche. */
+#app.lefty #steer-zone {
+  left: 48%;
+  right: 0;
+}
+#app.lefty #pedals {
+  right: auto;
+  left: 0;
+}
+#app.lefty .pedal-gas {
+  right: auto;
+  left: 12px;
+}
+#app.lefty .pedal-brake {
+  right: auto;
+  left: 104px;
+}
+#app.lefty .pedal-gallop {
+  right: auto;
+  left: 22px;
 }
 .pedal.pressed {
   transform: translateY(6px);
@@ -289,12 +340,12 @@ body {
   white-space: pre-line;
   position: absolute;
   left: 50%;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 150px);
   transform: translateX(-50%);
-  width: 80%;
+  width: 94%;
   text-align: center;
   font-weight: 900;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--blanc);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
   pointer-events: none;

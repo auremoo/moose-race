@@ -122,7 +122,7 @@ export function createMooseView(color = 0x5b3a29): MooseView {
       panache.rotation.x = (antlerLag - leanAngle) * 1.5;
 
       // En survitesse, l'arrière chasse légèrement vers l'extérieur.
-      const slipYaw = Math.sign(s.curvature) * s.slip * 0.35;
+      const slipYaw = Math.sign(s.curvature) * s.slip * (s.drifting ? 0.85 : 0.35);
       yawSlip.rotation.y += (slipYaw - yawSlip.rotation.y) * Math.min(1, 8 * dt);
     },
   };

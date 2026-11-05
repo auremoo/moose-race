@@ -57,6 +57,16 @@ const hud = new Hud(
       view.setDebug(on);
       writeSave(save);
     },
+    onIdealLine: (on) => {
+      save.idealLine = on;
+      view.setIdealLine(on);
+      writeSave(save);
+    },
+    onLefty: (on) => {
+      save.lefty = on;
+      input.reset();
+      writeSave(save);
+    },
     onLang: (l) => {
       setLang(l);
       save.lang = l;
@@ -66,7 +76,10 @@ const hud = new Hud(
   },
   save.sensitivity,
   debug,
+  save.idealLine,
+  save.lefty,
 );
+view.setIdealLine(save.idealLine);
 const menus = new Menus(save, {
   onStart: (c) => {
     const def = trackById(c.trackId ?? '');
@@ -196,10 +209,14 @@ function frame(now: number): void {
       `rayon    ${Number.isFinite(R) ? R.toFixed(0) + ' m' : '∞'}`,
       `v limite ${Number.isFinite(vLim) ? vLim.toFixed(1) + ' m/s' : '—'}`,
       `a_lat    ${m.lateralAccel.toFixed(1)} m/s²`,
-      `glisse   ${m.sliding ? 'OUI' : 'non'} ${m.slip.toFixed(2)}`,
+      `dérapage ${m.sliding ? 'OUI' : 'non'} ${m.slip.toFixed(2)}`,
       `direct.  ${m.steer.toFixed(2)}`,
       `écart    ${p.d.toFixed(1)} m`,
       `R piste  ${Math.abs(k) > 1e-4 ? (1 / Math.abs(k)).toFixed(0) + ' m' : '∞'}`,
+      `ligne    ${race.line.speed[p.index].toFixed(1)} m/s`,
+      `endur.   ${(m.endurance * 100).toFixed(0)} %${m.galloping ? ' GALOP' : ''}`,
+      `glisse   ${m.drifting ? `OUI ${m.driftTime.toFixed(1)} s` : 'non'}  élan ${m.boostTime.toFixed(1)} s`,
+      `cordes   ${race.racers[0].cordeCount}/${race.line.apexes.length}`,
     ].join('\n');
   }
   hud.update(race, input.visual, save.bestLaps[trackDef.id], dbg);

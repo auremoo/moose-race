@@ -2,14 +2,20 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalon 1 « boîte grise »** — 1 circuit, orignal provisoire pilotable, physique arcade, caméra poursuite, déploiement GitHub Pages.
+**État : jalon 2 « art du virage »** — 20 circuits, accélérateur et frein, ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire, pas encore de bots.
 
 ## Jouer
 
 - En ligne : https://auremoo.github.io/moose-race/ (après activation de Pages, voir plus bas)
 - Tactile : pouce gauche sur le bas de l'écran, glisse à gauche ou à droite pour diriger ;
   pouce droit sur **Fonce** (accélérer) et **Freine**. Le pouce peut glisser d'un bouton à l'autre.
-- Clavier : ← → (ou A / D) pour diriger, ↑ (W) pour accélérer, ↓ (S) pour freiner, Échap ou P pour la pause.
+- **Galop** (bouton orange, Espace) : +22 % de vitesse, vide l'endurance (anneau du bouton) en 4 s, recharge en 8 s.
+- **Glissade** : Freine en braquant fort à bonne vitesse (ou Maj). Courte, elle freine ; longue, elle charge un élan
+  (gerbes bleues puis or) libéré au relâchement, de 0,5 à 1,5 s.
+- **Corde** : passer sur le disque vert à l'intérieur du virage sans déraper donne +5 % pendant 1,5 s.
+- **Ligne idéale** au sol : verte si ta vitesse permet encore le prochain virage, rouge s'il faut freiner. Désactivable.
+- Clavier : ← → (ou A / D) pour diriger, ↑ (W) pour accélérer, ↓ (S) pour freiner, Espace galop, Maj glissade,
+  Échap ou P pour la pause.
 - Débogage : ajouter `?debug` à l'adresse, ou cocher « Mode débogage » dans la pause.
 - Langue : français ou anglais, selon le téléphone par défaut, modifiable dans Réglages (écran d'accueil).
 - Compteur : la vitesse affichée est ramenée à celle d'un vrai orignal (pointe ≈ 56 km/h, valeur

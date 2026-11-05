@@ -22,7 +22,7 @@ export class ChaseCamera {
     this.camera.updateProjectionMatrix();
   }
 
-  update(x: number, y: number, heading: number, speedRatio: number, dt: number): void {
+  update(x: number, y: number, heading: number, speedRatio: number, dt: number, boosting = false): void {
     const c = this.cfg;
     if (!this.initialized) {
       this.yaw = heading;
@@ -58,8 +58,8 @@ export class ChaseCamera {
     this.camera.position.copy(this.pos);
     this.camera.lookAt(this.look);
 
-    // Le champ s'élargit avec la vitesse (préparé pour le galop).
-    const fov = c.fov + c.galopFovBoost * Math.max(0, speedRatio - 0.9) * 10;
+    // Le champ s'élargit au galop et pendant l'élan, un peu avec la vitesse.
+    const fov = c.fov + c.galopFovBoost * ((boosting ? 1 : 0) + Math.max(0, Math.min(1, (speedRatio - 0.9) * 5)) * 0.3);
     if (Math.abs(this.camera.fov - fov) > 0.05) {
       this.camera.fov += (fov - this.camera.fov) * Math.min(1, 4 * dt);
       this.camera.updateProjectionMatrix();

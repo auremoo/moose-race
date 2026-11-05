@@ -4,7 +4,8 @@
  */
 import * as THREE from 'three';
 import { createRng } from '../sim/rng';
-import { projectOnTrack, type Track } from '../sim/track';
+import type { RacingLine } from '../sim/racingLine';
+import { projectOnTrack, type SurfaceId, type Track } from '../sim/track';
 import { simToWorldX, simToWorldZ } from './coords';
 
 const COLORS = {
@@ -19,7 +20,28 @@ const COLORS = {
   pine: 0x2e8b57,
   pineDark: 0x1f6b40,
   post: 0x8a5a36,
+  corde: 0x2e8b57,
 };
+
+/** Couleur du sentier selon la surface. */
+const SURFACE_COLORS: Record<SurfaceId, number> = {
+  sentier: 0xb08a5e,
+  herbe: 0x8cc160,
+  boue: 0x6b4a2f,
+  neige: 0xeef3f7,
+  glace: 0xbfe6f5,
+};
+
+export interface IdealLine {
+  mesh: THREE.Mesh;
+  colors: THREE.BufferAttribute;
+}
+
+export interface World {
+  group: THREE.Group;
+  debugLine: THREE.Line;
+  ideal: IdealLine;
+}
 
 /** Ruban entre deux décalages latéraux d1 < d2 le long de la piste, couleur par échantillon. */
 function ribbon(
@@ -65,7 +87,7 @@ function ribbon(
   return g;
 }
 
-export function buildWorld(scene: THREE.Scene, track: Track): { group: THREE.Group; debugLine: THREE.Line } {
+export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine): World {
   scene.background = new THREE.Color(COLORS.sky);
   scene.fog = new THREE.Fog(COLORS.sky, 90, 420);
   const group = new THREE.Group();
@@ -98,9 +120,18 @@ export function buildWorld(scene: THREE.Scene, track: Track): { group: THREE.Gro
   // Bas-côté (herbe), sentier, bordures blanches. La largeur varie le long de la piste.
   const vergeCol = vc(COLORS.verge);
   group.add(new THREE.Mesh(ribbon(track, off(limitAt, -1), limitAt, 0.0, () => vergeCol), flat));
-  const trailA = vc(COLORS.trail);
-  const trailB = vc(COLORS.trail).offsetHSL(0, 0, -0.03);
-  group.add(new THREE.Mesh(ribbon(track, off(hwAt, -1), hwAt, 0.02, (i) => (Math.floor(i / 6) % 2 ? trailA : trailB)), flat));
+  const surfA = {} as Record<SurfaceId, THREE.Color>;
+  const surfB = {} as Record<SurfaceId, THREE.Color>;
+  for (const k of Object.keys(SURFACE_COLORS) as SurfaceId[]) {
+    surfA[k] = vc(SURFACE_COLORS[k]);
+    surfB[k] = vc(SURFACE_COLORS[k]).offsetHSL(0, 0, -0.03);
+  }
+  group.add(
+    new THREE.Mesh(
+      ribbon(track, off(hwAt, -1), hwAt, 0.02, (i) => (Math.floor(i / 6) % 2 ? surfA : surfB)[S[i].surface]),
+      flat,
+    ),
+  );
   const white = vc(COLORS.edge);
   group.add(new THREE.Mesh(ribbon(track, off(hwAt, 1, -0.5), off(hwAt, 1, -0.2), 0.04, () => white), flat));
   group.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, 0.2), off(hwAt, -1, 0.5), 0.04, () => white), flat));
@@ -220,5 +251,37 @@ export function buildWorld(scene: THREE.Scene, track: Track): { group: THREE.Gro
   debugLine.visible = false;
   group.add(debugLine);
 
-  return { group, debugLine };
+  // Ligne idéale : ruban étroit au sol, couleurs mises à jour à chaque image.
+  const lineOff = (i: number) => line.offset[i];
+  const idealGeo = ribbon(track, off(lineOff, 1, -0.35), off(lineOff, 1, 0.35), 0.06, () => white);
+  const idealMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85, depthWrite: false });
+  const idealMesh = new THREE.Mesh(idealGeo, idealMat);
+  idealMesh.renderOrder = 1;
+  group.add(idealMesh);
+
+  // Points de corde : disque vert au sol et petit fanion côté intérieur.
+  const discGeo = new THREE.CircleGeometry(1.6, 18);
+  discGeo.rotateX(-Math.PI / 2);
+  const disc = new THREE.InstancedMesh(
+    discGeo,
+    new THREE.MeshBasicMaterial({ color: COLORS.corde, transparent: true, opacity: 0.75, depthWrite: false }),
+    Math.max(1, line.apexes.length),
+  );
+  const flagGeo = new THREE.ConeGeometry(0.35, 1.6, 6);
+  flagGeo.translate(0, 0.8, 0);
+  const flags = new THREE.InstancedMesh(flagGeo, new THREE.MeshLambertMaterial({ color: COLORS.corde }), Math.max(1, line.apexes.length));
+  line.apexes.forEach((ap, i) => {
+    const s = S[ap.index];
+    m4.makeTranslation(simToWorldX(s.x + s.nx * ap.offset), 0.07, simToWorldZ(s.y + s.ny * ap.offset));
+    disc.setMatrixAt(i, m4);
+    const edge = ap.side * (s.hw + 0.6);
+    m4.makeTranslation(simToWorldX(s.x + s.nx * edge), 0, simToWorldZ(s.y + s.ny * edge));
+    flags.setMatrixAt(i, m4);
+  });
+  disc.count = line.apexes.length;
+  flags.count = line.apexes.length;
+  disc.renderOrder = 1;
+  group.add(disc, flags);
+
+  return { group, debugLine, ideal: { mesh: idealMesh, colors: idealGeo.getAttribute('color') as THREE.BufferAttribute } };
 }

@@ -21,6 +21,8 @@ export interface HudCallbacks {
   onSensitivity(v: number): void;
   onDebug(on: boolean): void;
   onLang(l: Lang): void;
+  onIdealLine(on: boolean): void;
+  onLefty(on: boolean): void;
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -56,6 +58,12 @@ export class Hud {
   private gait = $('hud-gait');
   private needle = document.getElementById('gauge-needle') as unknown as SVGLineElement;
   private lastGait = '';
+  private gallopBtn = $('btn-gallop');
+  private lastCordeTick = -1;
+  private lastBoost = 0;
+  private eventMsg = '';
+  private eventClass = '';
+  private eventTimer = 0;
   private needleKmh = 0;
 
   constructor(
@@ -64,6 +72,8 @@ export class Hud {
     cb: HudCallbacks,
     sensitivity: number,
     debug: boolean,
+    idealLine: boolean,
+    lefty: boolean,
   ) {
     this.applyTexts();
     this.buildGauge(race.balance.hud);
@@ -74,6 +84,17 @@ export class Hud {
       }),
     );
 
+    const ideal = $<HTMLInputElement>('chk-ideal');
+    const left = $<HTMLInputElement>('chk-lefty');
+    ideal.checked = idealLine;
+    left.checked = lefty;
+    $('app').classList.toggle('lefty', lefty);
+    ideal.addEventListener('change', () => cb.onIdealLine(ideal.checked));
+    left.addEventListener('change', () => {
+      $('app').classList.toggle('lefty', left.checked);
+      this.zoneRect = null;
+      cb.onLefty(left.checked);
+    });
     this.sens.value = String(sensitivity);
     this.dbg.checked = debug;
     this.debugEl.style.display = debug ? 'block' : 'none';
@@ -172,6 +193,12 @@ export class Hud {
     $('settings').hidden = !on;
   }
 
+  private showEvent(text: string, cls: string): void {
+    this.eventMsg = text;
+    this.eventClass = cls;
+    this.eventTimer = 1;
+  }
+
   showPause(on: boolean): void {
     this.pauseMenu.hidden = !on;
   }
@@ -234,9 +261,33 @@ export class Hud {
     this.lastUpdate = now;
     const cfg = race.balance.hud;
     this.slideTimer = r.moose.sliding && r.moose.slip > cfg.slideMessageSlip ? this.slideTimer + dt : 0;
-    const msg = this.slideTimer > cfg.slideMessageDelay ? t('sliding') : r.onVerge ? t('offTrack') : '';
-    if (msg) this.flash.textContent = msg;
+    // Événements brefs : corde parfaite, élan libéré.
+    if (r.lastCordeTick !== this.lastCordeTick) {
+      if (r.lastCordeTick >= 0) this.showEvent(t('corde'), 'good');
+      this.lastCordeTick = r.lastCordeTick;
+    }
+    if (r.moose.boostTime > this.lastBoost + 0.2) this.showEvent(t('boost'), 'gold');
+    this.lastBoost = r.moose.boostTime;
+    this.eventTimer = Math.max(0, this.eventTimer - dt);
+
+    let msg = '';
+    let cls = '';
+    if (this.eventTimer > 0) {
+      msg = this.eventMsg;
+      cls = this.eventClass;
+    } else if (this.slideTimer > cfg.slideMessageDelay) msg = t('sliding');
+    else if (r.onVerge) msg = t('offTrack');
+    if (msg) {
+      this.flash.textContent = msg;
+      this.flash.classList.toggle('good', cls === 'good');
+      this.flash.classList.toggle('gold', cls === 'gold');
+    }
     this.flash.classList.toggle('on', !!msg && race.phase === 'running');
+
+    // Bouton Galop : anneau d'endurance.
+    this.gallopBtn.style.setProperty('--endurance', r.moose.endurance.toFixed(3));
+    this.gallopBtn.classList.toggle('on', r.moose.galloping);
+    this.gallopBtn.classList.toggle('tired', r.moose.exhausted);
 
     // Repère du pouce.
     if (steer.active) {

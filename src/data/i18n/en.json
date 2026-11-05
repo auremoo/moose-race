@@ -16,7 +16,7 @@
   "bestLap": "Best lap",
   "record": "New record!",
   "replay": "Race again",
-  "steerHint": "Left thumb: steer\nRight thumb: go and brake",
+  "steerHint": "Left thumb: steer\nRight thumb: go, brake, gallop\nBrake while steering hard: drift",
   "offTrack": "Off the trail!",
   "sliding": "Too fast!",
   "portraitOnly": "Turn your phone to portrait",
@@ -78,5 +78,10 @@
   "prov_YT": "Yukon",
   "prov_NU": "Nunavut",
   "lapsN": "{n} laps",
-  "lap1": "1 lap"
+  "lap1": "1 lap",
+  "gallopBtn": "Gallop",
+  "corde": "Perfect apex!",
+  "boost": "Boost!",
+  "idealLine": "Racing line",
+  "lefty": "Left-handed (swap controls)"
 }
