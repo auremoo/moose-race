@@ -5,7 +5,8 @@
 import * as THREE from 'three';
 import { createRng } from '../sim/rng';
 import type { RacingLine } from '../sim/racingLine';
-import { projectOnTrack, type SurfaceId, type Track } from '../sim/track';
+import type { SurfaceId, Track } from '../sim/track';
+import { decorate, paletteFor, skyDome, trackSigns, type Biome } from './biomes';
 import { simToWorldX, simToWorldZ } from './coords';
 
 const COLORS = {
@@ -87,15 +88,19 @@ function ribbon(
   return g;
 }
 
-export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine): World {
-  scene.background = new THREE.Color(COLORS.sky);
-  scene.fog = new THREE.Fog(COLORS.sky, 90, 420);
+export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, biome: Biome = 'test', density = 1): World {
+  const snowy = track.def.surface === 'neige';
+  const dusk = track.def.id === 'crepuscule-manitoba';
+  const pal = paletteFor(biome, snowy, dusk);
+  scene.background = new THREE.Color(pal.fog);
+  scene.fog = new THREE.Fog(pal.fog, 110, 620);
   const group = new THREE.Group();
   scene.add(group);
+  group.add(skyDome(pal));
 
-  const hemi = new THREE.HemisphereLight(0xdff3ff, 0x557a3a, 1.6);
+  const hemi = new THREE.HemisphereLight(pal.hemiSky, pal.hemiGround, 1.6);
   group.add(hemi);
-  const sun = new THREE.DirectionalLight(0xfff1d6, 1.8);
+  const sun = new THREE.DirectionalLight(pal.sun, pal.sunIntensity);
   sun.position.set(-120, 200, 80);
   group.add(sun);
 
@@ -105,7 +110,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine): 
   // Sol.
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(3000, 3000),
-    new THREE.MeshLambertMaterial({ color: COLORS.ground }),
+    new THREE.MeshLambertMaterial({ color: pal.ground }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.05;
@@ -118,7 +123,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine): 
   const off = (f: (i: number) => number, k: number, c = 0) => (i: number) => k * f(i) + c;
 
   // Bas-côté (herbe), sentier, bordures blanches. La largeur varie le long de la piste.
-  const vergeCol = vc(COLORS.verge);
+  const vergeCol = vc(pal.verge);
   group.add(new THREE.Mesh(ribbon(track, off(limitAt, -1), limitAt, 0.0, () => vergeCol), flat));
   const surfA = {} as Record<SurfaceId, THREE.Color>;
   const surfB = {} as Record<SurfaceId, THREE.Color>;
@@ -201,45 +206,10 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine): 
   posts.count = pi;
   group.add(posts);
 
-  // Arbres : cônes instanciés hors de la piste, graine fixe.
-  const rng = createRng(1234);
-  const xs = S.map((s) => s.x);
-  const ys = S.map((s) => s.y);
-  const minX = Math.min(...xs) - 120;
-  const maxX = Math.max(...xs) + 120;
-  const minY = Math.min(...ys) - 120;
-  const maxY = Math.max(...ys) + 120;
-  const treeTarget = 700;
-  const trunkGeo = new THREE.CylinderGeometry(0.35, 0.45, 2, 6);
-  const crownGeo = new THREE.ConeGeometry(2.6, 7, 7);
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: COLORS.trunk }), treeTarget);
-  const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshLambertMaterial({ color: 0xffffff }), treeTarget);
-  const q = new THREE.Quaternion();
-  const scl = new THREE.Vector3();
-  const p = new THREE.Vector3();
-  const cA = vc(COLORS.pine);
-  const cB = vc(COLORS.pineDark);
-  let placed = 0;
-  for (let tries = 0; tries < treeTarget * 8 && placed < treeTarget; tries++) {
-    const x = rng.range(minX, maxX);
-    const y = rng.range(minY, maxY);
-    const pr = projectOnTrack(track, x, y);
-    if (Math.abs(pr.d) < limitAt(pr.index) + 3) continue;
-    const sc = rng.range(0.7, 1.4);
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rng.range(0, Math.PI * 2));
-    scl.set(sc, sc, sc);
-    p.set(simToWorldX(x), 1 * sc, simToWorldZ(y));
-    m4.compose(p, q, scl);
-    trunks.setMatrixAt(placed, m4);
-    p.y = (2 + 3.5) * sc;
-    m4.compose(p, q, scl);
-    crowns.setMatrixAt(placed, m4);
-    crowns.setColorAt(placed, cA.clone().lerp(cB, rng.next()));
-    placed++;
-  }
-  trunks.count = placed;
-  crowns.count = placed;
-  group.add(trunks, crowns);
+  // Décor du biome et repères de pilotage, graine fixe par circuit.
+  const rng = createRng(1234 + track.def.id.length * 97);
+  decorate(group, track, biome, snowy, rng, density);
+  trackSigns(group, track, line, rng);
 
   // Ligne centrale de débogage (masquée par défaut).
   const linePts = S.map((s) => new THREE.Vector3(simToWorldX(s.x), 0.12, simToWorldZ(s.y)));

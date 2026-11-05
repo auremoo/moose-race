@@ -81,6 +81,8 @@ export interface Race {
   racers: Racer[];
   difficulty: DifficultyId;
   mode: RaceMode;
+  /** Biome du parcours (rendu uniquement). */
+  biome?: string;
   /** Ours, castors et barrages : seulement en mode spécial. */
   hazards: Hazards | null;
   /** Ligne de course du circuit (ligne idéale, points de corde, profil de vitesse). */
@@ -98,6 +100,7 @@ export interface RaceOptions {
   playerGridSlot?: number;
   difficulty?: DifficultyId;
   mode?: RaceMode;
+  biome?: string;
 }
 
 export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = {}): Race {
@@ -181,6 +184,7 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
     racers,
     difficulty: opts.difficulty ?? 'moyen',
     mode: opts.mode ?? 'classique',
+    biome: opts.biome,
     hazards: null,
     line,
   };

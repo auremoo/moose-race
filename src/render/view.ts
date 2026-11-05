@@ -9,6 +9,7 @@ import { simToWorldX, simToWorldZ } from './coords';
 import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
 import { createMooseView, type MooseView } from './moose';
 import { Particles } from './particles';
+import type { Biome } from './biomes';
 import { buildWorld, type IdealLine } from './world';
 
 export interface Pose {
@@ -47,6 +48,12 @@ export class GameView {
   private barragePool: THREE.Group[] = [];
   private shields: THREE.Mesh[] = [];
   private clock = 0;
+  /** Densité du décor (qualité) : réduite sur les appareils modestes. */
+  private density = 1;
+  /** Qualité auto-adaptative : moyenne glissante des FPS. */
+  private fpsAvg = 60;
+  private qualityTimer = 0;
+  private pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
   private showcaseOn = false;
   private showcaseTime = 0;
   private lastW = 0;
@@ -72,7 +79,7 @@ export class GameView {
   }
 
   private buildTrackWorld(race: Race): void {
-    const w = buildWorld(this.scene, race.track, race.line);
+    const w = buildWorld(this.scene, race.track, race.line, (race.biome ?? 'test') as Biome, this.density);
     this.world = w.group;
     this.debugLine = w.debugLine;
     this.ideal = w.ideal;
@@ -217,13 +224,39 @@ export class GameView {
     if (w === 0 || h === 0) return;
     this.lastW = w;
     this.lastH = h;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(w, h, false);
     this.chase.setAspect(w / h);
   }
 
+  /**
+   * Qualité auto-adaptative : sous 45 FPS pendant 2 s, on baisse la résolution de rendu ;
+   * au-dessus de 58 FPS pendant 6 s, on la remonte (jusqu'à la densité de l'écran, 2 au plus).
+   */
+  private adaptQuality(dt: number): void {
+    if (dt <= 0) return;
+    this.fpsAvg += (1 / dt - this.fpsAvg) * Math.min(1, dt * 2);
+    this.qualityTimer += dt;
+    const max = Math.min(window.devicePixelRatio || 1, 2);
+    if (this.fpsAvg < 45 && this.qualityTimer > 2 && this.pixelRatio > 0.75) {
+      this.pixelRatio = Math.max(0.75, this.pixelRatio - 0.25);
+      this.qualityTimer = 0;
+      this.resize();
+    } else if (this.fpsAvg > 58 && this.qualityTimer > 6 && this.pixelRatio < max) {
+      this.pixelRatio = Math.min(max, this.pixelRatio + 0.25);
+      this.qualityTimer = 0;
+      this.resize();
+    }
+    if (this.fpsAvg < 30 && this.density > 0.5) this.density = 0.5;
+  }
+
+  get qualityInfo(): string {
+    return `${this.pixelRatio.toFixed(2)}x · décor ${this.density}`;
+  }
+
   render(race: Race, prev: Pose[], alpha: number, dt: number): void {
     if (this.canvas.clientWidth !== this.lastW || this.canvas.clientHeight !== this.lastH) this.resize();
+    this.adaptQuality(dt);
     for (let i = 0; i < race.racers.length; i++) {
       const m = race.racers[i].moose;
       const p = prev[i];

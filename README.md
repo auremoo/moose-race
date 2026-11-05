@@ -2,7 +2,7 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalons 1, 2, 3, 6 et 7** — mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
+**État : jalons 1, 2, 3, 5, 6 et 7** — décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
 
 ## Jouer
 
@@ -97,3 +97,12 @@ rapides. Castors hors de la ligne idéale : en toucher un donne une aide (Coup d
 plus offensive que tu es loin au classement ; réapparition après 5 s. Bouton Castor (ou E) pour l'utiliser.
 Les bots suivent les mêmes règles. Pièces +25 %. Tout est tiré avec la graine de la course (même comportement
 en multijoueur). Non fait : le Bief (raccourci d'eau), voir les issues.
+
+## Décors
+
+Trois biomes : **plaine** (champs de blé, silos et élévateurs à grain, peupliers ; ciel de crépuscule au
+Manitoba), **forêt** (pins et érables rouges, lacs et canots, cabane à sucre), **Rocheuses** (sommets enneigés à
+l'horizon, lacs turquoise, inukshuks ; neige sur les circuits enneigés). Sur chaque circuit : chevrons en entrée
+de virage, repères de freinage 100 / 50 avant les virages serrés, panneaux « Attention orignaux ». Tout est
+instancié et généré par le code (remplaçable par des modèles). Qualité auto-adaptative : la résolution de rendu
+baisse sous 45 FPS et remonte au-dessus de 58 FPS ; le décor s'allège sous 30 FPS.

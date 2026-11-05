@@ -37,7 +37,7 @@ function newRace(): Race {
     seed,
     balance,
   });
-  return createRace(trackDef, balance, { seed, laps: course.laps, entrants, difficulty, mode });
+  return createRace(trackDef, balance, { seed, laps: course.laps, entrants, difficulty, mode, biome: course.biome });
 }
 
 let race: Race = newRace();
@@ -327,7 +327,7 @@ function frame(now: number): void {
     const p = race.racers[0].proj;
     const k = race.track.samples[p.index].k;
     dbg = [
-      `FPS      ${fps.toFixed(0)}`,
+      `FPS      ${fps.toFixed(0)} (${view.qualityInfo})`,
       `vitesse  ${m.speed.toFixed(1)} m/s (jeu)`,
       `rayon    ${Number.isFinite(R) ? R.toFixed(0) + ' m' : '∞'}`,
       `v limite ${Number.isFinite(vLim) ? vLim.toFixed(1) + ' m/s' : '—'}`,
