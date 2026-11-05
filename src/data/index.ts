@@ -158,12 +158,23 @@ export interface MooseCatalog {
   rarities: Record<RarityId, { avgLevel1: number; costMultiplier: number; price: number; fragments: number; color: string }>;
   levelStatGain: number;
   maxLevel: number;
+  /** Coût de passage du niveau n à n + 1 : upgradeBase × n × multiplicateur de rareté. */
+  upgradeBase: number;
+  loot: {
+    cost: number;
+    odds: Record<RarityId, number>;
+    /** Un Rare ou mieux est garanti tous les pityEvery ravitaillements. */
+    pityEvery: number;
+    duplicateFragments: Record<RarityId, number>;
+  };
   moose: MooseDef[];
 }
 
 export function validateMooseCatalog(c: unknown): MooseCatalog {
   const o = c as MooseCatalog;
   checkNumbers(o, 'moose', ['levelStatGain', 'maxLevel']);
+  const oddsSum = Object.values(o.loot.odds).reduce((a, b) => a + b, 0);
+  if (Math.abs(oddsSum - 1) > 1e-9) fail('moose.loot.odds', `la somme des chances doit faire 1 (${oddsSum})`);
   const ids = new Set<string>();
   for (const m of o.moose) {
     if (ids.has(m.id)) fail(`moose.${m.id}`, 'identifiant en double');

@@ -5,7 +5,7 @@ import './ui/styles.css';
 import { balance, courses, trackById, tracks, type CourseDef, type DifficultyId } from './data';
 import { InputManager } from './input/input';
 import { coinsFor, FIRST_WIN_BONUS, firstWinKey } from './meta/economy';
-import { loadSave, writeSave } from './meta/settings';
+import { exportSave, importSave, loadSave, writeSave } from './meta/settings';
 import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
 import { createRace, estimatedFinishTime, standings, stepRace, type Race } from './sim/race';
@@ -65,6 +65,35 @@ const hud = new Hud(
       restart();
       paused = true;
       menus.show('home');
+document.getElementById('btn-improve')?.addEventListener('click', () => {
+  menus.show('enclos');
+  menus.collection.openDetail(save.activeMoose, 'enclos');
+});
+
+// Export et import de la sauvegarde (le navigateur peut effacer le stockage local).
+document.getElementById('btn-export')?.addEventListener('click', () => {
+  const blob = new Blob([exportSave(save)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `panache-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+const fileInput = document.getElementById('file-import') as HTMLInputElement;
+document.getElementById('btn-import')?.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', async () => {
+  const f = fileInput.files?.[0];
+  if (!f) return;
+  const loaded = importSave(await f.text());
+  if (!loaded) {
+    menus.toast(t('importFailed'));
+    return;
+  }
+  Object.assign(save, loaded);
+  writeSave(save);
+  menus.toast(t('imported'));
+  setTimeout(() => location.reload(), 600);
+});
     },
     onSensitivity: (v) => {
       save.sensitivity = v;
@@ -118,6 +147,13 @@ const menus = new Menus(save, {
     menus.show(null);
     restart(changed);
   },
+  onCollectionChange: () => {
+    // Nouvel orignal actif ou nouveau niveau : la vitrine et la prochaine course en tiennent compte.
+    race = newRace();
+    prev.length = 0;
+    race.racers.forEach((r) => prev.push({ x: r.moose.x, y: r.moose.y, heading: r.moose.heading }));
+    view.setRace(race, false);
+  },
   onScreen: (screen) => {
     onHome = screen !== null;
     view.setShowcase(onHome);
@@ -129,6 +165,35 @@ const menus = new Menus(save, {
   },
 });
 menus.show('home');
+document.getElementById('btn-improve')?.addEventListener('click', () => {
+  menus.show('enclos');
+  menus.collection.openDetail(save.activeMoose, 'enclos');
+});
+
+// Export et import de la sauvegarde (le navigateur peut effacer le stockage local).
+document.getElementById('btn-export')?.addEventListener('click', () => {
+  const blob = new Blob([exportSave(save)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `panache-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+const fileInput = document.getElementById('file-import') as HTMLInputElement;
+document.getElementById('btn-import')?.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', async () => {
+  const f = fileInput.files?.[0];
+  if (!f) return;
+  const loaded = importSave(await f.text());
+  if (!loaded) {
+    menus.toast(t('importFailed'));
+    return;
+  }
+  Object.assign(save, loaded);
+  writeSave(save);
+  menus.toast(t('imported'));
+  setTimeout(() => location.reload(), 600);
+});
 
 function setPaused(p: boolean): void {
   if (resultsShown || onHome) return;

@@ -245,5 +245,24 @@
       "accessory": "tuque",
       "size": 1.0
     }
-  ]
+  ],
+  "loot": {
+    "cost": 300,
+    "odds": {
+      "commun": 0.6,
+      "peu-commun": 0.27,
+      "rare": 0.1,
+      "epique": 0.025,
+      "legendaire": 0.005
+    },
+    "pityEvery": 10,
+    "duplicateFragments": {
+      "commun": 2,
+      "peu-commun": 5,
+      "rare": 10,
+      "epique": 20,
+      "legendaire": 40
+    }
+  },
+  "upgradeBase": 55
 }

@@ -997,3 +997,149 @@ body {
 .prep-rivals {
   text-align: center;
 }
+
+/* ---------- Collection ---------- */
+.moose-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-bottom: 12px;
+}
+.moose-card {
+  border: 0;
+  border-radius: 16px;
+  background: var(--blanc);
+  box-shadow: 0 5px 0 var(--gris-levre);
+  border-top: 6px solid var(--frame);
+  padding: 8px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-texte);
+  color: var(--brun);
+  cursor: pointer;
+}
+.moose-card.active {
+  outline: 3px solid var(--vert);
+}
+.moose-card strong {
+  font-family: var(--font-titre);
+  font-weight: 400;
+  font-size: 15px;
+}
+.moose-card small {
+  font-weight: 800;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.moose-card:active {
+  transform: translateY(5px);
+  box-shadow: none;
+}
+.portrait {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #f4ede4;
+  border: 4px solid var(--frame, #ccc);
+  display: grid;
+  place-items: center;
+}
+.portrait svg {
+  width: 86%;
+  height: 86%;
+}
+.portrait.big {
+  width: 92px;
+  height: 92px;
+}
+.portrait.silhouette svg {
+  filter: brightness(0) opacity(0.35);
+}
+.detail-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.detail-head h2 {
+  text-align: left;
+  margin: 4px 0 0;
+}
+.detail-level {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-titre);
+  font-size: 20px;
+}
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stat {
+  display: grid;
+  grid-template-columns: 100px 1fr 30px;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 13px;
+}
+.stat b {
+  text-align: right;
+}
+.bar {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: #eee6dc;
+  overflow: hidden;
+}
+.bar i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 6px;
+}
+.bar .now {
+  background: var(--vert);
+}
+.bar .next {
+  background: #b9e6c9;
+}
+.btn.poor {
+  filter: grayscale(0.6);
+  opacity: 0.75;
+}
+.btn:disabled {
+  opacity: 0.55;
+}
+.shop {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+}
+.shop-h {
+  margin: 6px 0 0;
+  font-weight: 900;
+}
+.odds {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+.odds li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+.reveal {
+  align-items: center;
+  text-align: center;
+}

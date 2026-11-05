@@ -2,7 +2,7 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalon 3 « peloton »** — 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
+**État : jalons 1, 2, 3 et 7** — collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
 
 ## Jouer
 
@@ -77,3 +77,13 @@ Difficile. Facile ajoute une petite aide à la direction ; Difficile masque la l
 
 Critères d'équilibrage mesurés par `npm run balance` (200 duels chacun) : expert contre moyen à cote égale
 87 % (≥ 85 %), +10 de cote à pilotage égal 70,5 % (≤ 80 %), meilleur orignal à cote égale 60 % (≤ 60 %).
+
+## Collection et économie
+
+- **Enclos** : les 20 orignaux, stats, niveau, cote ; Améliorer (+2 aux 5 stats par niveau, jusqu'au niveau 10), Choisir.
+- **Comptoir** : ravitaillement à 300 pièces (chances affichées : Commun 60 %, Peu commun 27 %, Rare 10 %,
+  Épique 2,5 %, Légendaire 0,5 % ; Rare ou mieux garanti tous les 10), achat direct (sauf les communs),
+  fragments de panache donnés par les doublons, échangeables contre l'orignal de son choix.
+- Coût d'un niveau : 55 × n × multiplicateur de rareté. **Écart assumé avec le cahier (60)** : avec 60, le
+  joueur simulé mettait 42 à 45 courses pour améliorer un Commun ; avec 55, 33 à 39 (cible 25 à 40).
+- Sauvegarde locale versionnée (schéma 2, migration depuis le schéma 1), export et import dans les Réglages.

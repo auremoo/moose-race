@@ -15,9 +15,10 @@ import {
 } from '../data';
 import type { SaveData } from '../meta/settings';
 import { formatTime } from './hud';
+import { CollectionScreens } from './collectionScreens';
 import { getLang, t, type TextKey } from './i18n';
 
-export type MenuScreen = 'home' | 'map' | 'prep';
+export type MenuScreen = 'home' | 'map' | 'prep' | 'enclos' | 'comptoir';
 
 export interface RaceSetup {
   difficulty: DifficultyId;
@@ -27,6 +28,8 @@ export interface RaceSetup {
 export interface MenuCallbacks {
   onStart(course: CourseDef, setup: RaceSetup): void;
   onScreen(screen: MenuScreen | null): void;
+  /** La collection a changé (orignal actif, niveau…). */
+  onCollectionChange(): void;
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -49,6 +52,7 @@ export class Menus {
   private current: MenuScreen | null = 'home';
   private selected: CourseDef = courses[0];
   private toastTimer = 0;
+  readonly collection: CollectionScreens;
 
   constructor(
     private save: SaveData,
@@ -70,7 +74,18 @@ export class Menus {
       true,
     );
 
+    this.collection = new CollectionScreens(
+      save,
+      () => {
+        this.refreshCoins();
+        this.renderHome();
+        this.cb.onCollectionChange();
+      },
+      (m) => this.toast(m),
+    );
     $('btn-play').addEventListener('click', () => this.show('map'));
+    document.querySelector('.tile[data-feature="enclos"]')?.addEventListener('click', () => this.show('enclos'));
+    document.querySelector('.tile[data-feature="comptoir"]')?.addEventListener('click', () => this.show('comptoir'));
     document.querySelectorAll<HTMLElement>('[data-back]').forEach((b) =>
       b.addEventListener('click', () => this.show(b.dataset.back as MenuScreen)),
     );
@@ -98,7 +113,10 @@ export class Menus {
 
   show(screen: MenuScreen | null): void {
     this.current = screen;
-    for (const s of ['home', 'map', 'prep'] as MenuScreen[]) $(`screen-${s}`).hidden = s !== screen;
+    for (const s of ['home', 'map', 'prep', 'enclos', 'comptoir'] as MenuScreen[]) $(`screen-${s}`).hidden = s !== screen;
+    if (screen === 'enclos') this.collection.renderEnclos();
+    if (screen === 'comptoir') this.collection.renderComptoir();
+    this.refreshCoins();
     $('app').classList.toggle('on-menu', screen !== null);
     if (screen === 'map') this.renderCourses();
     if (screen === 'prep') this.renderPrep();
@@ -148,7 +166,7 @@ export class Menus {
     el.style.background = mooseCatalog.rarities[rarity as keyof typeof mooseCatalog.rarities].color;
   }
 
-  private renderHome(): void {
+  renderHome(): void {
     const m = this.activeMoose();
     $('active-name').textContent = m.name;
     this.rarityChip($('active-rarity'), m.rarity);

@@ -222,8 +222,8 @@
     }
   ],
   "features": {
-    "enclos": 7,
-    "comptoir": 7,
+    "enclos": 3,
+    "comptoir": 3,
     "didacticiel": 8,
     "multijoueur": 9,
     "modeSpecial": 6,

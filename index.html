@@ -87,6 +87,7 @@
           <ol id="res-standings" class="standings"></ol>
           <div id="res-coins" class="res-coins"></div>
           <button class="btn btn-red" id="btn-replay"></button>
+          <button class="btn btn-white" id="btn-improve" data-t="improve"></button>
           <button class="btn btn-white" id="btn-home"></button>
         </div>
       </div>
@@ -180,6 +181,68 @@
         <button class="btn btn-red btn-big" id="btn-go" data-t="start"></button>
       </section>
 
+      <section class="screen screen-panel" id="screen-enclos" hidden>
+        <header class="topbar">
+          <button class="btn-icon" data-back="home" data-t-aria="back"><svg viewBox="0 0 24 24" width="24" height="24"><use href="#i-back"/></svg></button>
+          <h2 class="screen-title" data-t="enclos"></h2>
+          <div class="coins" data-feature="pieces"><span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><span class="coin-balance">0</span></div>
+        </header>
+        <p class="screen-sub" id="enclos-sub"></p>
+        <div class="moose-grid" id="enclos-grid"></div>
+      </section>
+
+      <section class="screen screen-panel" id="screen-comptoir" hidden>
+        <header class="topbar">
+          <button class="btn-icon" data-back="home" data-t-aria="back"><svg viewBox="0 0 24 24" width="24" height="24"><use href="#i-back"/></svg></button>
+          <h2 class="screen-title" data-t="comptoir"></h2>
+          <div class="coins" data-feature="pieces"><span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><span class="coin-balance">0</span></div>
+        </header>
+        <div class="shop">
+          <div class="prep-card shop-loot">
+            <h3 data-t="lootTitle"></h3>
+            <p class="prep-desc" data-t="lootDesc"></p>
+            <ul class="odds" id="loot-odds"></ul>
+            <p class="prep-desc" id="loot-pity"></p>
+            <button class="btn btn-red" id="btn-loot"></button>
+          </div>
+          <div class="prep-card">
+            <h3><span data-t="fragments"></span> : <span id="frag-count">0</span></h3>
+            <p class="prep-desc" data-t="fragmentsDesc"></p>
+          </div>
+          <h3 class="shop-h" data-t="shopDirect"></h3>
+          <div class="moose-grid" id="shop-grid"></div>
+        </div>
+      </section>
+
+      <div class="overlay" id="moose-detail" hidden>
+        <div class="card">
+          <div class="detail-head">
+            <div class="portrait big" id="detail-portrait"></div>
+            <div>
+              <span class="rarity-chip" id="detail-rarity"></span>
+              <h2 id="detail-name"></h2>
+              <p class="prep-desc" id="detail-style"></p>
+            </div>
+          </div>
+          <div class="detail-level"><span id="detail-level"></span><span id="detail-cote"></span></div>
+          <div class="stats" id="detail-stats"></div>
+          <button class="btn btn-red" id="detail-main"></button>
+          <button class="btn btn-white" id="detail-second"></button>
+          <button class="btn btn-white" id="detail-close"></button>
+        </div>
+      </div>
+
+      <div class="overlay" id="loot-reveal" hidden>
+        <div class="card reveal">
+          <p class="prep-desc" data-t="lootTitle"></p>
+          <div class="portrait big" id="reveal-portrait"></div>
+          <span class="rarity-chip" id="reveal-rarity"></span>
+          <h2 id="reveal-name"></h2>
+          <p class="record" id="reveal-msg"></p>
+          <button class="btn btn-red" id="reveal-ok"></button>
+        </div>
+      </div>
+
       <div id="toast" role="status"></div>
 
       <div class="overlay" id="settings" hidden>
@@ -207,6 +270,14 @@
               <button class="seg" data-lang="fr">Français</button>
               <button class="seg" data-lang="en">English</button>
             </div>
+          </div>
+          <div class="setting">
+            <span data-t="saveTitle"></span>
+            <div class="segmented">
+              <button class="seg" id="btn-export" data-t="exportSave"></button>
+              <button class="seg" id="btn-import" data-t="importSave"></button>
+            </div>
+            <input type="file" id="file-import" accept="application/json,.json" hidden />
           </div>
           <button class="btn btn-red" id="btn-settings-back"></button>
         </div>
