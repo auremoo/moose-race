@@ -219,10 +219,71 @@ body {
 #steer-zone {
   position: absolute;
   left: 0;
-  right: 0;
+  right: 40%;
   bottom: 0;
   height: 50%;
   touch-action: none;
+}
+/* Pédales sous le pouce droit : Fonce (grand, en bas) et Freine (au-dessus). */
+#pedals {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 40%;
+  height: 50%;
+  touch-action: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 22px) 0;
+}
+#app.on-menu #pedals {
+  visibility: hidden;
+}
+.pedal {
+  border: 0;
+  border-radius: 50%;
+  color: var(--blanc);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: var(--font-titre);
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: transform 0.04s;
+}
+.pedal svg {
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+}
+.pedal span {
+  pointer-events: none;
+}
+.pedal-gas {
+  width: 104px;
+  height: 104px;
+  background: var(--vert);
+  box-shadow: 0 6px 0 #1f6b40;
+}
+.pedal-brake {
+  width: 80px;
+  height: 80px;
+  margin-right: 46px;
+  background: var(--rouge);
+  box-shadow: 0 6px 0 var(--rouge-sombre);
+}
+.pedal.pressed {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 transparent;
+  filter: brightness(1.1);
 }
 #steer-hint {
   position: absolute;

@@ -13,6 +13,32 @@ export interface AutopilotOptions {
   offsetAt?: (index: number) => number;
   lookAheadBase?: number;
   lookAheadPerSpeed?: number;
+  /** Faux : accélère tout le temps, sans jamais freiner (pilote « naïf » des tests). */
+  brakes?: boolean;
+  /** Part de l'adhérence visée en virage (1 = à la limite). */
+  cornerMargin?: number;
+}
+
+/**
+ * Vitesse cible : la plus faible, sur les 150 m à venir, des vitesses qui permettent encore
+ * de passer chaque point à sa vitesse limite sqrt(a_lat × R) en freinant à temps.
+ */
+export function targetSpeed(track: Track, racer: Racer, p: MooseParams, surface: SurfaceParams, margin = 1): number {
+  const n = track.samples.length;
+  const aLat = p.aLat * surface.grip * margin;
+  const decel = p.brakeDecel * 0.75;
+  let target = Infinity;
+  const steps = Math.round(150 / track.spacing);
+  for (let j = 0; j <= steps; j += 2) {
+    const s = track.samples[(racer.proj.index + j) % n];
+    const k = Math.abs(s.k);
+    if (k < 1e-4) continue;
+    const vLimit = Math.sqrt(aLat / k);
+    const dist = Math.max(0, j * track.spacing - 4);
+    const vNow = Math.sqrt(vLimit * vLimit + 2 * decel * dist);
+    if (vNow < target) target = vNow;
+  }
+  return target;
 }
 
 export function autopilot(
@@ -41,5 +67,17 @@ export function autopilot(
   const range = steerCurvatureRange(m.speed, surface, p);
   const k = fwd < -1 ? Math.sign(left || 1) * range : (2 * left) / Math.max(d2, 1);
   const steer = Math.max(-1, Math.min(1, k / range));
-  return { steer, gallop: false, slide: false, castor: false };
+
+  let throttle = 1;
+  let brake = 0;
+  if (opts.brakes !== false) {
+    const vt = targetSpeed(track, racer, p, surface, opts.cornerMargin);
+    if (m.speed > vt + 0.3) {
+      throttle = 0;
+      brake = Math.min(1, (m.speed - vt) / 3);
+    } else if (m.speed > vt - 1) {
+      throttle = 0.4;
+    }
+  }
+  return { steer, throttle, brake, gallop: false, slide: false, castor: false };
 }

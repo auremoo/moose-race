@@ -3,7 +3,7 @@
  * Déterministe : même graine + mêmes commandes ⇒ même résultat.
  */
 import type { Balance } from '../data';
-import { createMooseState, stepMoose, type Commands, type MooseState } from './moose';
+import { createMooseState, NO_COMMANDS, stepMoose, type Commands, type MooseState } from './moose';
 import { createRng, type Rng } from './rng';
 import { buildTrack, projectOnTrack, type Track, type TrackDef, type TrackProjection } from './track';
 
@@ -162,12 +162,12 @@ export function stepRace(r: Race, commands: Commands[]): void {
   }
   if (r.phase === 'finished') {
     // Après l'arrivée, les orignaux continuent en roue libre (pour le rendu).
-    for (let i = 0; i < r.racers.length; i++) stepRacer(r, r.racers[i], { steer: commands[i]?.steer ?? 0, gallop: false, slide: false, castor: false });
+    for (let i = 0; i < r.racers.length; i++) stepRacer(r, r.racers[i], { ...NO_COMMANDS, steer: commands[i]?.steer ?? 0, brake: 0.3 });
     return;
   }
   for (let i = 0; i < r.racers.length; i++) {
     const racer = r.racers[i];
-    stepRacer(r, racer, commands[i] ?? { steer: 0, gallop: false, slide: false, castor: false });
+    stepRacer(r, racer, commands[i] ?? NO_COMMANDS);
   }
   if (r.racers[0].finished) r.phase = 'finished';
 }

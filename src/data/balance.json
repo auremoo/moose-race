@@ -12,10 +12,13 @@
     "maxSteerCurvature": 0.085,
     "steerGripMargin": 2.4,
     "steerRate": 4.0,
-    "scrubFactor": 0.35,
+    "scrubFactor": 0.25,
+    "slideGrip": 0.75,
     "scrubMaxExcess": 40,
     "slideFlatDecel": 1.2,
     "overTopDecelRate": 1.2,
+    "coastDecel": 1.2,
+    "brakeDecel": 14,
     "startSpeed": 0
   },
   "surfaces": {

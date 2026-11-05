@@ -20,7 +20,7 @@ const zone = document.getElementById('steer-zone') as HTMLElement;
 
 let race: Race = createRace(trackDef, balance, { seed: 1 });
 const view = new GameView(canvas, race, balance);
-const input = new InputManager(zone, { ...balance.input, sensitivity: save.sensitivity });
+const input = new InputManager(zone, { ...balance.input, sensitivity: save.sensitivity }, document.getElementById('pedals'));
 let debug = save.debug || new URLSearchParams(location.search).has('debug');
 view.setDebug(debug);
 

@@ -56,8 +56,8 @@ export function validateBalance(b: unknown): Balance {
   checkNumbers(o, 'balance', ['version']);
   checkNumbers(o.sim, 'balance.sim', ['hz', 'laps', 'countdownSeconds']);
   checkNumbers(o.moose, 'balance.moose', [
-    'topSpeed', 'accel', 'aLat', 'maxSteerCurvature', 'steerGripMargin', 'steerRate', 'scrubFactor',
-    'scrubMaxExcess', 'slideFlatDecel', 'overTopDecelRate', 'startSpeed',
+    'topSpeed', 'accel', 'aLat', 'maxSteerCurvature', 'steerGripMargin', 'steerRate', 'scrubFactor', 'slideGrip',
+    'scrubMaxExcess', 'slideFlatDecel', 'overTopDecelRate', 'coastDecel', 'brakeDecel', 'startSpeed',
   ]);
   for (const s of SURFACES) checkNumbers(o.surfaces?.[s], `balance.surfaces.${s}`, ['grip', 'vmax']);
   checkNumbers(o.barrier, 'balance.barrier', ['speedLossPerSecond', 'headingAlignRate']);
@@ -98,6 +98,8 @@ export interface MooseDef {
   /** Stats au niveau 1 : Vitesse, Accélération, Virage, Endurance, Robustesse. */
   stats: [number, number, number, number, number];
   starter?: boolean;
+  /** Style de course, en une phrase courte (français). */
+  style?: string;
 }
 
 export interface MooseCatalog {

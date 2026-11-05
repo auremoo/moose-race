@@ -9,11 +9,13 @@ const P = balance.moose;
 const SENTIER = balance.surfaces.sentier;
 const DT = 1 / balance.sim.hz;
 
-function runRace(seed: number, offset = 0, maxSeconds = 400) {
-  const race = createRace(tracks[0], balance, { seed, laps: 2 });
+const FULL = { ...NO_COMMANDS, throttle: 1 };
+
+function runRace(seed: number, opts: Parameters<typeof autopilot>[4] = {}, maxSeconds = 400, track = tracks[0]) {
+  const race = createRace(track, balance, { seed, laps: 2 });
   const max = Math.round(maxSeconds / DT);
   for (let i = 0; i < max && race.phase !== 'finished'; i++) {
-    stepRace(race, [autopilot(race.track, race.racers[0], P, SENTIER, { offset })]);
+    stepRace(race, [autopilot(race.track, race.racers[0], P, SENTIER, opts)]);
   }
   return race;
 }
@@ -30,9 +32,27 @@ describe('piste', () => {
 });
 
 describe('physique de l\'orignal', () => {
+  it('sans accélérer, l\'orignal ralentit doucement (roue libre)', () => {
+    const s = createMooseState(0, 0, 0, P.topSpeed);
+    for (let i = 0; i < 60; i++) stepMoose(s, NO_COMMANDS, SENTIER, P, DT);
+    expect(s.speed).toBeLessThan(P.topSpeed - 0.5);
+    expect(s.speed).toBeGreaterThan(P.topSpeed - 3);
+  });
+
+  it('le frein arrête l\'orignal de 30 m/s en ~2 à 3 s, sans arrêt net', () => {
+    const s = createMooseState(0, 0, 0, P.topSpeed);
+    let t = 0;
+    while (s.speed > 0.01 && t < 10) {
+      stepMoose(s, { ...NO_COMMANDS, brake: 1 }, SENTIER, P, DT);
+      t += DT;
+    }
+    expect(t).toBeGreaterThan(1.8);
+    expect(t).toBeLessThan(3);
+  });
+
   it('atteint la vitesse de pointe en ligne droite', () => {
     const s = createMooseState(0, 0, 0, 0);
-    for (let i = 0; i < 60 * 20; i++) stepMoose(s, NO_COMMANDS, SENTIER, P, DT);
+    for (let i = 0; i < 60 * 20; i++) stepMoose(s, FULL, SENTIER, P, DT);
     expect(s.speed).toBeGreaterThan(P.topSpeed * 0.97);
     expect(s.speed).toBeLessThanOrEqual(P.topSpeed + 1e-9);
   });
@@ -42,7 +62,7 @@ describe('physique de l\'orignal', () => {
     // Direction maintenue à fond : le rayon visé est le plus serré permis (borné par R).
     for (let i = 0; i < 60 * 30; i++) {
       const steer = Math.min(1, 1 / R / steerCurvatureRange(s.speed, SENTIER, P));
-      stepMoose(s, { ...NO_COMMANDS, steer }, SENTIER, P, DT);
+      stepMoose(s, { ...FULL, steer }, SENTIER, P, DT);
     }
     const expected = Math.min(P.topSpeed, Math.sqrt(P.aLat * R));
     expect(Math.abs(s.speed - expected) / expected).toBeLessThan(0.03);
@@ -53,7 +73,7 @@ describe('physique de l\'orignal', () => {
       const s = createMooseState(0, 0, 0, 20);
       for (let i = 0; i < 60 * 30; i++) {
         const steer = Math.min(1, 1 / R / steerCurvatureRange(s.speed, SENTIER, P));
-        stepMoose(s, { ...NO_COMMANDS, steer }, SENTIER, P, DT);
+        stepMoose(s, { ...FULL, steer }, SENTIER, P, DT);
       }
       return s.speed;
     };
@@ -64,21 +84,21 @@ describe('physique de l\'orignal', () => {
 
   it('à haute vitesse, un petit geste ne fait pas déraper', () => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
-    for (let i = 0; i < 30; i++) stepMoose(s, { ...NO_COMMANDS, steer: 0.4 }, SENTIER, P, DT);
+    for (let i = 0; i < 30; i++) stepMoose(s, { ...FULL, steer: 0.4 }, SENTIER, P, DT);
     expect(s.sliding).toBe(false);
   });
 
   it('la survitesse fait élargir : le rayon suivi dépasse le rayon demandé', () => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
-    stepMoose(s, { ...NO_COMMANDS, steer: 1 }, SENTIER, P, DT);
-    for (let i = 0; i < 10; i++) stepMoose(s, { ...NO_COMMANDS, steer: 1 }, SENTIER, P, DT);
+    stepMoose(s, { ...FULL, steer: 1 }, SENTIER, P, DT);
+    for (let i = 0; i < 10; i++) stepMoose(s, { ...FULL, steer: 1 }, SENTIER, P, DT);
     expect(s.sliding).toBe(true);
     expect(Math.abs(s.curvature)).toBeLessThan(Math.abs(s.commandedCurvature));
   });
 
   it('l\'herbe plafonne la vitesse à 75 %', () => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
-    for (let i = 0; i < 60 * 15; i++) stepMoose(s, NO_COMMANDS, balance.surfaces.herbe, P, DT);
+    for (let i = 0; i < 60 * 15; i++) stepMoose(s, FULL, balance.surfaces.herbe, P, DT);
     expect(s.speed).toBeLessThan(P.topSpeed * 0.76);
     expect(s.speed).toBeGreaterThan(P.topSpeed * 0.72);
   });
@@ -104,9 +124,16 @@ describe('course', () => {
     expect(t).toBeLessThan(160);
   });
 
+  it('freiner avant les virages est plus rapide que foncer sans freiner (critère du cahier)', () => {
+    const smart = runRace(1);
+    const naive = runRace(1, { brakes: false });
+    expect(smart.phase).toBe('finished');
+    expect(raceTime(smart)).toBeLessThan(naive.phase === 'finished' ? raceTime(naive) : Infinity);
+  });
+
   it('le demi-tour ne compte pas de tour', () => {
     const race = createRace(tracks[0], balance, { laps: 1 });
-    for (let i = 0; i < 60 * 60; i++) stepRace(race, [{ ...NO_COMMANDS, steer: 1 }]);
+    for (let i = 0; i < 60 * 60; i++) stepRace(race, [{ ...FULL, steer: 1 }]);
     expect(race.racers[0].lapsDone).toBe(0);
   });
 });

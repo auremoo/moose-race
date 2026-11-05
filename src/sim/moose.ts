@@ -7,6 +7,9 @@
  * longitudinale partage le même budget d'adhérence (cercle de friction).
  * Conséquence émergente : en virage stabilisé, v → sqrt(a_lat × R), donc un rayon plus
  * large (bonne trajectoire) passe plus vite, sans bonus scripté.
+ *
+ * Le joueur accélère et freine lui-même. Le freinage partage aussi le cercle de friction :
+ * on freine fort en ligne droite, moins fort en plein virage.
  */
 
 export interface MooseParams {
@@ -18,9 +21,15 @@ export interface MooseParams {
   steerGripMargin: number;
   steerRate: number;
   scrubFactor: number;
+  /** Adhérence restante une fois en dérapage (fraction, < 1 : glisser fait perdre le contrôle). */
+  slideGrip: number;
   scrubMaxExcess: number;
   slideFlatDecel: number;
   overTopDecelRate: number;
+  /** Décélération en roue libre, ni accélérateur ni frein (m/s²). */
+  coastDecel: number;
+  /** Décélération maximale au frein en ligne droite (m/s²). */
+  brakeDecel: number;
   startSpeed: number;
 }
 
@@ -33,12 +42,16 @@ export interface SurfaceParams {
 export interface Commands {
   /** Direction, -1 (droite) à +1 (gauche). */
   steer: number;
+  /** Accélérateur 0..1. */
+  throttle: number;
+  /** Frein 0..1. */
+  brake: number;
   gallop: boolean;
   slide: boolean;
   castor: boolean;
 }
 
-export const NO_COMMANDS: Commands = { steer: 0, gallop: false, slide: false, castor: false };
+export const NO_COMMANDS: Commands = { steer: 0, throttle: 0, brake: 0, gallop: false, slide: false, castor: false };
 
 export interface MooseState {
   x: number;
@@ -59,6 +72,8 @@ export interface MooseState {
   sliding: boolean;
   /** Intensité de glissement 0..1, pour le rendu (poussière, dérapage). */
   slip: number;
+  /** Vrai pendant un freinage. */
+  braking: boolean;
 }
 
 export function createMooseState(x: number, y: number, heading: number, speed = 0): MooseState {
@@ -73,6 +88,7 @@ export function createMooseState(x: number, y: number, heading: number, speed = 
     lateralAccel: 0,
     sliding: false,
     slip: 0,
+    braking: false,
   };
 }
 
@@ -113,10 +129,11 @@ export function stepMoose(
   let aUsed = aDemand;
   let excess = 0;
   if (aDemand > aMax && v > 0.1) {
-    // Survitesse : la courbure suivie est plafonnée, l'orignal élargit.
-    k = Math.sign(kCmd) * (aMax / (v * v));
+    // Survitesse : l'adhérence chute (glissement), la courbure suivie est plafonnée, l'orignal élargit.
+    const aSlide = aMax * p.slideGrip;
+    k = Math.sign(kCmd) * (aSlide / (v * v));
     aUsed = aMax;
-    excess = aDemand - aMax;
+    excess = aDemand - aSlide;
     s.sliding = true;
   } else {
     s.sliding = false;
@@ -126,16 +143,22 @@ export function stepMoose(
   const slipTarget = s.sliding ? clamp(excess / aMax, 0, 1) : 0;
   s.slip += (slipTarget - s.slip) * clamp(8 * dt, 0, 1);
 
-  // Longitudinal : course automatique vers la vitesse de pointe, dans la limite du cercle de friction.
+  // Longitudinal : accélérateur, roue libre et frein, dans la limite du cercle de friction.
+  const throttle = clamp(cmd.throttle, 0, 1);
+  const brake = clamp(cmd.brake, 0, 1);
+  const budget = Math.sqrt(Math.max(0, aMax * aMax - aUsed * aUsed));
   let a: number;
-  if (v <= vTop) {
-    const drive = p.accel * (1 - (v / vTop) * (v / vTop));
-    const budget = Math.sqrt(Math.max(0, aMax * aMax - aUsed * aUsed));
-    a = Math.min(drive, budget);
-  } else {
+  if (v > vTop) {
     // Au-dessus de la vitesse permise par la surface : ralentissement progressif, jamais net.
-    a = -p.overTopDecelRate * (v - vTop);
+    a = -p.overTopDecelRate * (v - vTop) - p.coastDecel;
+  } else if (throttle > 0 && brake === 0) {
+    const drive = throttle * p.accel * (1 - (v / vTop) * (v / vTop));
+    a = Math.min(drive, budget) - p.coastDecel * (1 - throttle);
+  } else {
+    a = -p.coastDecel * (1 - throttle);
   }
+  if (brake > 0 && v > 0) a -= Math.min(brake * p.brakeDecel, Math.max(budget, 0.25 * p.brakeDecel));
+  s.braking = brake > 0 && v > 0.5;
   if (s.sliding) {
     a -= p.scrubFactor * Math.min(excess, p.scrubMaxExcess) + p.slideFlatDecel;
   }

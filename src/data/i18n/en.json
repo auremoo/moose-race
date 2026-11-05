@@ -16,7 +16,7 @@
   "bestLap": "Best lap",
   "record": "New record!",
   "replay": "Race again",
-  "steerHint": "Slide your thumb left or right to steer",
+  "steerHint": "Left thumb: steer · right thumb: go and brake",
   "offTrack": "Off the trail!",
   "sliding": "Too fast!",
   "portraitOnly": "Turn your phone to portrait",
@@ -66,5 +66,7 @@
   "rarity_peu-commun": "Uncommon",
   "rarity_rare": "Rare",
   "rarity_epique": "Epic",
-  "rarity_legendaire": "Legendary"
+  "rarity_legendaire": "Legendary",
+  "gasBtn": "Go",
+  "brakeBtn": "Brake"
 }

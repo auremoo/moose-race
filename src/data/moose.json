@@ -1,25 +1,189 @@
 {
   "rarities": {
-    "commun": { "avgLevel1": 40, "costMultiplier": 1, "price": 200, "fragments": 10, "color": "#8E8A85" },
-    "peu-commun": { "avgLevel1": 44, "costMultiplier": 1.25, "price": 500, "fragments": 25, "color": "#2E8B57" },
-    "rare": { "avgLevel1": 48, "costMultiplier": 1.5, "price": 1500, "fragments": 50, "color": "#2C7BB6" },
-    "epique": { "avgLevel1": 52, "costMultiplier": 2, "price": 4000, "fragments": 100, "color": "#7B4FB8" },
-    "legendaire": { "avgLevel1": 56, "costMultiplier": 3, "price": 10000, "fragments": 200, "color": "#F5B301" }
+    "commun": {
+      "avgLevel1": 40,
+      "costMultiplier": 1,
+      "price": 200,
+      "fragments": 10,
+      "color": "#8E8A85"
+    },
+    "peu-commun": {
+      "avgLevel1": 44,
+      "costMultiplier": 1.25,
+      "price": 500,
+      "fragments": 25,
+      "color": "#2E8B57"
+    },
+    "rare": {
+      "avgLevel1": 48,
+      "costMultiplier": 1.5,
+      "price": 1500,
+      "fragments": 50,
+      "color": "#2C7BB6"
+    },
+    "epique": {
+      "avgLevel1": 52,
+      "costMultiplier": 2,
+      "price": 4000,
+      "fragments": 100,
+      "color": "#7B4FB8"
+    },
+    "legendaire": {
+      "avgLevel1": 56,
+      "costMultiplier": 3,
+      "price": 10000,
+      "fragments": 200,
+      "color": "#F5B301"
+    }
   },
   "levelStatGain": 2,
   "maxLevel": 10,
   "moose": [
-    { "id": "bucheron", "name": "Bûcheron", "rarity": "commun", "stats": [40, 40, 40, 40, 40], "starter": true },
-    { "id": "ti-gus", "name": "Ti-Gus", "rarity": "commun", "stats": [34, 50, 46, 35, 35], "starter": true },
-    { "id": "boreal", "name": "Boréal", "rarity": "commun", "stats": [45, 30, 35, 50, 40], "starter": true },
-    { "id": "poutine", "name": "Poutine", "rarity": "commun", "stats": [36, 38, 36, 40, 50], "starter": true },
-    { "id": "mistral", "name": "Mistral", "rarity": "peu-commun", "stats": [50, 48, 42, 40, 40] },
-    { "id": "sirop", "name": "Sirop", "rarity": "peu-commun", "stats": [40, 42, 58, 40, 40] },
-    { "id": "yukon", "name": "Yukon", "rarity": "peu-commun", "stats": [46, 36, 38, 60, 40] },
-    { "id": "aurore", "name": "Aurore", "rarity": "rare", "stats": [56, 46, 54, 44, 40] },
-    { "id": "mont-royal", "name": "Mont-Royal", "rarity": "rare", "stats": [48, 44, 44, 48, 56] },
-    { "id": "banff", "name": "Banff", "rarity": "epique", "stats": [64, 50, 56, 50, 40] },
-    { "id": "tempete", "name": "Tempête", "rarity": "epique", "stats": [54, 66, 62, 40, 38] },
-    { "id": "panache-dor", "name": "Panache d'Or", "rarity": "legendaire", "stats": [64, 58, 58, 52, 48] }
+    {
+      "id": "bucheron",
+      "name": "Bûcheron",
+      "rarity": "commun",
+      "stats": [40, 40, 40, 40, 40],
+      "starter": true,
+      "style": "Équilibré"
+    },
+    {
+      "id": "ti-gus",
+      "name": "Ti-Gus",
+      "rarity": "commun",
+      "stats": [34, 50, 46, 35, 35],
+      "starter": true,
+      "style": "Vif et petit"
+    },
+    {
+      "id": "boreal",
+      "name": "Boréal",
+      "rarity": "commun",
+      "stats": [45, 30, 35, 50, 40],
+      "starter": true,
+      "style": "Fond"
+    },
+    {
+      "id": "poutine",
+      "name": "Poutine",
+      "rarity": "commun",
+      "stats": [36, 38, 36, 40, 50],
+      "starter": true,
+      "style": "Costaud"
+    },
+    {
+      "id": "huard",
+      "name": "Huard",
+      "rarity": "commun",
+      "stats": [38, 44, 48, 36, 34],
+      "starter": true,
+      "style": "Agile"
+    },
+    {
+      "id": "tuque",
+      "name": "Tuque",
+      "rarity": "commun",
+      "stats": [42, 36, 38, 44, 40],
+      "starter": true,
+      "style": "Régulier"
+    },
+    {
+      "id": "mistral",
+      "name": "Mistral",
+      "rarity": "peu-commun",
+      "stats": [50, 48, 42, 40, 40],
+      "style": "Sprinteur"
+    },
+    {
+      "id": "sirop",
+      "name": "Sirop",
+      "rarity": "peu-commun",
+      "stats": [40, 42, 58, 40, 40],
+      "style": "Roi de la corde"
+    },
+    {
+      "id": "yukon",
+      "name": "Yukon",
+      "rarity": "peu-commun",
+      "stats": [46, 36, 38, 60, 40],
+      "style": "Marathonien"
+    },
+    {
+      "id": "chinook",
+      "name": "Chinook",
+      "rarity": "peu-commun",
+      "stats": [52, 46, 40, 42, 40],
+      "style": "Vent chaud"
+    },
+    {
+      "id": "nordet",
+      "name": "Nordet",
+      "rarity": "peu-commun",
+      "stats": [42, 40, 44, 46, 48],
+      "style": "Solide"
+    },
+    {
+      "id": "aurore",
+      "name": "Aurore",
+      "rarity": "rare",
+      "stats": [56, 46, 54, 44, 40],
+      "style": "Rapide et précis"
+    },
+    {
+      "id": "mont-royal",
+      "name": "Mont-Royal",
+      "rarity": "rare",
+      "stats": [48, 44, 44, 48, 56],
+      "style": "Bagarreur"
+    },
+    {
+      "id": "toundra",
+      "name": "Toundra",
+      "rarity": "rare",
+      "stats": [46, 42, 46, 58, 48],
+      "style": "Infatigable"
+    },
+    {
+      "id": "saguenay",
+      "name": "Saguenay",
+      "rarity": "rare",
+      "stats": [50, 52, 56, 40, 42],
+      "style": "Virages serrés"
+    },
+    {
+      "id": "banff",
+      "name": "Banff",
+      "rarity": "epique",
+      "stats": [64, 50, 56, 50, 40],
+      "style": "Vitesse pure"
+    },
+    {
+      "id": "tempete",
+      "name": "Tempête",
+      "rarity": "epique",
+      "stats": [54, 66, 62, 40, 38],
+      "style": "Technique"
+    },
+    {
+      "id": "klondike",
+      "name": "Klondike",
+      "rarity": "epique",
+      "stats": [58, 54, 48, 48, 52],
+      "style": "Chercheur d'or"
+    },
+    {
+      "id": "panache-dor",
+      "name": "Panache d'Or",
+      "rarity": "legendaire",
+      "stats": [64, 58, 58, 52, 48],
+      "style": "Complet"
+    },
+    {
+      "id": "polaris",
+      "name": "Polaris",
+      "rarity": "legendaire",
+      "stats": [60, 56, 64, 50, 50],
+      "style": "Étoile du Nord"
+    }
   ]
 }

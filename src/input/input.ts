@@ -5,6 +5,8 @@
 
 export interface Commands {
   steer: number;
+  throttle: number;
+  brake: number;
   gallop: boolean;
   slide: boolean;
   castor: boolean;
@@ -37,11 +39,21 @@ export class InputManager {
   private touchY = 0;
   private touchSteer = 0;
   readonly visual: SteerTouchVisual = { active: false, originX: 0, originY: 0, x: 0, y: 0, steer: 0 };
+  /** Pédale sous chaque doigt posé sur la zone des pédales. */
+  private pedalTouches = new Map<number, 'gas' | 'brake' | null>();
 
   constructor(
     private zone: HTMLElement,
     private cfg: InputConfig,
+    private pedals: HTMLElement | null = null,
   ) {
+    if (pedals) {
+      pedals.addEventListener('pointerdown', this.onPedalDown);
+      pedals.addEventListener('pointermove', this.onPedalMove);
+      pedals.addEventListener('pointerup', this.onPedalUp);
+      pedals.addEventListener('pointercancel', this.onPedalUp);
+      pedals.addEventListener('lostpointercapture', this.onPedalUp);
+    }
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('blur', this.reset);
@@ -71,6 +83,54 @@ export class InputManager {
     this.touchId = null;
     this.touchSteer = 0;
     this.visual.active = false;
+    this.pedalTouches.clear();
+    this.refreshPedals();
+  };
+
+  /** État des pédales tactiles (pour l'affichage). */
+  pedalState(): { gas: boolean; brake: boolean } {
+    let gas = false;
+    let brake = false;
+    for (const p of this.pedalTouches.values()) {
+      if (p === 'gas') gas = true;
+      if (p === 'brake') brake = true;
+    }
+    return { gas, brake };
+  }
+
+  private pedalAt(x: number, y: number): 'gas' | 'brake' | null {
+    const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-pedal]');
+    return (el?.dataset.pedal as 'gas' | 'brake' | undefined) ?? null;
+  }
+
+  private refreshPedals(): void {
+    if (!this.pedals) return;
+    const st = this.pedalState();
+    this.pedals.querySelector('[data-pedal="gas"]')?.classList.toggle('pressed', st.gas);
+    this.pedals.querySelector('[data-pedal="brake"]')?.classList.toggle('pressed', st.brake);
+  }
+
+  private onPedalDown = (e: PointerEvent): void => {
+    e.preventDefault();
+    this.pedals?.setPointerCapture?.(e.pointerId);
+    this.pedalTouches.set(e.pointerId, this.pedalAt(e.clientX, e.clientY));
+    this.refreshPedals();
+  };
+
+  // Le pouce peut glisser d'une pédale à l'autre sans se lever.
+  private onPedalMove = (e: PointerEvent): void => {
+    if (!this.pedalTouches.has(e.pointerId)) return;
+    e.preventDefault();
+    const p = this.pedalAt(e.clientX, e.clientY);
+    if (p !== this.pedalTouches.get(e.pointerId)) {
+      this.pedalTouches.set(e.pointerId, p);
+      this.refreshPedals();
+    }
+  };
+
+  private onPedalUp = (e: PointerEvent): void => {
+    if (!this.pedalTouches.delete(e.pointerId)) return;
+    this.refreshPedals();
   };
 
   /** Lit les commandes du pas courant. `dt` sert à la rampe du clavier. */
@@ -84,8 +144,13 @@ export class InputManager {
     this.keySteer += Math.max(-rate * dt, Math.min(rate * dt, delta));
 
     const steer = this.touchId !== null ? this.touchSteer : this.keySteer;
+    const pedals = this.pedalState();
+    const gasKey = this.keys.has('ArrowUp') || this.keys.has('KeyW');
+    const brakeKey = this.keys.has('ArrowDown') || this.keys.has('KeyS');
     return {
       steer,
+      throttle: pedals.gas || gasKey ? 1 : 0,
+      brake: pedals.brake || brakeKey ? 1 : 0,
       gallop: this.keys.has('Space'),
       slide: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'),
       castor: this.keys.has('KeyE'),

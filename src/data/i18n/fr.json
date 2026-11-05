@@ -16,7 +16,7 @@
   "bestLap": "Meilleur tour",
   "record": "Nouveau record !",
   "replay": "Rejouer",
-  "steerHint": "Glisse ton pouce à gauche ou à droite pour diriger",
+  "steerHint": "Pouce gauche : diriger · pouce droit : foncer et freiner",
   "offTrack": "Bas-côté !",
   "sliding": "Trop vite !",
   "portraitOnly": "Tourne ton téléphone en portrait",
@@ -66,5 +66,7 @@
   "rarity_peu-commun": "Peu commun",
   "rarity_rare": "Rare",
   "rarity_epique": "Épique",
-  "rarity_legendaire": "Légendaire"
+  "rarity_legendaire": "Légendaire",
+  "gasBtn": "Fonce",
+  "brakeBtn": "Freine"
 }
