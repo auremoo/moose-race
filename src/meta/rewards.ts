@@ -11,6 +11,8 @@ export interface RaceRewards {
   /** Coffre gagné (null : pas de podium) et s'il a trouvé une place. */
   chest: ChestType | null;
   chestStored: boolean;
+  /** Pièces données à la place d'un coffre sans emplacement libre (0 sinon). */
+  chestCoins: number;
   unlocked: string[];
 }
 
@@ -27,5 +29,9 @@ export function recordRace(save: SaveData, rank: number, participants: number, d
   // Premier défi du jour terminé : coffre doré garanti.
   if (dailyFirst) chest = chestCatalog.dailyChest;
   const chestStored = chest !== null && awardChest(save, chest);
-  return { chest, chestStored, unlocked: checkUnlocks(save) };
+  // Emplacements pleins : le coffre devient le minimum de pièces qu'il contient (rien n'est perdu,
+  // mais l'ouvrir reste plus intéressant : fragments et accessoires en plus).
+  const chestCoins = chest !== null && !chestStored ? chestCatalog.types[chest].coins[0] : 0;
+  save.coins += chestCoins;
+  return { chest, chestStored, chestCoins, unlocked: checkUnlocks(save) };
 }

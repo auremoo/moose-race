@@ -109,7 +109,8 @@ changer ce qu'il porte ; l'accessoire suit en course, à l'accueil et au podium.
 ## Coffres
 
 Un podium (1er, 2e ou 3e, avec au moins un adversaire) rapporte un coffre ; le premier défi du jour terminé, un
-coffre doré. Quatre emplacements sur l'accueil : au-delà, le coffre est perdu. Un seul coffre se déverrouille à
+coffre doré. Quatre emplacements sur l'accueil : s'ils sont pleins, le coffre est changé en pièces (le minimum qu'il
+contient : 12, 30, 70 ou 150). Un seul coffre se déverrouille à
 la fois, en temps réel (caisse en bois 15 min, érable 1 h, doré 3 h, aurore boréale 8 h) ; on peut l'ouvrir tout
 de suite pour 1 pièce par minute restante. **Jamais d'argent réel.** Contenu : pièces, fragments de panache et,
 selon le coffre, un accessoire pas encore possédé (toujours dans l'aurore boréale). Plus la place est bonne,

@@ -1614,7 +1614,7 @@ body {
   width: 40px;
   height: 40px;
 }
-.res-chest.lost {
+.res-chest.converted {
   opacity: 0.6;
 }
 @media (prefers-reduced-motion: reduce) {

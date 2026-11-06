@@ -178,7 +178,7 @@
   "chestContains": "{c1} à {c2} pièces, {f1} à {f2} fragments, accessoire : {p} %",
   "chestReady": "Prêt",
   "chestWon": "Coffre gagné : {name}",
-  "chestFull": "Emplacements pleins : coffre perdu",
+  "chestFull": "Emplacements pleins : {name} → +{n} pièces",
   "chestCoins": "+{n} pièces",
   "chestFrags": "+{n} fragments",
   "chestAcc": "Nouvel accessoire : {name}",

@@ -108,6 +108,19 @@ describe('objectifs et fin de course', () => {
     expect(s.chests).toHaveLength(1);
   });
 
+  it('emplacements pleins : le coffre devient son minimum de pièces', () => {
+    const s = defaultSave();
+    for (let i = 0; i < chestCatalog.slots; i++) awardChest(s, 'bois');
+    const res = recordRace(s, 1, 11, false);
+    expect(res.chestStored).toBe(false);
+    expect(res.chestCoins).toBe(chestCatalog.types[res.chest!].coins[0]);
+    expect(s.coins).toBe(res.chestCoins);
+    expect(s.chests).toHaveLength(chestCatalog.slots);
+    // Avec une place libre, pas de conversion.
+    s.chests = s.chests.slice(1);
+    expect(recordRace(s, 1, 11, false).chestCoins).toBe(0);
+  });
+
   it('le défi du jour donne un coffre doré', () => {
     const s = defaultSave();
     expect(recordRace(s, 9, 11, true).chest).toBe(chestCatalog.dailyChest);

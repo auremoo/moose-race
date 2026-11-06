@@ -26,7 +26,7 @@ export interface ResultsInfo {
   /** Photo-finish si l'arrivée était serrée. */
   photo?: { url: string; gap: number; rival: string } | null;
   /** Coffre gagné à cette course. */
-  rewards?: { chest: ChestType | null; chestStored: boolean };
+  rewards?: { chest: ChestType | null; chestStored: boolean; chestCoins: number };
 }
 
 export interface HudCallbacks {
@@ -320,9 +320,12 @@ export class Hud {
       if (rw?.chest) {
         chestEl.innerHTML = chestSvg(rw.chest);
         const span = document.createElement('span');
-        span.textContent = rw.chestStored ? t('chestWon').replace('{name}', chestCatalog.types[rw.chest].name[getLang()]) : t('chestFull');
+        const chestName = chestCatalog.types[rw.chest].name[getLang()];
+        span.textContent = rw.chestStored
+          ? t('chestWon').replace('{name}', chestName)
+          : t('chestFull').replace('{name}', chestName).replace('{n}', String(rw.chestCoins));
         chestEl.appendChild(span);
-        chestEl.classList.toggle('lost', !rw.chestStored);
+        chestEl.classList.toggle('converted', !rw.chestStored);
       }
       const coinsEl = $('res-coins');
       coinsEl.innerHTML = `<span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><b>+0</b><small></small>`;
