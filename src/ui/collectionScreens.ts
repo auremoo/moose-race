@@ -67,8 +67,7 @@ export class CollectionScreens {
   private sorted(): MooseDef[] {
     return [...mooseCatalog.moose].sort(
       (a, b) =>
-        Number(owns(this.save, b.id)) - Number(owns(this.save, a.id)) ||
-        RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity),
+        Number(owns(this.save, b.id)) - Number(owns(this.save, a.id)) || RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity),
     );
   }
 
@@ -110,7 +109,8 @@ export class CollectionScreens {
       const chip = li.querySelector('.rarity-chip') as HTMLElement;
       chip.textContent = tk(`rarity_${r}`);
       chip.style.background = mooseCatalog.rarities[r].color;
-      (li.querySelector('b') as HTMLElement).textContent = `${(cfg.odds[r] * 100).toLocaleString(undefined, { maximumFractionDigits: 1 })} %`;
+      (li.querySelector('b') as HTMLElement).textContent =
+        `${(cfg.odds[r] * 100).toLocaleString(undefined, { maximumFractionDigits: 1 })} %`;
       odds.appendChild(li);
     }
     $('loot-pity').textContent = fmt('lootPity', { n: pityRemaining(this.save) });
@@ -184,7 +184,7 @@ export class CollectionScreens {
   private detailAction(which: 'main' | 'second'): void {
     const def = mooseCatalog.moose.find((m) => m.id === this.detailId)!;
     const owned = owns(this.save, def.id);
-    let ok = false;
+    let ok: boolean;
     if (owned && which === 'main') ok = upgrade(this.save, def.id);
     else if (owned && which === 'second') {
       this.save.activeMoose = def.id;

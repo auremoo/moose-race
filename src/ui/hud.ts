@@ -156,9 +156,7 @@ export class Hud {
     set('res-best-lbl', 'bestLap');
     set('btn-replay', 'replay');
     $('gauge').title = t('speedNote');
-    document.querySelectorAll<HTMLButtonElement>('.seg[data-lang]').forEach((b) =>
-      b.classList.toggle('on', b.dataset.lang === getLang()),
-    );
+    document.querySelectorAll<HTMLButtonElement>('.seg[data-lang]').forEach((b) => b.classList.toggle('on', b.dataset.lang === getLang()));
     this.lastGait = '';
   }
 
@@ -230,6 +228,14 @@ export class Hud {
         .map((p, i) => `${i ? 'L' : 'M'}${(this.mapScale.x0 + p.x * k).toFixed(1)},${(this.mapScale.y0 - p.y * k).toFixed(1)}`)
         .join(' ');
       document.getElementById('minimap-path')!.setAttribute('d', `${d}Z`);
+      // Bifurcation : la branche en pointillés.
+      const fp = race.fork
+        ? race.fork.samples
+            .filter((_, i) => i % 4 === 0)
+            .map((p, i) => `${i ? 'L' : 'M'}${(this.mapScale.x0 + p.x * k).toFixed(1)},${(this.mapScale.y0 - p.y * k).toFixed(1)}`)
+            .join(' ')
+        : '';
+      document.getElementById('minimap-fork')!.setAttribute('d', fp);
       const g = document.getElementById('minimap-dots')!;
       g.replaceChildren();
       this.mapDots = race.racers
@@ -295,13 +301,20 @@ export class Hud {
       if (info.photo) {
         (fig.querySelector('img') as HTMLImageElement).src = info.photo.url;
         (fig.querySelector('img') as HTMLImageElement).alt = t('photoFinish');
-        const n = Math.abs(info.photo.gap).toFixed(2).replace('.', getLang() === 'fr' ? ',' : '.');
-        (fig.querySelector('figcaption') as HTMLElement).textContent =
-          `${t('photoFinish')} · ${t(info.photo.gap >= 0 ? 'photoAhead' : 'photoBehind').replace('{name}', info.photo.rival).replace('{n}', n)}`;
+        const n = Math.abs(info.photo.gap)
+          .toFixed(2)
+          .replace('.', getLang() === 'fr' ? ',' : '.');
+        (fig.querySelector('figcaption') as HTMLElement).textContent = `${t('photoFinish')} · ${t(
+          info.photo.gap >= 0 ? 'photoAhead' : 'photoBehind',
+        )
+          .replace('{name}', info.photo.rival)
+          .replace('{n}', n)}`;
       }
       const coinsEl = $('res-coins');
       coinsEl.innerHTML = `<span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><b>+0</b><small></small>`;
-      (coinsEl.querySelector('small') as HTMLElement).textContent = info.bonus ? `${t('firstWin')} +${info.bonus}` : `${t('balanceLbl')} ${info.balance}`;
+      (coinsEl.querySelector('small') as HTMLElement).textContent = info.bonus
+        ? `${t('firstWin')} +${info.bonus}`
+        : `${t('balanceLbl')} ${info.balance}`;
       // Pièces qui défilent jusqu'au gain.
       const b = coinsEl.querySelector('b') as HTMLElement;
       const start = performance.now();

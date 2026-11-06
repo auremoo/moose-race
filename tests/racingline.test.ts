@@ -34,17 +34,21 @@ describe('ligne de course', () => {
     return { name: c.name, center, racing, gain: center / racing - 1 };
   });
 
-  it.each(results.map((r) => [r.name, r] as const))(
-    '%s : la ligne de course bat le centre (sans bonus de corde)',
-    (_n, r) => {
-      expect(Number.isFinite(r.racing)).toBe(true);
-      expect(r.gain).toBeGreaterThan(0);
-    },
-  );
+  it.each(results.map((r) => [r.name, r] as const))('%s : la ligne de course bat le centre (sans bonus de corde)', (_n, r) => {
+    expect(Number.isFinite(r.racing)).toBe(true);
+    expect(r.gain).toBeGreaterThan(0);
+  });
 
   it('critère du cahier : gain moyen ≥ 3 % sur les 20 circuits', () => {
     const mean = results.reduce((a, r) => a + r.gain, 0) / results.length;
-    console.table(results.map((r) => ({ circuit: r.name, centre: r.center.toFixed(2), ligne: r.racing.toFixed(2), gain: `${(r.gain * 100).toFixed(1)} %` })));
+    console.table(
+      results.map((r) => ({
+        circuit: r.name,
+        centre: r.center.toFixed(2),
+        ligne: r.racing.toFixed(2),
+        gain: `${(r.gain * 100).toFixed(1)} %`,
+      })),
+    );
     expect(mean).toBeGreaterThanOrEqual(0.03);
   });
 });

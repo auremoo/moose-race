@@ -14,7 +14,13 @@ const N = Number(process.argv[2] ?? 1000);
 
 function duel(trackIdx: number, a: Entrant, b: Entrant, seed: number): number {
   const c = courses[trackIdx % courses.length];
-  const race = createRace(trackById(c.trackId!)!, balance, { seed, laps: c.laps, entrants: [a, b], playerGridSlot: seed % 2, difficulty: 'difficile' });
+  const race = createRace(trackById(c.trackId!)!, balance, {
+    seed,
+    laps: c.laps,
+    entrants: [a, b],
+    playerGridSlot: seed % 2,
+    difficulty: 'difficile',
+  });
   for (let i = 0; i < 60 * 400; i++) {
     stepRace(race, []);
     if (race.racers.every((r) => r.finished)) break;
@@ -26,7 +32,11 @@ function duel(trackIdx: number, a: Entrant, b: Entrant, seed: number): number {
 }
 
 const ent = (def: MooseDef, level: number, talent: number, name: string): Entrant => ({
-  name, mooseId: def.id, rating: mooseRating(def, level), params: mooseParamsFor(def, level, balance), botTalent: talent,
+  name,
+  mooseId: def.id,
+  rating: mooseRating(def, level),
+  params: mooseParamsFor(def, level, balance),
+  botTalent: talent,
 });
 
 const buch = mooseCatalog.moose.find((m) => m.id === 'bucheron')!;
@@ -63,7 +73,9 @@ for (const m of pool) {
     worstName = m.name;
   }
 }
-console.log(`3. Meilleur orignal à cote égale (${pool.length} orignaux) : ${worstName} ${(worst * 100).toFixed(1)} % (≤ 60 %) ${worst <= 0.6 ? '✓' : '✗'}`);
+console.log(
+  `3. Meilleur orignal à cote égale (${pool.length} orignaux) : ${worstName} ${(worst * 100).toFixed(1)} % (≤ 60 %) ${worst <= 0.6 ? '✓' : '✗'}`,
+);
 if (worst > 0.6) process.exitCode = 1;
 
 // 4. Un joueur simulé (pilote correct) améliore complètement un Commun en 25 à 40 courses.
@@ -79,11 +91,25 @@ for (let p = 0; p < players; p++) {
   const wins = new Set<string>();
   while (level < 10 && races < 120) {
     const c = courses[(races * 3 + p) % courses.length];
-    const entrants = buildEntrants({ playerName: 'J', playerMooseId: 'bucheron', playerLevel: level, difficulty: 'moyen', botCount: 10, seed: 100 + p * 1000 + races, balance });
+    const entrants = buildEntrants({
+      playerName: 'J',
+      playerMooseId: 'bucheron',
+      playerLevel: level,
+      difficulty: 'moyen',
+      botCount: 10,
+      seed: 100 + p * 1000 + races,
+      balance,
+    });
     entrants[0].botTalent = 0.8;
     const race = createRace(trackById(c.trackId!)!, balance, { seed: 100 + p * 1000 + races, laps: c.laps, entrants, difficulty: 'moyen' });
     for (let i = 0; i < 60 * 400 && !race.racers[0].finished; i++) stepRace(race, []);
-    const order = race.racers.map((_, i) => i).sort((a, b) => (race.racers[a].finished ? race.racers[a].finishTime : 1e9) - (race.racers[b].finished ? race.racers[b].finishTime : 1e9) || race.racers[b].distance - race.racers[a].distance);
+    const order = race.racers
+      .map((_, i) => i)
+      .sort(
+        (a, b) =>
+          (race.racers[a].finished ? race.racers[a].finishTime : 1e9) - (race.racers[b].finished ? race.racers[b].finishTime : 1e9) ||
+          race.racers[b].distance - race.racers[a].distance,
+      );
     const rank = order.indexOf(0) + 1;
     coins += coinsFor(rank, 11, balance.difficulties.moyen.coinMul, 1);
     const key = firstWinKey(c.id, 'moyen');
@@ -102,5 +128,7 @@ for (let p = 0; p < players; p++) {
   careers.push(races);
 }
 const avg = careers.reduce((a, b) => a + b, 0) / careers.length;
-console.log(`4. Courses pour améliorer un Commun au niveau 10 : ${careers.join(', ')} (moyenne ${avg.toFixed(1)}, attendu 25 à 40) ${avg >= 25 && avg <= 40 ? '✓' : '✗'}`);
+console.log(
+  `4. Courses pour améliorer un Commun au niveau 10 : ${careers.join(', ')} (moyenne ${avg.toFixed(1)}, attendu 25 à 40) ${avg >= 25 && avg <= 40 ? '✓' : '✗'}`,
+);
 if (avg < 25 || avg > 40) process.exitCode = 1;

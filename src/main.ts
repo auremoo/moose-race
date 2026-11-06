@@ -15,7 +15,7 @@ import { ghostPose, GhostRecorder, loadGhost, saveGhost } from './meta/ghost';
 import { DAILY_BONUS, dailyChallenge, type DailyChallenge } from './meta/daily';
 import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
-import { createRace, estimatedFinishTime, raceTime, standings, stepRace, type Race } from './sim/race';
+import { createRace, estimatedFinishTime, raceTime, standings, stepRace, surfaceUnder, type Race } from './sim/race';
 import { buildEntrants } from './sim/roster';
 import { GameView, type Pose } from './render/view';
 import { Hud } from './ui/hud';
@@ -64,7 +64,15 @@ function newRace(): Race {
     seed,
     balance,
   });
-  return createRace(trackDef, balance, { seed, laps: course.laps, entrants, difficulty, mode, biome: course.biome, weather: forcedWeather });
+  return createRace(trackDef, balance, {
+    seed,
+    laps: course.laps,
+    entrants,
+    difficulty,
+    mode,
+    biome: course.biome,
+    weather: forcedWeather,
+  });
 }
 
 let race: Race = newRace();
@@ -228,17 +236,45 @@ const bindCheck = (id: string, get: () => boolean, set: (v: boolean) => void) =>
     refreshSoundButton();
   });
 };
-bindCheck('chk-sound', () => save.soundOn, (v) => { save.soundOn = sound.sfxOn = v; sound.applyToggles(); });
-bindCheck('chk-music', () => save.musicOn, (v) => { save.musicOn = sound.musicOn = v; sound.applyToggles(); });
-bindCheck('chk-haptics', () => save.hapticsOn, (v) => { save.hapticsOn = sound.hapticsOn = v; });
-bindCheck('chk-ghost', () => save.ghostOn, (v) => {
-  save.ghostOn = v;
-  applyGhost();
-});
-bindCheck('chk-contrast', () => save.highContrast, (v) => {
-  save.highContrast = v;
-  document.documentElement.classList.toggle('high-contrast', v);
-});
+bindCheck(
+  'chk-sound',
+  () => save.soundOn,
+  (v) => {
+    save.soundOn = sound.sfxOn = v;
+    sound.applyToggles();
+  },
+);
+bindCheck(
+  'chk-music',
+  () => save.musicOn,
+  (v) => {
+    save.musicOn = sound.musicOn = v;
+    sound.applyToggles();
+  },
+);
+bindCheck(
+  'chk-haptics',
+  () => save.hapticsOn,
+  (v) => {
+    save.hapticsOn = sound.hapticsOn = v;
+  },
+);
+bindCheck(
+  'chk-ghost',
+  () => save.ghostOn,
+  (v) => {
+    save.ghostOn = v;
+    applyGhost();
+  },
+);
+bindCheck(
+  'chk-contrast',
+  () => save.highContrast,
+  (v) => {
+    save.highContrast = v;
+    document.documentElement.classList.toggle('high-contrast', v);
+  },
+);
 // Taille du texte : l'interface (HUD, menus) est agrandie, la scène 3D ne change pas.
 function applyScale(): void {
   document.documentElement.style.setProperty('--ui-scale', String(save.uiScale));
@@ -254,10 +290,14 @@ document.querySelectorAll<HTMLButtonElement>('[data-scale]').forEach((b) =>
 );
 applyScale();
 document.documentElement.classList.toggle('high-contrast', save.highContrast);
-bindCheck('chk-motion', () => save.reduceMotion, (v) => {
-  save.reduceMotion = v;
-  document.documentElement.classList.toggle('reduce-motion', v);
-});
+bindCheck(
+  'chk-motion',
+  () => save.reduceMotion,
+  (v) => {
+    save.reduceMotion = v;
+    document.documentElement.classList.toggle('reduce-motion', v);
+  },
+);
 const soundBtn = document.getElementById('btn-sound-toggle') as HTMLButtonElement;
 function refreshSoundButton(): void {
   soundBtn.textContent = save.soundOn || save.musicOn ? t('soundOn') : t('soundOff');
@@ -380,7 +420,15 @@ function onFinish(): void {
   setTimeout(() => {
     if (race !== finishedRace) return;
     hud.showPodiumTitle(false);
-    hud.showResults(race, record, { rank, participants: N, coins, bonus, standings: results, balance: save.coins, photo: view.takePhoto() });
+    hud.showResults(race, record, {
+      rank,
+      participants: N,
+      coins,
+      bonus,
+      standings: results,
+      balance: save.coins,
+      photo: view.takePhoto(),
+    });
     menus.refreshCoins();
   }, 900 + podiumMs);
 }
@@ -510,7 +558,7 @@ function soundEvents(): void {
   // Sabots : deux appuis par foulée, calés sur l'animation.
   const stride = view.playerStride();
   if (m.speed > 1 && Math.floor(stride / Math.PI) !== Math.floor(lastStride / Math.PI)) {
-    const surface = me.onVerge ? race.track.def.vergeSurface : race.track.samples[me.proj.index].surface;
+    const surface = surfaceUnder(race, me);
     sound.hoof(surface, m.speed / 30);
   }
   lastStride = stride;
@@ -565,4 +613,10 @@ void preloadModels().then(() => view.setRace(race, false));
 requestAnimationFrame(frame);
 
 // Point d'accès pour le débogage depuis la console.
-(window as unknown as { panache: unknown }).panache = { get race() { return race; }, balance, view };
+(window as unknown as { panache: unknown }).panache = {
+  get race() {
+    return race;
+  },
+  balance,
+  view,
+};

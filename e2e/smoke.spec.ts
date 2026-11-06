@@ -1,5 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/** Ce que le jeu expose sur window pour les tests (sous-ensemble utilisé ici). */
+interface PanacheWindow {
+  panache: {
+    race: {
+      laps: number;
+      track: { length: number };
+      racers: { distance: number; moose: { speed: number } }[];
+      hazards: { bears: unknown[] } | null;
+    };
+  };
+}
+
 /** Sauvegarde de départ : didacticiel déjà vu, pour aller droit au but. */
 async function freshStart(page: Page, extra: Record<string, unknown> = {}) {
   const errors: string[] = [];
@@ -10,7 +22,7 @@ async function freshStart(page: Page, extra: Record<string, unknown> = {}) {
   return errors;
 }
 
-test('l\'accueil s\'affiche sans erreur', async ({ page }) => {
+test("l'accueil s'affiche sans erreur", async ({ page }) => {
   const errors = await freshStart(page);
   await expect(page.locator('.logo')).toHaveText('Panache');
   await expect(page.locator('#btn-play')).toBeVisible();
@@ -25,12 +37,14 @@ test('une course se lance, se met en pause et se termine avec des pièces', asyn
   await page.click('#btn-go');
   await page.keyboard.down('ArrowUp');
   // Le rendu logiciel de la CI est lent : on attend que l'orignal ait pris de la vitesse.
-  await page.waitForFunction(() => (window as any).panache.race.racers[0].moose.speed > 5, undefined, { timeout: 60_000 });
+  await page.waitForFunction(() => (window as unknown as PanacheWindow).panache.race.racers[0].moose.speed > 5, undefined, {
+    timeout: 60_000,
+  });
   await page.keyboard.press('Escape');
   await expect(page.locator('#pause-menu')).toBeVisible();
   await page.click('#btn-resume');
   await page.evaluate(() => {
-    const r = (window as any).panache.race;
+    const r = (window as unknown as PanacheWindow).panache.race;
     r.racers[0].distance = r.laps * r.track.length - 2;
   });
   await expect(page.locator('#results')).toBeVisible({ timeout: 10_000 });
@@ -69,7 +83,7 @@ test('le mode Ours et castors démarre avec des ours', async ({ page }) => {
   await page.locator('.course-card').nth(7).click();
   await page.click('#btn-go');
   await page.waitForTimeout(1000);
-  const bears = await page.evaluate(() => (window as any).panache.race.hazards?.bears.length ?? 0);
+  const bears = await page.evaluate(() => (window as unknown as PanacheWindow).panache.race.hazards?.bears.length ?? 0);
   expect(bears).toBeGreaterThan(0);
   await expect(page.locator('#btn-castor')).toBeVisible();
   expect(errors).toEqual([]);

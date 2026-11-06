@@ -34,25 +34,86 @@ interface Spec {
 }
 
 const SPECS: Spec[] = [
-  { id: 'prairie-tranquille', name: 'Prairie tranquille', biome: 'plaine', province: 'SK', stars: 1, verge: 12,
-    route: 'W22 S220 R90@45 S80 ESL40@60 S60 R90@40 S120 CHL25@50 S100 R60@45 S60 R30@50 S150 R90@40 S60 ESR30@60 S80' },
-  { id: 'champs-canola', name: 'Champs de canola', biome: 'plaine', province: 'MB', stars: 1, verge: 12,
-    route: 'W22 S250 R45@50 S60 R45@50 S100 L60@45 R60@45 S80 R90@40 S200 R120@45 S60 L30@50 S80 R90@40' },
-  { id: 'riviere-rouge', name: 'Rivière Rouge', biome: 'plaine', province: 'MB', stars: 1, verge: 12,
-    route: 'W21 S180 R90@40 S100 L90@40 S80 R90@40 S240 CHR30@45 S120 R90@40 S90 L45@45 R45@45 S60 R90@40 S80 R90@40' },
-  { id: 'sentier-bleuets', name: 'Sentier des bleuets', biome: 'foret', province: 'QC', stars: 2, verge: 11,
-    route: 'W19 S160 R70@35 S60 ESL45@30 S80 R110@30 S120 CHL35@28 S100 R90@30 S60 L60@35 R60@35 S100 R90@32' },
-  { id: 'ble-saskatchewan', name: 'Blé de Saskatchewan', biome: 'plaine', province: 'SK', stars: 2, verge: 11,
+  {
+    id: 'prairie-tranquille',
+    name: 'Prairie tranquille',
+    biome: 'plaine',
+    province: 'SK',
+    stars: 1,
+    verge: 12,
+    route: 'W22 S220 R90@45 S80 ESL40@60 S60 R90@40 S120 CHL25@50 S100 R60@45 S60 R30@50 S150 R90@40 S60 ESR30@60 S80',
+  },
+  {
+    id: 'champs-canola',
+    name: 'Champs de canola',
+    biome: 'plaine',
+    province: 'MB',
+    stars: 1,
+    verge: 12,
+    route: 'W22 S250 R45@50 S60 R45@50 S100 L60@45 R60@45 S80 R90@40 S200 R120@45 S60 L30@50 S80 R90@40',
+  },
+  {
+    id: 'riviere-rouge',
+    name: 'Rivière Rouge',
+    biome: 'plaine',
+    province: 'MB',
+    stars: 1,
+    verge: 12,
+    route: 'W21 S180 R90@40 S100 L90@40 S80 R90@40 S240 CHR30@45 S120 R90@40 S90 L45@45 R45@45 S60 R90@40 S80 R90@40',
+  },
+  {
+    id: 'sentier-bleuets',
+    name: 'Sentier des bleuets',
+    biome: 'foret',
+    province: 'QC',
+    stars: 2,
+    verge: 11,
+    route: 'W19 S160 R70@35 S60 ESL45@30 S80 R110@30 S120 CHL35@28 S100 R90@30 S60 L60@35 R60@35 S100 R90@32',
+  },
+  {
+    id: 'ble-saskatchewan',
+    name: 'Blé de Saskatchewan',
+    biome: 'plaine',
+    province: 'SK',
+    stars: 2,
+    verge: 11,
     wind: { strength: 1.2, period: 12, direction: 1.2 },
-    route: 'W19 S400 CHL30@35 S200 R90@35 S120 R90@35 S150 L90@30 R90@30 S200 R90@35 S60 ESR40@35 S100 R90@35 S80' },
-  { id: 'lacs-banff', name: 'Lacs de Banff', biome: 'rocheuses', province: 'AB', stars: 2, verge: 10,
-    elevation: [[0, 0], [0.22, 14], [0.45, 30], [0.62, 26], [0.8, 8]],
+    route: 'W19 S400 CHL30@35 S200 R90@35 S120 R90@35 S150 L90@30 R90@30 S200 R90@35 S60 ESR40@35 S100 R90@35 S80',
+  },
+  {
+    id: 'lacs-banff',
+    name: 'Lacs de Banff',
+    biome: 'rocheuses',
+    province: 'AB',
+    stars: 2,
+    verge: 10,
+    elevation: [
+      [0, 0],
+      [0.22, 14],
+      [0.45, 30],
+      [0.62, 26],
+      [0.8, 8],
+    ],
     zones: [{ from: 0.62, to: 0.68, surface: 'boue' }],
-    route: 'W18 S200 R120@40 S100 L60@45 R90@35 S150 R150@40 S80 L60@40 R60@40 S120 R60@35 S60 CHR30@30 S80' },
-  { id: 'crepuscule-manitoba', name: 'Crépuscule du Manitoba', biome: 'plaine', province: 'MB', stars: 3, verge: 10,
+    route: 'W18 S200 R120@40 S100 L60@45 R90@35 S150 R150@40 S80 L60@40 R60@40 S120 R60@35 S60 CHR30@30 S80',
+  },
+  {
+    id: 'crepuscule-manitoba',
+    name: 'Crépuscule du Manitoba',
+    biome: 'plaine',
+    province: 'MB',
+    stars: 3,
+    verge: 10,
     wind: { strength: 2.6, period: 9, direction: 0.4 },
-    route: 'W17 S150 CHL30@35 S150 R90@30 S80 CHR35@28 S60 R90@30 S100 L90@25 S40 R180@20 S40 L90@25 S150 R90@30 S100 ESL40@35 S60 R90@30' },
-  { id: 'sentiers-algonquin', name: "Sentiers d'Algonquin", biome: 'foret', province: 'ON', stars: 3, verge: 9,
+    route: 'W17 S150 CHL30@35 S150 R90@30 S80 CHR35@28 S60 R90@30 S100 L90@25 S40 R180@20 S40 L90@25 S150 R90@30 S100 ESL40@35 S60 R90@30',
+  },
+  {
+    id: 'sentiers-algonquin',
+    name: "Sentiers d'Algonquin",
+    biome: 'foret',
+    province: 'ON',
+    stars: 3,
+    verge: 9,
     zones: [
       { from: 0.08, to: 0.13, surface: 'racines' },
       { from: 0.2, to: 0.26, surface: 'boue' },
@@ -60,37 +121,136 @@ const SPECS: Spec[] = [
       { from: 0.6, to: 0.65, surface: 'boue' },
       { from: 0.82, to: 0.86, surface: 'racines' },
     ],
-    route: 'W15 S150 R90@24 S80 L90@24 S100 R90@24 S120 R60@22 S100 R30@30 S80 R180@20 S100 L90@25 S150 R90@26' },
-  { id: 'automne-mauricie', name: 'Automne en Mauricie', biome: 'foret', province: 'QC', stars: 3, verge: 9,
+    route: 'W15 S150 R90@24 S80 L90@24 S100 R90@24 S120 R60@22 S100 R30@30 S80 R180@20 S100 L90@25 S150 R90@26',
+  },
+  {
+    id: 'automne-mauricie',
+    name: 'Automne en Mauricie',
+    biome: 'foret',
+    province: 'QC',
+    stars: 3,
+    verge: 9,
     zones: [{ from: 0.45, to: 0.51, surface: 'boue' }],
-    route: 'W15 S200 ESR60@30 R60@30 S120 R120@26 S100 L90@25 R90@25 S150 CHL35@24 S100 R90@26 S180 R90@28' },
-  { id: 'promenade-glaciers', name: 'Promenade des Glaciers', biome: 'rocheuses', province: 'AB', stars: 4, verge: 8,
-    elevation: [[0, 0], [0.3, 12], [0.55, 22], [0.8, 6]],
-    surface: 'neige', zones: [{ from: 0.17, to: 0.23, surface: 'glace' }, { from: 0.56, to: 0.61, surface: 'glace' }],
-    route: 'W15 S250 R90@30 S120 R180@17 S120 L180@18 S120 R90@28 S150 CHL35@22 S150 R90@30 S100 ESR45@25 S120 R90@30' },
-  { id: 'route-baleines', name: 'Route des baleines', biome: 'foret', province: 'QC', stars: 4, verge: 8,
+    route: 'W15 S200 ESR60@30 R60@30 S120 R120@26 S100 L90@25 R90@25 S150 CHL35@24 S100 R90@26 S180 R90@28',
+  },
+  {
+    id: 'promenade-glaciers',
+    name: 'Promenade des Glaciers',
+    biome: 'rocheuses',
+    province: 'AB',
+    stars: 4,
+    verge: 8,
+    elevation: [
+      [0, 0],
+      [0.3, 12],
+      [0.55, 22],
+      [0.8, 6],
+    ],
+    surface: 'neige',
+    zones: [
+      { from: 0.17, to: 0.23, surface: 'glace' },
+      { from: 0.56, to: 0.61, surface: 'glace' },
+    ],
+    route: 'W15 S250 R90@30 S120 R180@17 S120 L180@18 S120 R90@28 S150 CHL35@22 S150 R90@30 S100 ESR45@25 S120 R90@30',
+  },
+  {
+    id: 'route-baleines',
+    name: 'Route des baleines',
+    biome: 'foret',
+    province: 'QC',
+    stars: 4,
+    verge: 8,
     zones: [{ from: 0.7, to: 0.75, surface: 'boue' }],
-    route: 'W14 S200 R180@19 S140 L90@22 S60 R90@22 S100 CHR40@20 S80 R60@26 L60@26 S160 R90@20 S120 R90@22 S80' },
-  { id: 'badlands-drumheller', name: 'Badlands de Drumheller', biome: 'plaine', province: 'AB', stars: 4, verge: 8,
-    route: 'W14 S220 R135@19 S100 L90@22 S80 R135@18 S160 CHL40@20 S100 R90@20 S200 R90@24 S60 ESL45@25' },
-  { id: 'chicanes-lac-saint-jean', name: 'Chicanes du Lac-Saint-Jean', biome: 'foret', province: 'QC', stars: 4, verge: 8,
-    route: 'W14 S150 CHL40@18 S120 R90@20 S100 CHR40@18 S100 R90@20 S150 CHL40@18 S100 R90@20 S60 L90@18 S40 R180@16 S40 L90@18 S120 R90@20' },
-  { id: 'vallee-okanagan', name: "Vallée de l'Okanagan", biome: 'rocheuses', province: 'BC', stars: 4, verge: 8,
-    route: 'W14 S180 R90@18 S60 L90@18 R90@18 S60 L90@18 S150 R180@16 S180 R90@22 S60 CHL40@20 S60 R90@22' },
-  { id: 'col-kicking-horse', name: 'Col du Kicking Horse', biome: 'rocheuses', province: 'BC', stars: 5, verge: 7,
-    elevation: [[0, 0], [0.25, 6], [0.5, 20], [0.75, 14]],
+    route: 'W14 S200 R180@19 S140 L90@22 S60 R90@22 S100 CHR40@20 S80 R60@26 L60@26 S160 R90@20 S120 R90@22 S80',
+  },
+  {
+    id: 'badlands-drumheller',
+    name: 'Badlands de Drumheller',
+    biome: 'plaine',
+    province: 'AB',
+    stars: 4,
+    verge: 8,
+    route: 'W14 S220 R135@19 S100 L90@22 S80 R135@18 S160 CHL40@20 S100 R90@20 S200 R90@24 S60 ESL45@25',
+  },
+  {
+    id: 'chicanes-lac-saint-jean',
+    name: 'Chicanes du Lac-Saint-Jean',
+    biome: 'foret',
+    province: 'QC',
+    stars: 4,
+    verge: 8,
+    route:
+      'W14 S150 CHL40@18 S120 R90@20 S100 CHR40@18 S100 R90@20 S150 CHL40@18 S100 R90@20 S60 L90@18 S40 R180@16 S40 L90@18 S120 R90@20',
+  },
+  {
+    id: 'vallee-okanagan',
+    name: "Vallée de l'Okanagan",
+    biome: 'rocheuses',
+    province: 'BC',
+    stars: 4,
+    verge: 8,
+    route: 'W14 S180 R90@18 S60 L90@18 R90@18 S60 L90@18 S150 R180@16 S180 R90@22 S60 CHL40@20 S60 R90@22',
+  },
+  {
+    id: 'col-kicking-horse',
+    name: 'Col du Kicking Horse',
+    biome: 'rocheuses',
+    province: 'BC',
+    stars: 5,
+    verge: 7,
+    elevation: [
+      [0, 0],
+      [0.25, 6],
+      [0.5, 20],
+      [0.75, 14],
+    ],
     zones: [{ from: 0.3, to: 0.52, surface: 'neige' }],
-    route: 'W13 S160 R180@17 S80 L180@17 S80 R180@17 S120 CHL40@18 S80 R90@20 S240 R90@24' },
-  { id: 'serpent-temiscamingue', name: 'Serpent du Témiscamingue', biome: 'foret', province: 'QC', stars: 5, verge: 7,
-    route: 'W13 S100 L30@25 R60@25 L30@25 S100 R180@17 S100 L180@17 S100 R180@17 S100 L180@17 S100 R180@17 S180 R90@20 S150 R90@20' },
-  { id: 'cap-diamant', name: 'Cap Diamant', biome: 'foret', province: 'QC', stars: 5, verge: 7,
-    route: 'W12 S120 CHL45@16 S120 R90@17 S120 R90@17 S60 L90@15 S50 R180@14 S50 L90@15 S60 L90@15 S50 R180@14 S50 L90@15 S60 R90@17 S60 CHR40@16 S60 R90@17' },
-  { id: 'tempete-yukon', name: 'Tempête du Yukon', biome: 'rocheuses', province: 'YT', stars: 5, verge: 7,
-    surface: 'neige', zones: [{ from: 0.4, to: 0.46, surface: 'glace' }],
-    route: 'W12 S260 R90@18 S100 L90@16 S50 R180@15 S50 L90@16 S100 R90@18 S120 CHR35@18 S120 R90@18 S80 L45@20 R90@20 L45@20 S80 R90@18' },
-  { id: 'grand-nord', name: 'Grand Nord', biome: 'rocheuses', province: 'NU', stars: 5, verge: 7,
-    surface: 'neige', zones: [{ from: 0.24, to: 0.29, surface: 'glace' }, { from: 0.7, to: 0.75, surface: 'glace' }],
-    route: 'W11 S150 R180@14 L90@15 R90@15 L180@14 R90@15 S100 CHL40@16 S100 R180@14 S80 L90@15 S120 R90@18 S200 R90@20' },
+    route: 'W13 S160 R180@17 S80 L180@17 S80 R180@17 S120 CHL40@18 S80 R90@20 S240 R90@24',
+  },
+  {
+    id: 'serpent-temiscamingue',
+    name: 'Serpent du Témiscamingue',
+    biome: 'foret',
+    province: 'QC',
+    stars: 5,
+    verge: 7,
+    route: 'W13 S100 L30@25 R60@25 L30@25 S100 R180@17 S100 L180@17 S100 R180@17 S100 L180@17 S100 R180@17 S180 R90@20 S150 R90@20',
+  },
+  {
+    id: 'cap-diamant',
+    name: 'Cap Diamant',
+    biome: 'foret',
+    province: 'QC',
+    stars: 5,
+    verge: 7,
+    route:
+      'W12 S120 CHL45@16 S120 R90@17 S120 R90@17 S60 L90@15 S50 R180@14 S50 L90@15 S60 L90@15 S50 R180@14 S50 L90@15 S60 R90@17 S60 CHR40@16 S60 R90@17',
+  },
+  {
+    id: 'tempete-yukon',
+    name: 'Tempête du Yukon',
+    biome: 'rocheuses',
+    province: 'YT',
+    stars: 5,
+    verge: 7,
+    surface: 'neige',
+    zones: [{ from: 0.4, to: 0.46, surface: 'glace' }],
+    route: 'W12 S260 R90@18 S100 L90@16 S50 R180@15 S50 L90@16 S100 R90@18 S120 CHR35@18 S120 R90@18 S80 L45@20 R90@20 L45@20 S80 R90@18',
+  },
+  {
+    id: 'grand-nord',
+    name: 'Grand Nord',
+    biome: 'rocheuses',
+    province: 'NU',
+    stars: 5,
+    verge: 7,
+    surface: 'neige',
+    zones: [
+      { from: 0.24, to: 0.29, surface: 'glace' },
+      { from: 0.7, to: 0.75, surface: 'glace' },
+    ],
+    route: 'W11 S150 R180@14 L90@15 R90@15 L180@14 R90@15 S100 CHL40@16 S100 R180@14 S80 L90@15 S120 R90@18 S200 R90@20',
+  },
 ];
 
 /** Place de la boucle grise (circuit dessiné à la main) dans la progression. */
@@ -198,10 +358,14 @@ function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number
   let rx = gx;
   let ry = gy;
   for (let iter = 0; iter < 10 && free.size >= 2; iter++) {
-    let a11 = 0, a12 = 0, a22 = 0;
+    let a11 = 0,
+      a12 = 0,
+      a22 = 0;
     for (const i of free) {
       const [dx, dy] = S[i].dir;
-      a11 += dx * dx; a12 += dx * dy; a22 += dy * dy;
+      a11 += dx * dx;
+      a12 += dx * dy;
+      a22 += dy * dy;
     }
     const det = a11 * a22 - a12 * a12;
     if (Math.abs(det) < 1e-6) break;
@@ -228,7 +392,10 @@ function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number
     ry = 0;
     break;
   }
-  if (Math.hypot(rx, ry) > 0.5) throw new Error(`impossible de fermer la boucle : écart brut (${Math.round(-gx)}, ${Math.round(-gy)}), reste ${Math.hypot(rx, ry).toFixed(0)} m`);
+  if (Math.hypot(rx, ry) > 0.5)
+    throw new Error(
+      `impossible de fermer la boucle : écart brut (${Math.round(-gx)}, ${Math.round(-gy)}), reste ${Math.hypot(rx, ry).toFixed(0)} m`,
+    );
   const fixed = [...tokens];
   S.forEach((st, i) => (fixed[st.tokIndex] = `S${st.len + delta[i]}`));
   const cost = delta.reduce((acc, d) => acc + Math.abs(d), 0);
@@ -306,7 +473,10 @@ for (const spec of all) {
       points: pts.map((p) => [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10, p.w] as [number, number, number]),
     };
     info = `retouche ${gap.toFixed(0)} m, écart brut (${raw[0]}, ${raw[1]})`;
-    writeFileSync(`${outDir}/${spec.id}.json`, JSON.stringify(def, null, 1).replace(/\[\n\s+(-?[\d.]+),\n\s+(-?[\d.]+),\n\s+(-?[\d.]+)\n\s+\]/g, '[$1, $2, $3]') + '\n');
+    writeFileSync(
+      `${outDir}/${spec.id}.json`,
+      JSON.stringify(def, null, 1).replace(/\[\n\s+(-?[\d.]+),\n\s+(-?[\d.]+),\n\s+(-?[\d.]+)\n\s+\]/g, '[$1, $2, $3]') + '\n',
+    );
   } else {
     def = handmade;
   }
@@ -341,9 +511,17 @@ for (const spec of all) {
   const xs = S.map((s) => s.x);
   const ys = S.map((s) => -s.y);
   const pad = 30;
-  const vb = [Math.min(...xs) - pad, Math.min(...ys) - pad, Math.max(...xs) - Math.min(...xs) + 2 * pad, Math.max(...ys) - Math.min(...ys) + 2 * pad];
-  const edge = (sg: number) => S.map((s, i) => `${i ? 'L' : 'M'}${(s.x + s.nx * s.hw * sg).toFixed(1)},${(-(s.y + s.ny * s.hw * sg)).toFixed(1)}`).join(' ') + 'Z';
-  svgs.push(`<div class="c"><svg viewBox="${vb.join(' ')}"><path d="${edge(1)} ${edge(-1)}" fill="#8d6e63" fill-rule="evenodd"/><circle cx="${S[0].x}" cy="${-S[0].y}" r="${Math.max(vb[2], vb[3]) / 50}" fill="#d80621"/></svg><b>${spec.name}</b> ${'★'.repeat(spec.stars)}<br>${(track.length / 1000).toFixed(2)} km · ${laps} tour(s) · ${lap.toFixed(0)} s</div>`);
+  const vb = [
+    Math.min(...xs) - pad,
+    Math.min(...ys) - pad,
+    Math.max(...xs) - Math.min(...xs) + 2 * pad,
+    Math.max(...ys) - Math.min(...ys) + 2 * pad,
+  ];
+  const edge = (sg: number) =>
+    S.map((s, i) => `${i ? 'L' : 'M'}${(s.x + s.nx * s.hw * sg).toFixed(1)},${(-(s.y + s.ny * s.hw * sg)).toFixed(1)}`).join(' ') + 'Z';
+  svgs.push(
+    `<div class="c"><svg viewBox="${vb.join(' ')}"><path d="${edge(1)} ${edge(-1)}" fill="#8d6e63" fill-rule="evenodd"/><circle cx="${S[0].x}" cy="${-S[0].y}" r="${Math.max(vb[2], vb[3]) / 50}" fill="#d80621"/></svg><b>${spec.name}</b> ${'★'.repeat(spec.stars)}<br>${(track.length / 1000).toFixed(2)} km · ${laps} tour(s) · ${lap.toFixed(0)} s</div>`,
+  );
 }
 
 // Index des pistes pour l'application (import statique, compatible Vite et Node).

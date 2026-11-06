@@ -6,6 +6,7 @@
 import { autopilot, targetSpeedFromProfile } from './autopilot';
 import type { Commands } from './moose';
 import { bearAvoidance } from './hazards';
+import { forkApproachOffset, forkPursuit } from './fork';
 import type { Race, Racer } from './race';
 import type { Rng } from './rng';
 
@@ -23,6 +24,9 @@ export interface BotBrain {
   mistake: boolean;
   /** Le bot galope dans cette ligne droite. */
   gallopPlan: boolean;
+  /** Tour pour lequel le choix de la bifurcation a été tiré, et choix. */
+  forkLap: number;
+  takeFork: boolean;
 }
 
 export function createBotBrain(talent: number, rng: Rng): BotBrain {
@@ -36,6 +40,8 @@ export function createBotBrain(talent: number, rng: Rng): BotBrain {
     rolledLap: -1,
     mistake: false,
     gallopPlan: false,
+    forkLap: -1,
+    takeFork: false,
   };
 }
 
@@ -49,8 +55,24 @@ export function botCommand(r: Race, racer: Racer): Commands {
 
   // Après l'arrivée : le bot finit au trot.
   if (racer.finished) {
-    const cmd = autopilot(track, racer, racer.params, balance.surfaces.sentier, { line: { offset: line.offset, speed: racer.profile }, speedTarget: 12 });
+    const cmd = autopilot(track, racer, racer.params, balance.surfaces.sentier, {
+      line: { offset: line.offset, speed: racer.profile },
+      speedTarget: 12,
+    });
     return cmd;
+  }
+
+  // Bifurcation : sur la branche, poursuite de son axe ; avant l'embranchement, un tirage par tour
+  // (les plus talentueux la prennent plus souvent).
+  const fork = r.fork;
+  if (fork && racer.onFork) return forkPursuit(fork, racer, racer.params, r.surfaces, cfg.cornerMarginMin + (1 - cfg.cornerMarginMin) * t);
+  if (fork) {
+    const lapF = Math.floor(racer.distance / track.length);
+    const ahead = (track.samples[fork.from].s - racer.proj.s + track.length) % track.length;
+    if (ahead < 150 && brain.forkLap !== lapF) {
+      brain.forkLap = lapF;
+      brain.takeFork = r.rng.next() < 0.2 + 0.5 * t;
+    }
   }
 
   // Dépassement : un orignal juste devant, presque dans l'axe → on se décale du côté libre.
@@ -58,7 +80,7 @@ export function botCommand(r: Race, racer: Racer): Commands {
   brain.laneTarget = 0;
   let followSpeed = Infinity;
   for (const o of r.racers) {
-    if (o === racer) continue;
+    if (o === racer || o.onFork) continue;
     const gap = o.distance - racer.distance;
     if (gap <= 0 || gap > cfg.overtakeDistance) continue;
     const lat = o.proj.d - racer.proj.d;
@@ -76,7 +98,7 @@ export function botCommand(r: Race, racer: Racer): Commands {
   }
   // Évitement : un orignal à côté (même hauteur) → on s'écarte de lui.
   for (const o of r.racers) {
-    if (o === racer) continue;
+    if (o === racer || o.onFork) continue;
     const gap = Math.abs(o.distance - racer.distance);
     if (gap > 5) continue;
     const lat = racer.proj.d - o.proj.d;
@@ -91,13 +113,19 @@ export function botCommand(r: Race, racer: Racer): Commands {
 
   // Erreur de trajectoire propre au bot : bruit lent le long de la piste.
   const amp = cfg.noiseAmplitude * (1 - t);
-  const offsetAt = (i: number) => {
+  const lineOffsetAt = (i: number) => {
     const s = track.samples[i];
     const sPos = s.s;
     const noise = (Math.sin(brain.phaseA + sPos * 0.013) + 0.5 * Math.sin(brain.phaseB + sPos * 0.031)) / 1.5;
     const o = line.offset[i] + noise * amp + brain.lane;
     const lim = Math.max(0, s.hw - 1.6);
     return Math.max(-lim, Math.min(lim, o));
+  };
+  // Vers l'embouchure de la branche si le bot a choisi de la prendre (hors des limites de la piste).
+  const offsetAt = (i: number) => {
+    const base = lineOffsetAt(i);
+    if (!fork || !brain.takeFork) return base;
+    return forkApproachOffset(track, fork, track.samples[i].s, base) ?? base;
   };
 
   // Tirage d'erreur une fois par virage et par tour : entrer trop vite.

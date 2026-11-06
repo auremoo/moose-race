@@ -25,12 +25,19 @@ while (i0 < n && Math.abs(S[i0].k) > thr) i0++;
 for (let j = 0; j <= n; j++) {
   const s = S[(i0 + j) % n];
   const c = Math.abs(s.k) > thr;
-  if (c && !inCorner) { inCorner = true; start = s.s; minR = Infinity; sign = Math.sign(s.k); }
+  if (c && !inCorner) {
+    inCorner = true;
+    start = s.s;
+    minR = Infinity;
+    sign = Math.sign(s.k);
+  }
   if (c) minR = Math.min(minR, 1 / Math.abs(s.k));
   if (!c && inCorner) {
     inCorner = false;
     const vmax = Math.sqrt(18 * minR);
-    corners.push(`  ${sign > 0 ? 'gauche' : 'droite'} à ${start.toFixed(0)} m, R min ${minR.toFixed(1)} m (v_max centre ${vmax.toFixed(1)} m/s)`);
+    corners.push(
+      `  ${sign > 0 ? 'gauche' : 'droite'} à ${start.toFixed(0)} m, R min ${minR.toFixed(1)} m (v_max centre ${vmax.toFixed(1)} m/s)`,
+    );
   }
 }
 console.log(`${corners.length} virages :`);
@@ -49,16 +56,21 @@ for (let a = 0; a < n; a += 2) {
     if (d < worst) worst = d;
   }
 }
-console.log(`Distance minimale entre portions non voisines : ${worst.toFixed(1)} m (besoin > ${clear} m) ${worst > clear ? 'OK' : 'TROP PROCHE'}`);
+console.log(
+  `Distance minimale entre portions non voisines : ${worst.toFixed(1)} m (besoin > ${clear} m) ${worst > clear ? 'OK' : 'TROP PROCHE'}`,
+);
 
 if (out) {
   const xs = S.map((s) => s.x);
   const ys = S.map((s) => -s.y);
   const pad = 40;
-  const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
-  const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+  const minX = Math.min(...xs) - pad,
+    maxX = Math.max(...xs) + pad;
+  const minY = Math.min(...ys) - pad,
+    maxY = Math.max(...ys) + pad;
   const path = S.map((s, i) => `${i ? 'L' : 'M'}${s.x.toFixed(1)},${(-s.y).toFixed(1)}`).join(' ') + 'Z';
-  const edge = (sg: number) => S.map((s, i) => `${i ? 'L' : 'M'}${(s.x + s.nx * s.hw * sg).toFixed(1)},${(-(s.y + s.ny * s.hw * sg)).toFixed(1)}`).join(' ') + 'Z';
+  const edge = (sg: number) =>
+    S.map((s, i) => `${i ? 'L' : 'M'}${(s.x + s.nx * s.hw * sg).toFixed(1)},${(-(s.y + s.ny * s.hw * sg)).toFixed(1)}`).join(' ') + 'Z';
   const trail = edge(1) + ' ' + edge(-1);
   const pts = def.points.map((p) => `<circle cx="${p[0]}" cy="${-p[1]}" r="3" fill="red"/>`).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${minY} ${maxX - minX} ${maxY - minY}" width="900">

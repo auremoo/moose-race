@@ -3,7 +3,7 @@
  */
 import * as THREE from 'three';
 import type { Balance } from '../data';
-import { raceTime, rankOf, windAt, type Race } from '../sim/race';
+import { raceTime, rankOf, surfaceUnder, windAt, type Race } from '../sim/race';
 import { terrainHeight } from '../sim/track';
 import { ChaseCamera } from './camera';
 import { simToWorldX, simToWorldZ } from './coords';
@@ -250,7 +250,10 @@ export class GameView {
       // Inclinaison du canal si ses deux bouts ne sont pas à la même hauteur.
       g.rotation.z = Math.atan2(zb - za, b.length);
       this.hazardGroup.add(g);
-      for (const [x, y, z] of [[b.ax, b.ay, za], [b.bx, b.by, zb]]) {
+      for (const [x, y, z] of [
+        [b.ax, b.ay, za],
+        [b.bx, b.by, zb],
+      ]) {
         const sign = createWarningSprite('~', '#2C7BB6');
         sign.position.set(simToWorldX(x), z + 4, simToWorldZ(y));
         this.hazardGroup.add(sign);
@@ -600,13 +603,11 @@ export class GameView {
     g.fillStyle = '#D80621';
     g.fillRect(319, 0, 3, 360);
     this.tags.forEach((t, i) => t && (t.visible = tagsShown[i]));
-    let url = '';
     try {
-      url = out.toDataURL('image/jpeg', 0.82);
+      return { url: out.toDataURL('image/jpeg', 0.82), gap: best.gap, rival: best.name };
     } catch {
       return null;
     }
-    return { url, gap: best.gap, rival: best.name };
   }
 
   /**
@@ -660,7 +661,7 @@ export class GameView {
     const rnd = (a: number) => (Math.random() - 0.5) * a;
 
     // Poussière (ou neige, ou boue) : dérapage, glissade, bas-côté.
-    const surface = r.onVerge ? race.track.def.vergeSurface : race.track.samples[r.proj.index].surface;
+    const surface = surfaceUnder(race, r);
     const swimming = r.swim >= 0;
     // Sous la pluie, on soulève des éclaboussures plutôt que de la poussière.
     if (race.weather === 'pluie' && m.speed > 6 && !swimming) {

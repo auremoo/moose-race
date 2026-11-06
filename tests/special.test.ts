@@ -26,7 +26,7 @@ describe('mode spécial', () => {
     expect(race('boucle-grise', 'classique', 'difficile', 10).hazards).toBeNull();
   });
 
-  it('nombre d\'ours selon la difficulté', () => {
+  it("nombre d'ours selon la difficulté", () => {
     for (const d of ['facile', 'moyen', 'difficile'] as DifficultyId[]) {
       const [lo, hi] = balance.special.bears[d].count;
       for (const id of ['boucle-grise', 'cap-diamant', 'ble-saskatchewan']) {
@@ -37,7 +37,7 @@ describe('mode spécial', () => {
     }
   });
 
-  it('un signal précède chaque passage d\'ours d\'environ 2 s', () => {
+  it("un signal précède chaque passage d'ours d'environ 2 s", () => {
     const r = race('boucle-grise', 'special', 'moyen', 0);
     const b = r.hazards!.bears.find((x) => x.kind !== 'garde')!;
     let warnStart = -1;
@@ -52,7 +52,7 @@ describe('mode spécial', () => {
     expect(activeStart - warnStart).toBeLessThan(2.1);
   });
 
-  it('les dernières places reçoivent plus d\'aides offensives', () => {
+  it("les dernières places reçoivent plus d'aides offensives", () => {
     const share = (rank: number) => {
       let coup = 0;
       for (let i = 0; i < 1000; i++) if (pickItem(rank, 11, (i + 0.5) / 1000) === 'coup') coup++;
@@ -87,7 +87,8 @@ describe('jeu complet : tous les circuits, 2 modes, 3 difficultés, 1 à 10 bots
   const cases: [string, RaceMode, DifficultyId, number][] = [];
   courses.forEach((c, i) => {
     for (const mode of ['classique', 'special'] as RaceMode[])
-      for (const d of ['facile', 'moyen', 'difficile'] as DifficultyId[]) cases.push([c.trackId!, mode, d, 1 + ((i * 3 + cases.length) % 10)]);
+      for (const d of ['facile', 'moyen', 'difficile'] as DifficultyId[])
+        cases.push([c.trackId!, mode, d, 1 + ((i * 3 + cases.length) % 10)]);
   });
   it.each(cases)('%s %s %s, %i bot(s)', (id, mode, d, bots) => {
     const r = run(race(id, mode, d, bots));

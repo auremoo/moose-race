@@ -60,13 +60,7 @@ export function targetSpeed(track: Track, racer: Racer, p: MooseParams, surface:
   return target;
 }
 
-export function autopilot(
-  track: Track,
-  racer: Racer,
-  p: MooseParams,
-  surface: SurfaceParams,
-  opts: AutopilotOptions = {},
-): Commands {
+export function autopilot(track: Track, racer: Racer, p: MooseParams, surface: SurfaceParams, opts: AutopilotOptions = {}): Commands {
   const m = racer.moose;
   const n = track.samples.length;
   const L = (opts.lookAheadBase ?? 6) + (opts.lookAheadPerSpeed ?? 0.45) * m.speed;

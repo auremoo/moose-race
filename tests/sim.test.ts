@@ -32,15 +32,15 @@ describe('piste', () => {
   });
 });
 
-describe('physique de l\'orignal', () => {
-  it('sans accélérer, l\'orignal ralentit doucement (roue libre)', () => {
+describe("physique de l'orignal", () => {
+  it("sans accélérer, l'orignal ralentit doucement (roue libre)", () => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
     for (let i = 0; i < 60; i++) stepMoose(s, NO_COMMANDS, SENTIER, P, DT);
     expect(s.speed).toBeLessThan(P.topSpeed - 0.5);
     expect(s.speed).toBeGreaterThan(P.topSpeed - 3);
   });
 
-  it('le frein arrête l\'orignal de 30 m/s en ~2 à 3 s, sans arrêt net', () => {
+  it("le frein arrête l'orignal de 30 m/s en ~2 à 3 s, sans arrêt net", () => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
     let t = 0;
     while (s.speed > 0.01 && t < 10) {
@@ -97,7 +97,7 @@ describe('physique de l\'orignal', () => {
     expect(Math.abs(s.curvature)).toBeLessThan(Math.abs(s.commandedCurvature));
   });
 
-  it('l\'herbe plafonne la vitesse à 75 %', () => {
+  it("l'herbe plafonne la vitesse à 75 %", () => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
     for (let i = 0; i < 60 * 15; i++) stepMoose(s, FULL, balance.surfaces.herbe, P, DT);
     expect(s.speed).toBeLessThan(P.topSpeed * 0.76);
@@ -162,7 +162,15 @@ describe('bots derrière un joueur immobile', () => {
     const { createRace: create, stepRace: step } = await import('../src/sim/race');
     const { balance: b, trackById: byId } = await import('../src/data');
     for (const seed of [1, 2, 3]) {
-      const entrants = buildEntrants({ playerName: 'J', playerMooseId: 'bucheron', playerLevel: 1, difficulty: 'moyen', botCount: 10, seed, balance: b });
+      const entrants = buildEntrants({
+        playerName: 'J',
+        playerMooseId: 'bucheron',
+        playerLevel: 1,
+        difficulty: 'moyen',
+        botCount: 10,
+        seed,
+        balance: b,
+      });
       const r = create(byId('boucle-grise')!, b, { laps: 1, entrants, difficulty: 'moyen', seed });
       for (let i = 0; i < 60 * 20; i++) step(r, [NO_COMMANDS]);
       for (const x of r.racers.slice(1)) expect(x.distance, `graine ${seed}, ${x.name}`).toBeGreaterThan(30);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { dailyChallenge, dayKey } from '../src/meta/daily';
 
 describe('défi du jour', () => {
-  it('est identique pour une même date et change d\'un jour à l\'autre', () => {
+  it("est identique pour une même date et change d'un jour à l'autre", () => {
     const a = dailyChallenge(new Date(2026, 10, 6, 9));
     const b = dailyChallenge(new Date(2026, 10, 6, 21));
     expect(a).toEqual(b);

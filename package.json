@@ -13,7 +13,10 @@
     "track:report": "tsx tools/track-report.ts",
     "tracks:gen": "tsx tools/track-gen.ts",
     "balance": "tsx tools/balance-sim.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" \"tools/**/*.ts\" \"e2e/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" \"tools/**/*.ts\" \"e2e/**/*.ts\""
   },
   "dependencies": {
     "@fontsource/lilita-one": "^5.3.0",
@@ -21,11 +24,17 @@
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@playwright/test": "^1.63.0",
     "@types/node": "22.20.5",
     "@types/three": "0.186.0",
+    "eslint": "10.14.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.14.0",
+    "prettier": "3.9.10",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
     "vite": "8.3.4",
     "vitest": "5.0.5"
   }

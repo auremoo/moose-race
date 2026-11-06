@@ -43,7 +43,14 @@ export interface SpecialDef {
     minSpacing: number;
   };
   beaver: { perTrack: number; radius: number; respawnSeconds: number; lineOffset: number };
-  items: { coupSeconds: number; barrageSeconds: number; barrageHalfWidth: number; barrageSpeedKeep: number; hutteSeconds: number; biefOpenSeconds: number };
+  items: {
+    coupSeconds: number;
+    barrageSeconds: number;
+    barrageHalfWidth: number;
+    barrageSpeedKeep: number;
+    hutteSeconds: number;
+    biefOpenSeconds: number;
+  };
 }
 
 export interface Balance {
@@ -64,7 +71,15 @@ export interface Balance {
     followLateral: number;
     catchUpRange: number;
   };
-  contact: { halfLength: number; halfWidth: number; speedTransfer: number; stunClosingSpeed: number; stunFraction: number; minSpeedKeep: number; stunCooldown: number };
+  contact: {
+    halfLength: number;
+    halfWidth: number;
+    speedTransfer: number;
+    stunClosingSpeed: number;
+    stunFraction: number;
+    minSpeedKeep: number;
+    stunCooldown: number;
+  };
   special: SpecialDef;
   /** Plages stat 0 → stat 100 de chaque paramètre physique lié aux stats. */
   stats: Record<'topSpeed' | 'accel' | 'aLat' | 'enduranceSeconds' | 'stunSeconds' | 'mass', [number, number]>;
@@ -111,29 +126,101 @@ export function validateBalance(b: unknown): Balance {
   checkNumbers(o, 'balance', ['version']);
   checkNumbers(o.sim, 'balance.sim', ['hz', 'laps', 'countdownSeconds']);
   checkNumbers(o.moose, 'balance.moose', [
-    'topSpeed', 'accel', 'aLat', 'maxSteerCurvature', 'steerGripMargin', 'steerRate', 'scrubFactor', 'slideGrip',
-    'scrubMaxExcess', 'slideFlatDecel', 'overTopDecelRate', 'coastDecel', 'brakeDecel', 'startSpeed',
-    'gallopSpeedMul', 'gallopAccelMul', 'enduranceSeconds', 'enduranceRecoverSeconds', 'gallopRestartMin',
-    'driftMinSpeed', 'driftSteerMin', 'driftGripMul', 'driftDecel', 'driftChargeSeconds', 'driftMinCharge',
-    'boostMinSeconds', 'boostMaxSeconds', 'boostSpeedMul', 'boostAccel', 'cordeSpeedMul', 'cordeSeconds',
-    'draftSpeedMul', 'draftDistance', 'stunSeconds', 'mass',
+    'topSpeed',
+    'accel',
+    'aLat',
+    'maxSteerCurvature',
+    'steerGripMargin',
+    'steerRate',
+    'scrubFactor',
+    'slideGrip',
+    'scrubMaxExcess',
+    'slideFlatDecel',
+    'overTopDecelRate',
+    'coastDecel',
+    'brakeDecel',
+    'startSpeed',
+    'gallopSpeedMul',
+    'gallopAccelMul',
+    'enduranceSeconds',
+    'enduranceRecoverSeconds',
+    'gallopRestartMin',
+    'driftMinSpeed',
+    'driftSteerMin',
+    'driftGripMul',
+    'driftDecel',
+    'driftChargeSeconds',
+    'driftMinCharge',
+    'boostMinSeconds',
+    'boostMaxSeconds',
+    'boostSpeedMul',
+    'boostAccel',
+    'cordeSpeedMul',
+    'cordeSeconds',
+    'draftSpeedMul',
+    'draftDistance',
+    'stunSeconds',
+    'mass',
   ]);
   for (const s of SURFACES) checkNumbers(o.surfaces?.[s], `balance.surfaces.${s}`, ['grip', 'vmax']);
   checkNumbers(o.barrier, 'balance.barrier', ['speedLossPerSecond', 'headingAlignRate']);
   checkNumbers(o.corde, 'balance.corde', ['zoneHalfLength', 'lateralTolerance']);
   for (const id of ['facile', 'moyen', 'difficile'] as DifficultyId[])
     checkNumbers(o.difficulties?.[id], `balance.difficulties.${id}`, ['ratingOffset', 'catchUp', 'coinMul', 'assist']);
-  checkNumbers(o.bots, 'balance.bots', ['noiseAmplitude', 'mistakeChance', 'mistakeSpeedBonus', 'cornerMarginMin', 'overtakeDistance', 'overtakeShift', 'followLateral', 'catchUpRange']);
+  checkNumbers(o.bots, 'balance.bots', [
+    'noiseAmplitude',
+    'mistakeChance',
+    'mistakeSpeedBonus',
+    'cornerMarginMin',
+    'overtakeDistance',
+    'overtakeShift',
+    'followLateral',
+    'catchUpRange',
+  ]);
   checkNumbers(o.special, 'balance.special', ['coinMul']);
-  checkNumbers(o.special.bear, 'balance.special.bear', ['warnSeconds', 'crossSpeed', 'chargeSpeed', 'guardSway', 'periodMin', 'periodMax', 'radius', 'hitSpeedKeep', 'minSpacing']);
+  checkNumbers(o.special.bear, 'balance.special.bear', [
+    'warnSeconds',
+    'crossSpeed',
+    'chargeSpeed',
+    'guardSway',
+    'periodMin',
+    'periodMax',
+    'radius',
+    'hitSpeedKeep',
+    'minSpacing',
+  ]);
   checkNumbers(o.special.beaver, 'balance.special.beaver', ['perTrack', 'radius', 'respawnSeconds', 'lineOffset']);
-  checkNumbers(o.special.items, 'balance.special.items', ['coupSeconds', 'barrageSeconds', 'barrageHalfWidth', 'barrageSpeedKeep', 'hutteSeconds', 'biefOpenSeconds']);
-  checkNumbers(o.contact, 'balance.contact', ['halfLength', 'halfWidth', 'speedTransfer', 'stunClosingSpeed', 'stunFraction', 'minSpeedKeep', 'stunCooldown']);
+  checkNumbers(o.special.items, 'balance.special.items', [
+    'coupSeconds',
+    'barrageSeconds',
+    'barrageHalfWidth',
+    'barrageSpeedKeep',
+    'hutteSeconds',
+    'biefOpenSeconds',
+  ]);
+  checkNumbers(o.contact, 'balance.contact', [
+    'halfLength',
+    'halfWidth',
+    'speedTransfer',
+    'stunClosingSpeed',
+    'stunFraction',
+    'minSpeedKeep',
+    'stunCooldown',
+  ]);
   checkNumbers(o.hud, 'balance.hud', ['realTopKmh', 'gaugeMaxKmh', 'slideMessageSlip', 'slideMessageDelay']);
   if (!Array.isArray(o.hud.gaits) || o.hud.gaits.some((g) => typeof g[0] !== 'number' || typeof g[1] !== 'string'))
     fail('balance.hud.gaits', '[seuil, clé] attendus');
   checkNumbers(o.input, 'balance.input', ['touchRangePx', 'touchCurve', 'keyboardRampPerSecond', 'sensitivity']);
-  checkNumbers(o.camera, 'balance.camera', ['distance', 'height', 'lookAhead', 'lookHeight', 'fov', 'followRate', 'yawRate', 'galopFovBoost']);
+  checkNumbers(o.camera, 'balance.camera', [
+    'distance',
+    'height',
+    'lookAhead',
+    'lookHeight',
+    'fov',
+    'followRate',
+    'yawRate',
+    'galopFovBoost',
+  ]);
   if (o.sim.hz <= 0 || o.moose.aLat <= 0 || o.moose.topSpeed <= 0) fail('balance', 'valeurs strictement positives attendues');
   return o;
 }

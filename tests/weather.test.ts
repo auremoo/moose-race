@@ -7,7 +7,15 @@ import { createRng } from '../src/sim/rng';
 import { pickWeather, wetSurfaces } from '../src/sim/weather';
 
 function race(weather?: 'clair' | 'pluie' | 'brouillard', biome?: string, seed = 5) {
-  const entrants = buildEntrants({ playerName: 'J', playerMooseId: 'bucheron', playerLevel: 1, difficulty: 'moyen', botCount: 0, seed, balance });
+  const entrants = buildEntrants({
+    playerName: 'J',
+    playerMooseId: 'bucheron',
+    playerLevel: 1,
+    difficulty: 'moyen',
+    botCount: 0,
+    seed,
+    balance,
+  });
   return createRace(trackById('boucle-grise')!, balance, { laps: 1, entrants, difficulty: 'moyen', seed, weather, biome });
 }
 
@@ -42,7 +50,7 @@ describe('météo', () => {
     expect(fog / N).toBeLessThan(0.14);
   });
 
-  it('la pluie réduit l\'adhérence sans toucher la glace ni le rocher', () => {
+  it("la pluie réduit l'adhérence sans toucher la glace ni le rocher", () => {
     const w = wetSurfaces(balance.surfaces);
     expect(w.sentier.grip).toBeLessThan(balance.surfaces.sentier.grip);
     expect(w.boue.vmax).toBeLessThan(balance.surfaces.boue.vmax);

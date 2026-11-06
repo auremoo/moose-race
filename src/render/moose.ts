@@ -71,10 +71,16 @@ function mooseProxy(color: THREE.Color, level: 1 | 2, accessory?: string): THREE
     parts.push(part(new THREE.CylinderGeometry(0.32, 0.45, 1.1, 5), color, 1.35, 2.55, 0, -0.9));
     parts.push(part(new THREE.CapsuleGeometry(0.32, 0.7, 2, 5), dark, 1.95, 2.85, 0, Math.PI / 2 - 0.35));
     for (const side of [-1, 1]) parts.push(part(new THREE.SphereGeometry(1, 6, 3).scale(0.32, 0.12, 0.75), antler, 1.85, 3.3, side * 0.72));
-    for (const [x, z] of [[0.85, 0.4], [0.85, -0.4], [-0.85, 0.4], [-0.85, -0.4]])
+    for (const [x, z] of [
+      [0.85, 0.4],
+      [0.85, -0.4],
+      [-0.85, 0.4],
+      [-0.85, -0.4],
+    ])
       parts.push(part(new THREE.CylinderGeometry(0.13, 0.1, 1.45, 4), dark, x, 0.78, z));
     if (accessory === 'tuque') parts.push(part(new THREE.ConeGeometry(0.32, 0.55, 6), new THREE.Color(0xd80621), 1.95, 3.35, 0));
-    if (accessory === 'foulard') parts.push(part(new THREE.TorusGeometry(0.46, 0.13, 4, 8).rotateY(Math.PI / 2), new THREE.Color(0xd80621), 1.25, 2.45, 0));
+    if (accessory === 'foulard')
+      parts.push(part(new THREE.TorusGeometry(0.46, 0.13, 4, 8).rotateY(Math.PI / 2), new THREE.Color(0xd80621), 1.25, 2.45, 0));
   } else {
     parts.push(part(new THREE.BoxGeometry(3.0, 1.4, 1.3), color, 0, 2.0, 0));
     parts.push(part(new THREE.BoxGeometry(1.0, 0.55, 0.55), dark, 1.9, 2.8, 0, -0.35));

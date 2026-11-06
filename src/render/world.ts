@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { createRng } from '../sim/rng';
 import type { RacingLine } from '../sim/racingLine';
 import { terrainHeight, type SurfaceId, type Track } from '../sim/track';
+import { getFork, projectOnFork, type Fork } from '../sim/fork';
 import { decorate, paletteFor, skyDome, trackSigns, type Biome, type Decor } from './biomes';
 import { simToWorldX, simToWorldZ } from './coords';
 
@@ -48,17 +49,20 @@ export interface World {
 
 /** Ruban entre deux décalages latéraux d1 < d2 le long de la piste, couleur par échantillon. */
 function ribbon(
-  track: Track,
+  track: { samples: { x: number; y: number; nx: number; ny: number; z: number }[] },
   d1: (i: number) => number,
   d2: (i: number) => number,
   y: number,
   color: (i: number) => THREE.Color,
+  closed = true,
 ): THREE.BufferGeometry {
   const S = track.samples;
   const n = S.length;
-  const pos = new Float32Array((n + 1) * 2 * 3);
-  const col = new Float32Array((n + 1) * 2 * 3);
-  for (let j = 0; j <= n; j++) {
+  // Boucle fermée : un sommet de plus pour rejoindre le premier. Chemin ouvert : n - 1 segments.
+  const last = closed ? n : n - 1;
+  const pos = new Float32Array((last + 1) * 2 * 3);
+  const col = new Float32Array((last + 1) * 2 * 3);
+  for (let j = 0; j <= last; j++) {
     const i = j % n;
     const s = S[i];
     const c = color(i);
@@ -74,7 +78,7 @@ function ribbon(
     }
   }
   const idx: number[] = [];
-  for (let j = 0; j < n; j++) {
+  for (let j = 0; j < last; j++) {
     const a = j * 2;
     const b = a + 1;
     const c = a + 2;
@@ -90,7 +94,66 @@ function ribbon(
   return g;
 }
 
-export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, biome: Biome = 'test', density = 1, weather = 'clair'): World {
+/** Panneau jaune à l'embranchement : flèche qui se divise, côté branche. */
+function forkSign(track: Track, fork: Fork): THREE.Group {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#F5B301';
+  g.fillRect(0, 0, 128, 128);
+  g.strokeStyle = '#111';
+  g.lineWidth = 6;
+  g.strokeRect(4, 4, 120, 120);
+  g.lineWidth = 12;
+  g.lineCap = 'round';
+  const dir = fork.side > 0 ? -1 : 1;
+  g.beginPath();
+  g.moveTo(64, 112);
+  g.lineTo(64, 30);
+  g.moveTo(64, 72);
+  g.lineTo(64 + dir * 36, 34);
+  g.stroke();
+  g.fillStyle = '#111';
+  for (const [x, ang] of [
+    [64, 0],
+    [64 + dir * 36, dir * 0.75],
+  ] as const) {
+    g.save();
+    g.translate(x, x === 64 ? 22 : 28);
+    g.rotate(ang);
+    g.beginPath();
+    g.moveTo(0, -12);
+    g.lineTo(13, 6);
+    g.lineTo(-13, 6);
+    g.fill();
+    g.restore();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const grp = new THREE.Group();
+  const S = track.samples;
+  const i = (fork.from - Math.round(35 / track.spacing) + S.length) % S.length;
+  const s = S[i];
+  const d = fork.side * (s.hw + 8.5);
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+  board.position.y = 3.4;
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 3.4, 6), new THREE.MeshLambertMaterial({ color: 0x8e8a85 }));
+  pole.position.y = 1.7;
+  grp.add(board, pole);
+  grp.position.set(simToWorldX(s.x + s.nx * d), s.z, simToWorldZ(s.y + s.ny * d));
+  // Face aux orignaux qui arrivent.
+  grp.rotation.y = Math.atan2(s.ty, s.tx) - Math.PI / 2;
+  return grp;
+}
+
+export function buildWorld(
+  scene: THREE.Scene,
+  track: Track,
+  line: RacingLine,
+  biome: Biome = 'test',
+  density = 1,
+  weather = 'clair',
+): World {
   const snowy = track.def.surface === 'neige';
   const dusk = track.def.id === 'crepuscule-manitoba';
   const pal = paletteFor(biome, snowy, dusk);
@@ -120,10 +183,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   const flat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
 
   // Sol.
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(3000, 3000),
-    new THREE.MeshLambertMaterial({ color: pal.ground }),
-  );
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshLambertMaterial({ color: pal.ground }));
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.05;
   group.add(ground);
@@ -138,7 +198,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
     const pos = geo.getAttribute('position');
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i) + cx;
-      const y = -(pos.getZ(i)) + cy;
+      const y = -pos.getZ(i) + cy;
       pos.setY(i, Math.max(0, terrainHeight(track, x, y) - 0.12));
     }
     geo.translate(simToWorldX(cx), 0, simToWorldZ(cy));
@@ -150,11 +210,19 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   const verge = track.def.verge;
   const hwAt = (i: number) => S[i].hw;
   const limitAt = (i: number) => S[i].hw + verge;
-  const off = (f: (i: number) => number, k: number, c = 0) => (i: number) => k * f(i) + c;
+  const off =
+    (f: (i: number) => number, k: number, c = 0) =>
+    (i: number) =>
+      k * f(i) + c;
 
   // Bas-côté (herbe), sentier, bordures blanches. La largeur varie le long de la piste.
   const vergeCol = vc(pal.verge);
-  group.add(new THREE.Mesh(ribbon(track, off(limitAt, -1), limitAt, 0.0, () => vergeCol), flat));
+  group.add(
+    new THREE.Mesh(
+      ribbon(track, off(limitAt, -1), limitAt, 0.0, () => vergeCol),
+      flat,
+    ),
+  );
   const surfA = {} as Record<SurfaceId, THREE.Color>;
   const surfB = {} as Record<SurfaceId, THREE.Color>;
   for (const k of Object.keys(SURFACE_COLORS) as SurfaceId[]) {
@@ -168,8 +236,18 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
     ),
   );
   const white = vc(COLORS.edge);
-  group.add(new THREE.Mesh(ribbon(track, off(hwAt, 1, -0.5), off(hwAt, 1, -0.2), 0.04, () => white), flat));
-  group.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, 0.2), off(hwAt, -1, 0.5), 0.04, () => white), flat));
+  group.add(
+    new THREE.Mesh(
+      ribbon(track, off(hwAt, 1, -0.5), off(hwAt, 1, -0.2), 0.04, () => white),
+      flat,
+    ),
+  );
+  group.add(
+    new THREE.Mesh(
+      ribbon(track, off(hwAt, -1, 0.2), off(hwAt, -1, 0.5), 0.04, () => white),
+      flat,
+    ),
+  );
 
   // Vibreurs rouge et blanc sur les virages marqués, côté intérieur et extérieur.
   const red = vc(COLORS.curbRed);
@@ -177,6 +255,67 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   const curbColor = (i: number) => (curbMask[i] ? (Math.floor(i / 3) % 2 ? red : white) : vergeCol);
   group.add(new THREE.Mesh(ribbon(track, hwAt, off(hwAt, 1, 1.4), 0.03, curbColor), flat));
   group.add(new THREE.Mesh(ribbon(track, off(hwAt, -1, -1.4), off(hwAt, -1), 0.03, curbColor), flat));
+
+  // Bifurcation : branche étroite, son bas-côté, ses bordures, et un panneau à l'embranchement.
+  const fork = getFork(track);
+  if (fork) {
+    const F = fork.samples;
+    const fhw = () => fork.hw;
+    const flim = () => fork.hw + fork.verge;
+    group.add(
+      new THREE.Mesh(
+        ribbon(
+          fork,
+          () => -flim(),
+          flim,
+          0.01,
+          () => vergeCol,
+          false,
+        ),
+        flat,
+      ),
+    );
+    group.add(
+      new THREE.Mesh(
+        ribbon(
+          fork,
+          () => -fhw(),
+          fhw,
+          0.025,
+          (i) => (Math.floor(i / 6) % 2 ? surfA : surfB)[F[i].surface],
+          false,
+        ),
+        flat,
+      ),
+    );
+    group.add(
+      new THREE.Mesh(
+        ribbon(
+          fork,
+          () => fork.hw - 0.4,
+          () => fork.hw - 0.15,
+          0.045,
+          () => white,
+          false,
+        ),
+        flat,
+      ),
+    );
+    group.add(
+      new THREE.Mesh(
+        ribbon(
+          fork,
+          () => -fork.hw + 0.15,
+          () => -fork.hw + 0.4,
+          0.045,
+          () => white,
+          false,
+        ),
+        flat,
+      ),
+    );
+    group.add(forkSign(track, fork));
+  }
 
   // Ligne de départ en damier.
   const startCanvas = document.createElement('canvas');
@@ -230,6 +369,13 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
     for (const side of [-1, 1]) {
       const s = S[i];
       const limit = limitAt(i);
+      // Pas de poteau en travers de la branche de la bifurcation.
+      if (fork) {
+        const px = s.x + s.nx * limit * side;
+        const py = s.y + s.ny * limit * side;
+        const fp = projectOnFork(fork, px, py);
+        if (Math.abs(fp.d) < fork.hw + fork.verge + 0.5 && fp.s > 0.5 && fp.s < fork.length - 0.5) continue;
+      }
       m4.makeTranslation(simToWorldX(s.x + s.nx * limit * side), 0.6 + s.z, simToWorldZ(s.y + s.ny * limit * side));
       posts.setMatrixAt(pi++, m4);
     }
@@ -245,10 +391,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   // Ligne centrale de débogage (masquée par défaut).
   const linePts = S.map((s) => new THREE.Vector3(simToWorldX(s.x), 0.12 + s.z, simToWorldZ(s.y)));
   linePts.push(linePts[0].clone());
-  const debugLine = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(linePts),
-    new THREE.LineBasicMaterial({ color: 0x00e5ff }),
-  );
+  const debugLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(linePts), new THREE.LineBasicMaterial({ color: 0x00e5ff }));
   debugLine.visible = false;
   group.add(debugLine);
 

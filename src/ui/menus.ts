@@ -92,9 +92,9 @@ export class Menus {
     document.querySelector('.tile[data-feature="enclos"]')?.addEventListener('click', () => this.show('enclos'));
     document.querySelector('.tile[data-feature="comptoir"]')?.addEventListener('click', () => this.show('comptoir'));
     document.querySelector('.tile[data-feature="didacticiel"]')?.addEventListener('click', () => this.cb.onTutorial());
-    document.querySelectorAll<HTMLElement>('[data-back]').forEach((b) =>
-      b.addEventListener('click', () => this.show(b.dataset.back as MenuScreen)),
-    );
+    document
+      .querySelectorAll<HTMLElement>('[data-back]')
+      .forEach((b) => b.addEventListener('click', () => this.show(b.dataset.back as MenuScreen)));
     $('btn-go').addEventListener('click', () =>
       this.cb.onStart(this.selected, { difficulty: this.save.difficulty, botCount: this.save.botCount, mode: this.save.mode }),
     );
@@ -182,7 +182,8 @@ export class Menus {
     const daily = dailyChallenge();
     $('daily-name').textContent = daily.course.name;
     const done = this.save.dailyDone.includes(daily.key);
-    $('daily-info').textContent = `${'★'.repeat(daily.course.stars)} · ${daily.mode === 'special' ? t('modeSpecial') : t('modeClassic')} · ${tk(daily.difficulty === 'difficile' ? 'hard' : daily.difficulty === 'facile' ? 'easy' : 'medium')} · ${done ? t('dailyDone') : `+${DAILY_BONUS}`}`;
+    $('daily-info').textContent =
+      `${'★'.repeat(daily.course.stars)} · ${daily.mode === 'special' ? t('modeSpecial') : t('modeClassic')} · ${tk(daily.difficulty === 'difficile' ? 'hard' : daily.difficulty === 'facile' ? 'easy' : 'medium')} · ${done ? t('dailyDone') : `+${DAILY_BONUS}`}`;
     $('btn-daily').classList.toggle('done', done);
     // Première visite : le didacticiel est mis en avant.
     document.querySelector('.tile[data-feature="didacticiel"]')?.classList.toggle('highlight', !this.save.tutorialDone);
@@ -237,9 +238,7 @@ export class Menus {
     const level = this.save.levels[m.id] ?? 1;
     $('prep-cote').textContent = String(mooseRating(m, level));
     $('bots-count').textContent = String(this.save.botCount);
-    document.querySelectorAll<HTMLElement>('[data-diff]').forEach((b) =>
-      b.classList.toggle('on', b.dataset.diff === this.save.difficulty),
-    );
+    document.querySelectorAll<HTMLElement>('[data-diff]').forEach((b) => b.classList.toggle('on', b.dataset.diff === this.save.difficulty));
     document.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === this.save.mode));
     $('mode-desc').textContent = this.save.mode === 'special' ? t('modeSpecialDesc') : t('modeClassicDesc');
     const off = balance.difficulties[this.save.difficulty].ratingOffset;

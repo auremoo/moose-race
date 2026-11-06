@@ -34,7 +34,7 @@ describe('niveaux de détail', () => {
     expect([...decor.tiers]).toEqual(before);
   });
 
-  it('l\'orignal a trois niveaux, les deux simplifiés en un seul appel de dessin', () => {
+  it("l'orignal a trois niveaux, les deux simplifiés en un seul appel de dessin", () => {
     const v = createMooseView({ coat: '#5B3A29', accessory: 'tuque' });
     const lod = v.root.children.find((c) => (c as THREE.LOD).isLOD) as THREE.LOD;
     expect(lod).toBeDefined();

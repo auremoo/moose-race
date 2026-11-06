@@ -2,16 +2,7 @@
  * Composition du peloton : le joueur puis des bots dont la cote est calée sur celle
  * du joueur selon la difficulté (Facile −6, Moyen ±0, Difficile +4).
  */
-import {
-  botNames,
-  mooseById,
-  mooseCatalog,
-  mooseParamsFor,
-  mooseRating,
-  type Balance,
-  type DifficultyId,
-  type MooseDef,
-} from '../data';
+import { botNames, mooseById, mooseCatalog, mooseParamsFor, mooseRating, type Balance, type DifficultyId, type MooseDef } from '../data';
 import type { Entrant } from './race';
 import { createRng } from './rng';
 
@@ -58,7 +49,10 @@ export function buildEntrants(o: RosterOptions): Entrant[] {
       : mooseCatalog.moose.filter((m) => m.rarity === (target < mooseRating(mooseCatalog.moose[0], 1) ? 'commun' : 'legendaire'));
     const def = pool[Math.floor(rng.next() * pool.length)];
     const jitter = Math.round(rng.range(-2, 2));
-    const level = Math.max(1, Math.min(mooseCatalog.maxLevel, Math.round((target + jitter - mooseRating(def, 1)) / mooseCatalog.levelStatGain) + 1));
+    const level = Math.max(
+      1,
+      Math.min(mooseCatalog.maxLevel, Math.round((target + jitter - mooseRating(def, 1)) / mooseCatalog.levelStatGain) + 1),
+    );
     const ni = Math.floor(rng.next() * names.length);
     const name = names.splice(ni, 1)[0] ?? `Bot ${i + 1}`;
     const talent = rng.range(diff.talent[0], diff.talent[1]);

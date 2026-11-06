@@ -36,16 +36,8 @@ export class ChaseCamera {
     const fy = Math.sin(this.yaw);
     const wx = simToWorldX(x);
     const wz = simToWorldZ(y);
-    const targetPos = new THREE.Vector3(
-      wx - simToWorldX(fx) * c.distance,
-      c.height + z,
-      wz - simToWorldZ(fy) * c.distance,
-    );
-    const targetLook = new THREE.Vector3(
-      wx + simToWorldX(fx) * c.lookAhead,
-      c.lookHeight + z,
-      wz + simToWorldZ(fy) * c.lookAhead,
-    );
+    const targetPos = new THREE.Vector3(wx - simToWorldX(fx) * c.distance, c.height + z, wz - simToWorldZ(fy) * c.distance);
+    const targetLook = new THREE.Vector3(wx + simToWorldX(fx) * c.lookAhead, c.lookHeight + z, wz + simToWorldZ(fy) * c.lookAhead);
     if (!this.initialized) {
       this.pos.copy(targetPos);
       this.look.copy(targetLook);
@@ -56,7 +48,10 @@ export class ChaseCamera {
       this.look.lerp(targetLook, Math.min(1, k * 1.5));
     }
     this.camera.position.copy(this.pos);
-    if (shake > 0) this.camera.position.add(new THREE.Vector3((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake));
+    if (shake > 0)
+      this.camera.position.add(
+        new THREE.Vector3((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake),
+      );
     this.camera.lookAt(this.look);
 
     // Le champ s'élargit au galop et pendant l'élan, un peu avec la vitesse.

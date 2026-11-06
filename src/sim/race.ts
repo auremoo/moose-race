@@ -11,7 +11,8 @@ import { createMooseState, NO_COMMANDS, stepMoose, type Commands, type MoosePara
 import { getRacingLine, speedProfile, type RacingLine } from './racingLine';
 import { createRng, type Rng } from './rng';
 import { pickWeather, wetSurfaces, type Weather } from './weather';
-import { buildTrack, projectOnTrack, type Track, type TrackDef, type TrackProjection } from './track';
+import { FORK_ENTRY_MARGIN, forkToTrackS, getFork, projectOnFork, type Fork, type ForkProjection } from './fork';
+import { buildTrack, projectOnTrack, type SurfaceId, type Track, type TrackDef, type TrackProjection } from './track';
 
 export type RacePhase = 'countdown' | 'running' | 'finished';
 export type RaceMode = 'classique' | 'special';
@@ -68,6 +69,9 @@ export interface Racer {
   lastItemUseTick: number;
   /** Bouton Castor tenu au pas précédent (déclenchement au front). */
   castorHeld: boolean;
+  /** Engagé sur la bifurcation, et position sur la branche. */
+  onFork: boolean;
+  forkProj: ForkProjection;
   /** Bief ouvert pour ce participant (s restantes). */
   biefOpen: number;
   /** Distance nagée dans le canal (m), −1 hors du bief. */
@@ -90,6 +94,8 @@ export interface Race {
   /** Biome du parcours. */
   biome?: string;
   weather: Weather;
+  /** Bifurcation risquée du circuit, s'il en a une. */
+  fork: Fork | null;
   /** Surfaces en vigueur (mouillées sous la pluie). */
   surfaces: Balance['surfaces'];
   /** Ours, castors et barrages : seulement en mode spécial. */
@@ -122,7 +128,8 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
   const weather = opts.weather ?? pickWeather(createRng(seed ^ 0x6a09e667), opts.biome, def.surface === 'neige');
   const surfaces = weather === 'pluie' ? wetSurfaces(balance.surfaces) : balance.surfaces;
   // Sous la pluie, la vitesse cible de la ligne de course baisse (même trajectoire).
-  const lineUsed = surfaces === balance.surfaces ? line : { ...line, speed: speedProfile(track, line.x, line.y, line.k, balance.moose, surfaces) };
+  const lineUsed =
+    surfaces === balance.surfaces ? line : { ...line, speed: speedProfile(track, line.x, line.y, line.k, balance.moose, surfaces) };
   const entrants: Entrant[] =
     opts.entrants ?? Array.from({ length: opts.racerCount ?? 1 }, (_, i) => ({ name: i === 0 ? 'Joueur' : `Bot ${i}` }));
   const count = entrants.length;
@@ -186,6 +193,8 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
       castorHeld: false,
       biefOpen: 0,
       swim: -1,
+      onFork: false,
+      forkProj: { index: 0, s: 0, d: 0 },
     };
   });
   const race: Race = {
@@ -203,6 +212,7 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
     mode: opts.mode ?? 'classique',
     biome: opts.biome,
     weather,
+    fork: getFork(track),
     surfaces,
     hazards: null,
     line: lineUsed,
@@ -255,11 +265,32 @@ function stepSwim(r: Race, racer: Racer): void {
   }
 }
 
+/** Surface sous les sabots (piste, bas-côté ou branche de la bifurcation). */
+export function surfaceUnder(r: Race, racer: Racer): SurfaceId {
+  if (racer.onVerge) return r.track.def.vergeSurface;
+  if (racer.onFork && r.fork) return r.fork.samples[racer.forkProj.index].surface;
+  return r.track.samples[racer.proj.index].surface;
+}
+
+/** Vent de travers : il pousse l'orignal sur le côté, d'autant plus qu'il court vite et à découvert. */
+function applyWind(r: Race, m: MooseState): void {
+  if (!r.track.def.wind || r.phase === 'countdown' || m.speed <= 2) return;
+  const w = windAt(r);
+  const exposure = Math.min(1, m.speed / 15);
+  const lat = -w.x * Math.sin(m.heading) + w.y * Math.cos(m.heading);
+  m.x += -Math.sin(m.heading) * lat * exposure * r.dt;
+  m.y += Math.cos(m.heading) * lat * exposure * r.dt;
+}
+
 function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
-  const { track, balance } = r;
+  const { track } = r;
   const m = racer.moose;
   if (racer.swim >= 0 && r.hazards?.bief) {
     stepSwim(r, racer);
+    return;
+  }
+  if (racer.onFork && r.fork) {
+    stepFork(r, racer, cmd);
     return;
   }
   const absD = Math.abs(racer.proj.d);
@@ -269,14 +300,7 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   const smp = track.samples[racer.proj.index];
   const slope = smp.slope * (Math.cos(m.heading) * smp.tx + Math.sin(m.heading) * smp.ty);
   stepMoose(m, cmd, r.surfaces[surfaceId], racer.params, r.dt, slope);
-  // Vent de travers : il pousse l'orignal sur le côté, d'autant plus qu'il court vite et à découvert.
-  if (track.def.wind && r.phase !== 'countdown' && m.speed > 2) {
-    const w = windAt(r);
-    const exposure = Math.min(1, m.speed / 15);
-    const lat = -w.x * Math.sin(m.heading) + w.y * Math.cos(m.heading);
-    m.x += -Math.sin(m.heading) * lat * exposure * r.dt;
-    m.y += Math.cos(m.heading) * lat * exposure * r.dt;
-  }
+  applyWind(r, m);
 
   let proj = projectOnTrack(track, m.x, m.y, racer.proj.index);
 
@@ -285,24 +309,71 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   racer.onBarrier = false;
   if (Math.abs(proj.d) > limit) {
     racer.onBarrier = true;
-    const sm = track.samples[proj.index];
-    const over = Math.abs(proj.d) - limit;
-    const sign = Math.sign(proj.d);
-    m.x -= sm.nx * over * sign;
-    m.y -= sm.ny * over * sign;
-    m.speed *= Math.max(0, 1 - balance.barrier.speedLossPerSecond * r.dt);
-    // Ramène le cap vers la tangente si l'orignal pointe vers l'extérieur.
-    const outward = (Math.cos(m.heading) * sm.nx + Math.sin(m.heading) * sm.ny) * sign;
-    if (outward > 0) {
-      const tangentHeading = Math.atan2(sm.ty, sm.tx);
-      let dh = tangentHeading - m.heading;
-      while (dh > Math.PI) dh -= 2 * Math.PI;
-      while (dh < -Math.PI) dh += 2 * Math.PI;
-      m.heading += dh * Math.min(1, balance.barrier.headingAlignRate * r.dt);
-    }
+    pushFromBarrier(r, m, track.samples[proj.index], Math.abs(proj.d) - limit, Math.sign(proj.d));
     proj = projectOnTrack(track, m.x, m.y, proj.index);
   }
+  if (r.fork) maybeEnterFork(r, racer, proj);
   updateProgress(r, racer, proj);
+}
+
+/** Barrière souple : repousse de `over` vers l'axe, ralentit, ramène le cap vers la tangente. */
+function pushFromBarrier(r: Race, m: MooseState, sm: { nx: number; ny: number; tx: number; ty: number }, over: number, sign: number): void {
+  m.x -= sm.nx * over * sign;
+  m.y -= sm.ny * over * sign;
+  m.speed *= Math.max(0, 1 - r.balance.barrier.speedLossPerSecond * r.dt);
+  // Ramène le cap vers la tangente si l'orignal pointe vers l'extérieur.
+  const outward = (Math.cos(m.heading) * sm.nx + Math.sin(m.heading) * sm.ny) * sign;
+  if (outward > 0) {
+    const tangentHeading = Math.atan2(sm.ty, sm.tx);
+    let dh = tangentHeading - m.heading;
+    while (dh > Math.PI) dh -= 2 * Math.PI;
+    while (dh < -Math.PI) dh += 2 * Math.PI;
+    m.heading += dh * Math.min(1, r.balance.barrier.headingAlignRate * r.dt);
+  }
+}
+
+/** Embranchement franchi sur le bas-côté, du côté de la branche : l'orignal s'y engage. */
+function maybeEnterFork(r: Race, racer: Racer, proj: TrackProjection): void {
+  const f = r.fork!;
+  const L = r.track.length;
+  const sFrom = r.track.samples[f.from].s;
+  const before = (sFrom - racer.proj.s + L) % L;
+  const step = (proj.s - racer.proj.s + L) % L;
+  if (step > L / 2 || before >= step) return;
+  if (proj.d * f.side <= r.track.samples[proj.index].hw + FORK_ENTRY_MARGIN) return;
+  racer.onFork = true;
+  racer.forkProj = projectOnFork(f, racer.moose.x, racer.moose.y);
+}
+
+/** Pas d'un orignal engagé sur la branche. */
+function stepFork(r: Race, racer: Racer, cmd: Commands): void {
+  const { track } = r;
+  const f = r.fork!;
+  const m = racer.moose;
+  const fs = f.samples[racer.forkProj.index];
+  racer.onVerge = Math.abs(racer.forkProj.d) > f.hw;
+  const surfaceId = racer.onVerge ? track.def.vergeSurface : fs.surface;
+  const slope =
+    ((f.samples[f.samples.length - 1].z - f.samples[0].z) / f.length) * (Math.cos(m.heading) * fs.tx + Math.sin(m.heading) * fs.ty);
+  stepMoose(m, cmd, r.surfaces[surfaceId], racer.params, r.dt, slope);
+  applyWind(r, m);
+  let p = projectOnFork(f, m.x, m.y, racer.forkProj.index);
+  const limit = f.hw + f.verge;
+  racer.onBarrier = false;
+  if (Math.abs(p.d) > limit) {
+    racer.onBarrier = true;
+    pushFromBarrier(r, m, f.samples[p.index], Math.abs(p.d) - limit, Math.sign(p.d));
+    p = projectOnFork(f, m.x, m.y, p.index);
+  }
+  racer.forkProj = p;
+  // Bout de la branche (ou demi-tour jusqu'à l'embranchement) : retour sur la piste.
+  if (p.s >= f.length - 0.5 || p.s <= 0.05) {
+    racer.onFork = false;
+    updateProgress(r, racer, projectOnTrack(track, m.x, m.y, p.s <= 0.05 ? f.from : f.to, 30));
+    return;
+  }
+  const sMain = forkToTrackS(track, f, p.s);
+  updateProgress(r, racer, { index: Math.round(sMain / track.spacing) % track.samples.length, s: sMain, d: 0 });
 }
 
 function updateProgress(r: Race, racer: Racer, proj: TrackProjection): void {
@@ -436,7 +507,10 @@ function resolveContacts(r: Race): void {
       b.speed = Math.max(keepB, b.speed + closing * c.speedTransfer * wb * 0.5 * Math.max(0, pb));
       if (closing > c.stunClosingSpeed) {
         const cooldown = Math.round(c.stunCooldown / r.dt);
-        for (const [R, M] of [[A, a], [B, b]] as const) {
+        for (const [R, M] of [
+          [A, a],
+          [B, b],
+        ] as const) {
           if (M.shieldTime > 0) {
             // La hutte repousse le choc.
             M.shieldTime = 0;

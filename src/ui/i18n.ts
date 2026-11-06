@@ -9,7 +9,7 @@ let current: Lang = 'fr';
 
 /** Langue par défaut : celle du téléphone si c'est le français, sinon l'anglais. */
 export function detectLang(): Lang {
-  const langs = typeof navigator !== 'undefined' ? navigator.languages ?? [navigator.language] : [];
+  const langs = typeof navigator !== 'undefined' ? (navigator.languages ?? [navigator.language]) : [];
   return langs.some((l) => l?.toLowerCase().startsWith('fr')) ? 'fr' : 'en';
 }
 

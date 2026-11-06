@@ -4,6 +4,8 @@
  * Aucune dépendance au DOM ni à Three.js.
  */
 
+import type { ForkDef } from './fork';
+
 export type SurfaceId = 'sentier' | 'herbe' | 'boue' | 'neige' | 'glace' | 'racines';
 
 export interface TrackDef {
@@ -40,6 +42,8 @@ export interface TrackDef {
    * Exemple : [[0, 0], [0.3, 22], [0.6, 4]].
    */
   elevation?: [number, number][];
+  /** Bifurcation risquée : branche plus courte mais lente (voir fork.ts). */
+  fork?: ForkDef;
 }
 
 export interface TrackSample {
@@ -89,8 +93,7 @@ function catmullRomCentripetal(
   t: number,
 ): [number, number] {
   const alpha = 0.5;
-  const tj = (ti: number, a: [number, number], b: [number, number]) =>
-    ti + Math.pow(Math.hypot(b[0] - a[0], b[1] - a[1]), alpha);
+  const tj = (ti: number, a: [number, number], b: [number, number]) => ti + Math.pow(Math.hypot(b[0] - a[0], b[1] - a[1]), alpha);
   const t0 = 0;
   const t1 = tj(t0, p0, p1);
   const t2 = tj(t1, p1, p2);
@@ -160,7 +163,7 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
   }
 
   // 4. Décalage pour placer la ligne de départ à l'indice 0.
-  const shift = Math.round(((def.startOffset % total) + total) % total / step) % count;
+  const shift = Math.round((((def.startOffset % total) + total) % total) / step) % count;
   const pos = raw.slice(shift).concat(raw.slice(0, shift));
   const wid = rawW.slice(shift).concat(rawW.slice(0, shift));
   // Lissage de la largeur sur ±8 m pour des transitions douces.
@@ -196,7 +199,20 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
     const ty = Math.sin(h);
     const f = i / count;
     const zone = def.zones?.find((z) => (z.from <= z.to ? f >= z.from && f < z.to : f >= z.from || f < z.to));
-    samples.push({ x: pos[i][0], y: pos[i][1], tx, ty, nx: -ty, ny: tx, k, hw: widSmooth[i] / 2, s: i * step, surface: zone?.surface ?? def.surface, z: elevationAt(def, f), slope: 0 });
+    samples.push({
+      x: pos[i][0],
+      y: pos[i][1],
+      tx,
+      ty,
+      nx: -ty,
+      ny: tx,
+      k,
+      hw: widSmooth[i] / 2,
+      s: i * step,
+      surface: zone?.surface ?? def.surface,
+      z: elevationAt(def, f),
+      slope: 0,
+    });
   }
   for (let i = 0; i < count; i++) {
     const a = samples[(i - 2 + count) % count];

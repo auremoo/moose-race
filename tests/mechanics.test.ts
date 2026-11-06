@@ -13,7 +13,7 @@ const run = (s: ReturnType<typeof createMooseState>, cmd: typeof GO, seconds: nu
 };
 
 describe('galop', () => {
-  it('augmente la vitesse de pointe de 22 % et vide l\'endurance en 4 s', () => {
+  it("augmente la vitesse de pointe de 22 % et vide l'endurance en 4 s", () => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
     run(s, { ...GO, gallop: true }, 3.9);
     expect(s.galloping).toBe(true);
@@ -24,7 +24,7 @@ describe('galop', () => {
     expect(s.endurance).toBeLessThan(0.02);
   });
 
-  it('l\'endurance remonte en 8 s hors galop', () => {
+  it("l'endurance remonte en 8 s hors galop", () => {
     const s = createMooseState(0, 0, 0, P.topSpeed);
     run(s, { ...GO, gallop: true }, 4.1);
     run(s, GO, 7.9);
@@ -44,13 +44,13 @@ describe('glissade', () => {
     return { s, speedDuring };
   };
 
-  it('une glissade courte ne charge pas d\'élan et sert de frein', () => {
+  it("une glissade courte ne charge pas d'élan et sert de frein", () => {
     const { s, speedDuring } = drift(0.25);
     expect(s.boostTime).toBe(0);
     expect(speedDuring).toBeLessThan(25);
   });
 
-  it('une glissade longue libère jusqu\'à 1,5 s de poussée', () => {
+  it("une glissade longue libère jusqu'à 1,5 s de poussée", () => {
     const { s } = drift(2);
     expect(s.boostTime).toBeGreaterThan(1.4);
     expect(s.boostTime).toBeLessThanOrEqual(1.5);
@@ -66,7 +66,7 @@ describe('glissade', () => {
 });
 
 describe('surfaces', () => {
-  it('la glace réduit fortement l\'adhérence en virage', () => {
+  it("la glace réduit fortement l'adhérence en virage", () => {
     const a = createMooseState(0, 0, 0, 25);
     const b = createMooseState(0, 0, 0, 25);
     run(a, { ...GO, steer: 0.6 }, 1);
@@ -83,12 +83,15 @@ describe('corde et aspiration en course', () => {
     expect(race.racers[0].cordeCount).toBeGreaterThanOrEqual(Math.floor(race.line.apexes.length * 0.6));
   });
 
-  it('un orignal dans le sillage d\'un autre va plus vite', () => {
+  it("un orignal dans le sillage d'un autre va plus vite", () => {
     const race = createRace(trackById('prairie-tranquille')!, balance, { racerCount: 2 });
     // Deux orignaux alignés sur la ligne droite, le second 8 m derrière.
     const s0 = race.track.samples[40];
     const h = Math.atan2(s0.ty, s0.tx);
-    for (const [i, back] of [[0, 0], [1, 8]] as const) {
+    for (const [i, back] of [
+      [0, 0],
+      [1, 8],
+    ] as const) {
       const m = race.racers[i].moose;
       m.x = s0.x - s0.tx * back;
       m.y = s0.y - s0.ty * back;
@@ -107,10 +110,22 @@ describe('peloton', () => {
   it('11 orignaux terminent la course, de façon déterministe', async () => {
     const { buildEntrants } = await import('../src/sim/roster');
     const run = () => {
-      const entrants = buildEntrants({ playerName: 'J', playerMooseId: 'bucheron', playerLevel: 1, difficulty: 'moyen', botCount: 10, seed: 9, balance });
+      const entrants = buildEntrants({
+        playerName: 'J',
+        playerMooseId: 'bucheron',
+        playerLevel: 1,
+        difficulty: 'moyen',
+        botCount: 10,
+        seed: 9,
+        balance,
+      });
       const race = createRace(trackById('cap-diamant')!, balance, { laps: 1, entrants, difficulty: 'moyen', seed: 9 });
       for (let i = 0; i < 60 * 200 && !race.racers.every((r) => r.finished); i++)
-        stepRace(race, [autopilot(race.track, race.racers[0], race.racers[0].params, S.sentier, { line: { offset: race.line.offset, speed: race.racers[0].profile } })]);
+        stepRace(race, [
+          autopilot(race.track, race.racers[0], race.racers[0].params, S.sentier, {
+            line: { offset: race.line.offset, speed: race.racers[0].profile },
+          }),
+        ]);
       return race.racers.map((r) => r.finishTime);
     };
     const a = run();
@@ -121,7 +136,15 @@ describe('peloton', () => {
   it('la cote des bots suit la difficulté', async () => {
     const { buildEntrants } = await import('../src/sim/roster');
     const mean = (d: 'facile' | 'moyen' | 'difficile') => {
-      const e = buildEntrants({ playerName: 'J', playerMooseId: 'bucheron', playerLevel: 5, difficulty: d, botCount: 10, seed: 2, balance });
+      const e = buildEntrants({
+        playerName: 'J',
+        playerMooseId: 'bucheron',
+        playerLevel: 5,
+        difficulty: d,
+        botCount: 10,
+        seed: 2,
+        balance,
+      });
       return e.slice(1).reduce((a, x) => a + (x.rating ?? 0), 0) / 10;
     };
     expect(Math.abs(mean('facile') - 42)).toBeLessThanOrEqual(1.5);
@@ -159,7 +182,7 @@ describe('vent de travers et racines', () => {
 });
 
 describe('dénivelé', () => {
-  it('on ralentit en montée et on prend de l\'élan en descente', () => {
+  it("on ralentit en montée et on prend de l'élan en descente", () => {
     const flat = createMooseState(0, 0, 0, 20);
     const up = createMooseState(0, 0, 0, 20);
     const down = createMooseState(0, 0, 0, 20);

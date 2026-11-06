@@ -35,6 +35,8 @@ npm run balance -- 1000     # critères d'équilibrage du cahier (duels simulés
 npm run tracks:gen -- planche.html   # régénère les 19 circuits décrits par segments + planche de contrôle
 ```
 
+
+Style : `npm run lint` (ESLint) et `npm run format` (Prettier, `format:check` en CI).
 ## Architecture
 
 | Dossier | Rôle |
@@ -141,6 +143,15 @@ Rocheuses : 15 % / 20 % ; jamais de pluie sur la neige). Même graine, même mé
   traînées de pluie penchées par le vent, éclaboussures, bruit de pluie. Un tour est quelques pour cent plus lent.
 - **Brouillard** : rendu seulement (on voit moins loin), aucune incidence sur la physique.
 - Annonce au départ (« Pluie : sentier glissant »). Pour tester : `?meteo=pluie`, `?meteo=brouillard` ou `?meteo=clair`.
+
+## Bifurcation (Automne en Mauricie)
+
+Avant le virage du bas, à gauche de la carte, une branche étroite (7 m, racines sur 70 % de sa longueur) coupe
+le coin intérieur : 154 m au lieu de 193 m. Pour la prendre, on sort sur le bas-côté du côté du panneau jaune
+avant l'embranchement ; la ligne de course n'y passe jamais, on ne s'y retrouve donc pas par hasard. Gain
+d'environ 0,2 s par tour en passage propre ; une touche de barrière ou une sortie dans l'herbe le fait perdre.
+Les bots la tentent une fois sur cinq à une fois sur deux selon leur talent. Données : `fork` dans le JSON du
+circuit (`from`, `to`, `width`, `surface`, `bend`, `zones`), code dans `src/sim/fork.ts`.
 
 ## Vent et racines
 

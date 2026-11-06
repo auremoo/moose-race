@@ -4,6 +4,7 @@
  * Formes simples et instanciées pour tenir 60 FPS sur téléphone ; remplaçables par des GLB.
  */
 import * as THREE from 'three';
+import { getFork, projectOnFork } from '../sim/fork';
 import type { RacingLine } from '../sim/racingLine';
 import type { Rng } from '../sim/rng';
 import { projectOnTrack, terrainHeight, type Track } from '../sim/track';
@@ -25,18 +26,78 @@ export interface Palette {
 
 export function paletteFor(biome: Biome, snowy: boolean, dusk: boolean): Palette {
   if (dusk)
-    return { skyTop: 0x3b4a8c, skyBottom: 0xf7a35c, fog: 0xf0b07a, ground: 0xb99a45, verge: 0xcfb35a, hemiSky: 0xffd2a8, hemiGround: 0x6b5a2a, sun: 0xffb36b, sunIntensity: 1.5 };
+    return {
+      skyTop: 0x3b4a8c,
+      skyBottom: 0xf7a35c,
+      fog: 0xf0b07a,
+      ground: 0xb99a45,
+      verge: 0xcfb35a,
+      hemiSky: 0xffd2a8,
+      hemiGround: 0x6b5a2a,
+      sun: 0xffb36b,
+      sunIntensity: 1.5,
+    };
   if (snowy)
-    return { skyTop: 0x6fa8dc, skyBottom: 0xdcefff, fog: 0xdcefff, ground: 0xf2f6fa, verge: 0xe6eef5, hemiSky: 0xeaf6ff, hemiGround: 0x9fb4c4, sun: 0xffffff, sunIntensity: 1.6 };
+    return {
+      skyTop: 0x6fa8dc,
+      skyBottom: 0xdcefff,
+      fog: 0xdcefff,
+      ground: 0xf2f6fa,
+      verge: 0xe6eef5,
+      hemiSky: 0xeaf6ff,
+      hemiGround: 0x9fb4c4,
+      sun: 0xffffff,
+      sunIntensity: 1.6,
+    };
   switch (biome) {
     case 'plaine':
-      return { skyTop: 0x5aa9e6, skyBottom: 0xcfeaff, fog: 0xd6ecff, ground: 0xc9a646, verge: 0xd9bf5a, hemiSky: 0xfff4d6, hemiGround: 0x8a7a3a, sun: 0xfff1d6, sunIntensity: 1.9 };
+      return {
+        skyTop: 0x5aa9e6,
+        skyBottom: 0xcfeaff,
+        fog: 0xd6ecff,
+        ground: 0xc9a646,
+        verge: 0xd9bf5a,
+        hemiSky: 0xfff4d6,
+        hemiGround: 0x8a7a3a,
+        sun: 0xfff1d6,
+        sunIntensity: 1.9,
+      };
     case 'rocheuses':
-      return { skyTop: 0x4f8fd6, skyBottom: 0xcde8fb, fog: 0xcfe4f2, ground: 0x7aa35a, verge: 0x93b96a, hemiSky: 0xe3f2ff, hemiGround: 0x4f6a3a, sun: 0xfff6e6, sunIntensity: 1.8 };
+      return {
+        skyTop: 0x4f8fd6,
+        skyBottom: 0xcde8fb,
+        fog: 0xcfe4f2,
+        ground: 0x7aa35a,
+        verge: 0x93b96a,
+        hemiSky: 0xe3f2ff,
+        hemiGround: 0x4f6a3a,
+        sun: 0xfff6e6,
+        sunIntensity: 1.8,
+      };
     case 'foret':
-      return { skyTop: 0x5c9fd8, skyBottom: 0xd4ecf7, fog: 0xc8e2d0, ground: 0x4e8a3a, verge: 0x6fa84a, hemiSky: 0xe4f6e4, hemiGround: 0x35552a, sun: 0xffeccc, sunIntensity: 1.7 };
+      return {
+        skyTop: 0x5c9fd8,
+        skyBottom: 0xd4ecf7,
+        fog: 0xc8e2d0,
+        ground: 0x4e8a3a,
+        verge: 0x6fa84a,
+        hemiSky: 0xe4f6e4,
+        hemiGround: 0x35552a,
+        sun: 0xffeccc,
+        sunIntensity: 1.7,
+      };
     default:
-      return { skyTop: 0x7cc4ef, skyBottom: 0x9fd8f2, fog: 0x9fd8f2, ground: 0x6fa84a, verge: 0x8cc160, hemiSky: 0xdff3ff, hemiGround: 0x557a3a, sun: 0xfff1d6, sunIntensity: 1.8 };
+      return {
+        skyTop: 0x7cc4ef,
+        skyBottom: 0x9fd8f2,
+        fog: 0x9fd8f2,
+        ground: 0x6fa84a,
+        verge: 0x8cc160,
+        hemiSky: 0xdff3ff,
+        hemiGround: 0x557a3a,
+        sun: 0xfff1d6,
+        sunIntensity: 1.8,
+      };
   }
 }
 
@@ -140,17 +201,26 @@ function freeSpots(track: Track, rng: Rng, count: number, margin: number, reach:
   const minY = Math.min(...ys) - reach;
   const maxY = Math.max(...ys) + reach;
   const out: Spot[] = [];
+  const fork = getFork(track);
   for (let tries = 0; tries < count * 8 && out.length < count; tries++) {
     const x = rng.range(minX, maxX);
     const y = rng.range(minY, maxY);
     const pr = projectOnTrack(track, x, y);
     if (Math.abs(pr.d) < S[pr.index].hw + track.def.verge + margin) continue;
+    if (fork) {
+      const fp = projectOnFork(fork, x, y);
+      if (Math.abs(fp.d) < fork.hw + fork.verge + margin && fp.s > 0 && fp.s < fork.length) continue;
+    }
     out.push({ x, y, z: terrainHeight(track, x, y, pr.index) });
   }
   return out;
 }
 
-function instanced(geo: THREE.BufferGeometry, mat: THREE.Material, spots: { x: number; y: number; s: number; r: number; h?: number; z?: number; c?: THREE.Color }[]): THREE.InstancedMesh {
+function instanced(
+  geo: THREE.BufferGeometry,
+  mat: THREE.Material,
+  spots: { x: number; y: number; s: number; r: number; h?: number; z?: number; c?: THREE.Color }[],
+): THREE.InstancedMesh {
   const mesh = new THREE.InstancedMesh(geo, mat, Math.max(1, spots.length));
   const m4 = new THREE.Matrix4();
   const q = new THREE.Quaternion();
@@ -272,7 +342,11 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
     const c = new THREE.Color(palette[Math.floor(rng.next() * palette.length)]);
     const wx = simToWorldX(p.x);
     const wz = simToWorldZ(p.y);
-    const m = new THREE.Matrix4().compose(new THREE.Vector3(wx, p.z, wz), new THREE.Quaternion().setFromAxisAngle(up, r), new THREE.Vector3(sc, sc, sc));
+    const m = new THREE.Matrix4().compose(
+      new THREE.Vector3(wx, p.z, wz),
+      new THREE.Quaternion().setFromAxisAngle(up, r),
+      new THREE.Vector3(sc, sc, sc),
+    );
     return { m, c, wx, wz, kind: isMaple || isPoplar ? 'round' : 'pine' };
   });
   const decor = treeLod(group, trees, snowy);

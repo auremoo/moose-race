@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mooseById, mooseCatalog } from '../src/data';
-import {
-  buyDirect,
-  exchangeFragments,
-  openLoot,
-  rollRarity,
-  totalUpgradeCost,
-  upgrade,
-  upgradeCost,
-} from '../src/meta/collection';
+import { buyDirect, exchangeFragments, openLoot, rollRarity, totalUpgradeCost, upgrade, upgradeCost } from '../src/meta/collection';
 import { defaultSave, exportSave, importSave, migrate } from '../src/meta/settings';
 
 describe('améliorations', () => {
@@ -16,7 +8,9 @@ describe('améliorations', () => {
     const base = mooseCatalog.upgradeBase;
     for (const m of mooseCatalog.moose) {
       const mult = mooseCatalog.rarities[m.rarity].costMultiplier;
-      expect(totalUpgradeCost(m)).toBe(Math.round(base * mult) * 0 + [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((a, n) => a + Math.round(base * n * mult), 0));
+      expect(totalUpgradeCost(m)).toBe(
+        Math.round(base * mult) * 0 + [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((a, n) => a + Math.round(base * n * mult), 0),
+      );
     }
     // Avec la base du cahier (60), le Commun coûterait 2 700 au total.
     expect([1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((a, n) => a + 60 * n, 0)).toBe(2700);
@@ -24,7 +18,7 @@ describe('améliorations', () => {
     expect(upgradeCost(mooseById('bucheron')!, 10)).toBeNull();
   });
 
-  it('montent d\'un niveau et débitent les pièces', () => {
+  it("montent d'un niveau et débitent les pièces", () => {
     const s = defaultSave();
     s.coins = 100;
     expect(upgrade(s, 'bucheron')).toBe(true);
@@ -67,7 +61,7 @@ describe('Comptoir', () => {
     expect(s.fragments).toBeGreaterThan(0);
   });
 
-  it('les fragments s\'échangent contre un orignal au choix', () => {
+  it("les fragments s'échangent contre un orignal au choix", () => {
     const s = defaultSave();
     s.fragments = 200;
     expect(exchangeFragments(s, 'panache-dor')).toBe(true);

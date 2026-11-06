@@ -20,4 +20,25 @@ import capDiamant from './cap-diamant.json';
 import tempeteYukon from './tempete-yukon.json';
 import grandNord from './grand-nord.json';
 
-export const trackJsons: unknown[] = [prairieTranquille, champsCanola, riviereRouge, sentierBleuets, bleSaskatchewan, lacsBanff, crepusculeManitoba, boucleGrise, sentiersAlgonquin, automneMauricie, promenadeGlaciers, routeBaleines, badlandsDrumheller, chicanesLacSaintJean, valleeOkanagan, colKickingHorse, serpentTemiscamingue, capDiamant, tempeteYukon, grandNord];
+export const trackJsons: unknown[] = [
+  prairieTranquille,
+  champsCanola,
+  riviereRouge,
+  sentierBleuets,
+  bleSaskatchewan,
+  lacsBanff,
+  crepusculeManitoba,
+  boucleGrise,
+  sentiersAlgonquin,
+  automneMauricie,
+  promenadeGlaciers,
+  routeBaleines,
+  badlandsDrumheller,
+  chicanesLacSaintJean,
+  valleeOkanagan,
+  colKickingHorse,
+  serpentTemiscamingue,
+  capDiamant,
+  tempeteYukon,
+  grandNord,
+];
