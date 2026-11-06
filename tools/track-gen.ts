@@ -30,6 +30,7 @@ interface Spec {
   surface?: SurfaceId;
   zones?: { from: number; to: number; surface: SurfaceId }[];
   wind?: { strength: number; period: number; direction: number };
+  elevation?: [number, number][];
 }
 
 const SPECS: Spec[] = [
@@ -45,6 +46,7 @@ const SPECS: Spec[] = [
     wind: { strength: 1.2, period: 12, direction: 1.2 },
     route: 'W19 S400 CHL30@35 S200 R90@35 S120 R90@35 S150 L90@30 R90@30 S200 R90@35 S60 ESR40@35 S100 R90@35 S80' },
   { id: 'lacs-banff', name: 'Lacs de Banff', biome: 'rocheuses', province: 'AB', stars: 2, verge: 10,
+    elevation: [[0, 0], [0.22, 14], [0.45, 30], [0.62, 26], [0.8, 8]],
     zones: [{ from: 0.62, to: 0.68, surface: 'boue' }],
     route: 'W18 S200 R120@40 S100 L60@45 R90@35 S150 R150@40 S80 L60@40 R60@40 S120 R60@35 S60 CHR30@30 S80' },
   { id: 'crepuscule-manitoba', name: 'Crépuscule du Manitoba', biome: 'plaine', province: 'MB', stars: 3, verge: 10,
@@ -63,6 +65,7 @@ const SPECS: Spec[] = [
     zones: [{ from: 0.45, to: 0.51, surface: 'boue' }],
     route: 'W15 S200 ESR60@30 R60@30 S120 R120@26 S100 L90@25 R90@25 S150 CHL35@24 S100 R90@26 S180 R90@28' },
   { id: 'promenade-glaciers', name: 'Promenade des Glaciers', biome: 'rocheuses', province: 'AB', stars: 4, verge: 8,
+    elevation: [[0, 0], [0.3, 12], [0.55, 22], [0.8, 6]],
     surface: 'neige', zones: [{ from: 0.17, to: 0.23, surface: 'glace' }, { from: 0.56, to: 0.61, surface: 'glace' }],
     route: 'W15 S250 R90@30 S120 R180@17 S120 L180@18 S120 R90@28 S150 CHL35@22 S150 R90@30 S100 ESR45@25 S120 R90@30' },
   { id: 'route-baleines', name: 'Route des baleines', biome: 'foret', province: 'QC', stars: 4, verge: 8,
@@ -75,6 +78,7 @@ const SPECS: Spec[] = [
   { id: 'vallee-okanagan', name: "Vallée de l'Okanagan", biome: 'rocheuses', province: 'BC', stars: 4, verge: 8,
     route: 'W14 S180 R90@18 S60 L90@18 R90@18 S60 L90@18 S150 R180@16 S180 R90@22 S60 CHL40@20 S60 R90@22' },
   { id: 'col-kicking-horse', name: 'Col du Kicking Horse', biome: 'rocheuses', province: 'BC', stars: 5, verge: 7,
+    elevation: [[0, 0], [0.25, 6], [0.5, 20], [0.75, 14]],
     zones: [{ from: 0.3, to: 0.52, surface: 'neige' }],
     route: 'W13 S160 R180@17 S80 L180@17 S80 R180@17 S120 CHL40@18 S80 R90@20 S240 R90@24' },
   { id: 'serpent-temiscamingue', name: 'Serpent du Témiscamingue', biome: 'foret', province: 'QC', stars: 5, verge: 7,
@@ -298,6 +302,7 @@ for (const spec of all) {
       startOffset: 20,
       ...(spec.zones ? { zones: spec.zones } : {}),
       ...(spec.wind ? { wind: spec.wind } : {}),
+      ...(spec.elevation ? { elevation: spec.elevation } : {}),
       points: pts.map((p) => [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10, p.w] as [number, number, number]),
     };
     info = `retouche ${gap.toFixed(0)} m, écart brut (${raw[0]}, ${raw[1]})`;

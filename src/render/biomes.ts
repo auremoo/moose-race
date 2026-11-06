@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import type { RacingLine } from '../sim/racingLine';
 import type { Rng } from '../sim/rng';
-import { projectOnTrack, type Track } from '../sim/track';
+import { projectOnTrack, terrainHeight, type Track } from '../sim/track';
 import { simToWorldX, simToWorldZ } from './coords';
 
 export type Biome = 'plaine' | 'foret' | 'rocheuses' | 'test';
@@ -126,6 +126,8 @@ function signMaterial(kind: 'chevronL' | 'chevronR' | 'moose' | 'b100' | 'b50'):
 interface Spot {
   x: number;
   y: number;
+  /** Hauteur du terrain à cet endroit. */
+  z: number;
 }
 
 /** Points libres autour du circuit (hors piste et hors bas-côté). */
@@ -143,19 +145,19 @@ function freeSpots(track: Track, rng: Rng, count: number, margin: number, reach:
     const y = rng.range(minY, maxY);
     const pr = projectOnTrack(track, x, y);
     if (Math.abs(pr.d) < S[pr.index].hw + track.def.verge + margin) continue;
-    out.push({ x, y });
+    out.push({ x, y, z: terrainHeight(track, x, y, pr.index) });
   }
   return out;
 }
 
-function instanced(geo: THREE.BufferGeometry, mat: THREE.Material, spots: { x: number; y: number; s: number; r: number; h?: number; c?: THREE.Color }[]): THREE.InstancedMesh {
+function instanced(geo: THREE.BufferGeometry, mat: THREE.Material, spots: { x: number; y: number; s: number; r: number; h?: number; z?: number; c?: THREE.Color }[]): THREE.InstancedMesh {
   const mesh = new THREE.InstancedMesh(geo, mat, Math.max(1, spots.length));
   const m4 = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const up = new THREE.Vector3(0, 1, 0);
   spots.forEach((p, i) => {
     q.setFromAxisAngle(up, p.r);
-    m4.compose(new THREE.Vector3(simToWorldX(p.x), p.h ?? 0, simToWorldZ(p.y)), q, new THREE.Vector3(p.s, p.s, p.s));
+    m4.compose(new THREE.Vector3(simToWorldX(p.x), (p.h ?? 0) + (p.z ?? 0), simToWorldZ(p.y)), q, new THREE.Vector3(p.s, p.s, p.s));
     mesh.setMatrixAt(i, m4);
     if (p.c) mesh.setColorAt(i, p.c);
   });
@@ -184,7 +186,7 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
     const palette = isMaple ? maples : snowy ? snowGreens : greens;
     return { ...p, s: rng.range(0.7, 1.4) * (biome === 'rocheuses' ? 1.15 : 1), r: rng.range(0, 6.28), c: new THREE.Color(palette[Math.floor(rng.next() * palette.length)]), kind: isMaple || isPoplar ? 'round' : 'pine' };
   });
-  group.add(instanced(trunk, trunkMat, trees.map(({ x, y, s: sc, r }) => ({ x, y, s: sc, r }))));
+  group.add(instanced(trunk, trunkMat, trees.map(({ x, y, z, s: sc, r }) => ({ x, y, z, s: sc, r }))));
   group.add(instanced(pine, leafMat, trees.filter((t) => t.kind === 'pine')));
   group.add(instanced(round, leafMat, trees.filter((t) => t.kind === 'round')));
   if (snowy) {
@@ -220,11 +222,11 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
     for (const l of lakes) {
       const lake = new THREE.Mesh(new THREE.CircleGeometry(rng.range(25, 45), 24), new THREE.MeshLambertMaterial({ color: 0x3fc1c9 }));
       lake.rotation.x = -Math.PI / 2;
-      lake.position.set(simToWorldX(l.x), 0.03, simToWorldZ(l.y));
+      lake.position.set(simToWorldX(l.x), 0.03 + l.z, simToWorldZ(l.y));
       group.add(lake);
     }
     const stone = new THREE.MeshLambertMaterial({ color: 0x8e8a85, flatShading: true });
-    for (const p of freeSpots(track, rng, 5, 4, 30)) group.add(inukshuk(stone, p.x, p.y, rng.range(0, 6.28)));
+    for (const p of freeSpots(track, rng, 5, 4, 30)) group.add(inukshuk(stone, p.x, p.y, p.z, rng.range(0, 6.28)));
   }
 
   if (biome === 'plaine') {
@@ -255,7 +257,7 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
       const elev = new THREE.Mesh(new THREE.BoxGeometry(6, 24, 6), red);
       elev.position.set(-8, 12, 0);
       g.add(elev);
-      g.position.set(simToWorldX(p.x), 0, simToWorldZ(p.y));
+      g.position.set(simToWorldX(p.x), p.z, simToWorldZ(p.y));
       g.rotation.y = rng.range(0, 6.28);
       group.add(g);
     }
@@ -267,12 +269,12 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
       const r = rng.range(22, 40);
       const lake = new THREE.Mesh(new THREE.CircleGeometry(r, 24), new THREE.MeshLambertMaterial({ color: 0x3c7fb0 }));
       lake.rotation.x = -Math.PI / 2;
-      lake.position.set(simToWorldX(l.x), 0.03, simToWorldZ(l.y));
+      lake.position.set(simToWorldX(l.x), 0.03 + l.z, simToWorldZ(l.y));
       group.add(lake);
       const canoe = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 3.6, 4, 8), new THREE.MeshLambertMaterial({ color: 0xc8361f }));
       canoe.rotation.z = Math.PI / 2;
       canoe.scale.set(1, 1, 0.45);
-      canoe.position.set(simToWorldX(l.x + r * 0.3), 0.2, simToWorldZ(l.y));
+      canoe.position.set(simToWorldX(l.x + r * 0.3), 0.2 + l.z, simToWorldZ(l.y));
       group.add(canoe);
     }
     const wood = new THREE.MeshLambertMaterial({ color: 0x8a5a36 });
@@ -287,14 +289,14 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
       const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.8, 3, 0.8), new THREE.MeshLambertMaterial({ color: 0x8e8a85 }));
       chimney.position.set(2, 6, 0);
       g.add(box, top, chimney);
-      g.position.set(simToWorldX(p.x), 0, simToWorldZ(p.y));
+      g.position.set(simToWorldX(p.x), p.z, simToWorldZ(p.y));
       g.rotation.y = rng.range(0, 6.28);
       group.add(g);
     }
   }
 }
 
-function inukshuk(mat: THREE.Material, x: number, y: number, rot: number): THREE.Group {
+function inukshuk(mat: THREE.Material, x: number, y: number, z: number, rot: number): THREE.Group {
   const g = new THREE.Group();
   const block = (w: number, h: number, d: number, px: number, py: number) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -307,7 +309,7 @@ function inukshuk(mat: THREE.Material, x: number, y: number, rot: number): THREE
   block(0.7, 0.8, 0.5, 0, 2);
   block(2.6, 0.35, 0.5, 0, 2.55);
   block(0.55, 0.55, 0.5, 0, 3);
-  g.position.set(simToWorldX(x), 0, simToWorldZ(y));
+  g.position.set(simToWorldX(x), z, simToWorldZ(y));
   g.rotation.y = rot;
   return g;
 }
@@ -330,7 +332,7 @@ export function trackSigns(group: THREE.Group, track: Track, line: RacingLine, r
     const p = new THREE.Mesh(post, postMat);
     p.position.y = 0.8;
     g.add(b, p);
-    g.position.set(simToWorldX(x), 0, simToWorldZ(y));
+    g.position.set(simToWorldX(x), s.z, simToWorldZ(y));
     // Face aux orignaux qui arrivent : le panneau regarde vers l'arrière de la piste.
     g.rotation.y = Math.atan2(s.ty, s.tx) + Math.PI / 2;
     group.add(g);

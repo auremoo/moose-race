@@ -253,7 +253,10 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   const absD = Math.abs(racer.proj.d);
   racer.onVerge = absD > track.samples[racer.proj.index].hw;
   const surfaceId = racer.onVerge ? track.def.vergeSurface : track.samples[racer.proj.index].surface;
-  stepMoose(m, cmd, balance.surfaces[surfaceId], racer.params, r.dt);
+  // Pente vue par l'orignal : celle de la piste, projetée sur son cap.
+  const smp = track.samples[racer.proj.index];
+  const slope = smp.slope * (Math.cos(m.heading) * smp.tx + Math.sin(m.heading) * smp.ty);
+  stepMoose(m, cmd, balance.surfaces[surfaceId], racer.params, r.dt, slope);
   // Vent de travers : il pousse l'orignal sur le côté, d'autant plus qu'il court vite et à découvert.
   if (track.def.wind && r.phase !== 'countdown' && m.speed > 2) {
     const w = windAt(r);

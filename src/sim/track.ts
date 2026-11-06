@@ -35,6 +35,11 @@ export interface TrackDef {
    * direction = d'où souffle le vent (radians, 0 = vers +x).
    */
   wind?: { strength: number; period: number; direction: number };
+  /**
+   * Dénivelé : hauteurs (m) à des fractions du tour, interpolées en douceur (boucle fermée).
+   * Exemple : [[0, 0], [0.3, 22], [0.6, 4]].
+   */
+  elevation?: [number, number][];
 }
 
 export interface TrackSample {
@@ -52,6 +57,9 @@ export interface TrackSample {
   hw: number;
   /** Surface du sentier à cet endroit. */
   surface: SurfaceId;
+  /** Hauteur du sentier (m) et pente le long de la piste (dz/ds, positive en montée). */
+  z: number;
+  slope: number;
   /** Abscisse curviligne (m). */
   s: number;
 }
@@ -188,7 +196,12 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
     const ty = Math.sin(h);
     const f = i / count;
     const zone = def.zones?.find((z) => (z.from <= z.to ? f >= z.from && f < z.to : f >= z.from || f < z.to));
-    samples.push({ x: pos[i][0], y: pos[i][1], tx, ty, nx: -ty, ny: tx, k, hw: widSmooth[i] / 2, s: i * step, surface: zone?.surface ?? def.surface });
+    samples.push({ x: pos[i][0], y: pos[i][1], tx, ty, nx: -ty, ny: tx, k, hw: widSmooth[i] / 2, s: i * step, surface: zone?.surface ?? def.surface, z: elevationAt(def, f), slope: 0 });
+  }
+  for (let i = 0; i < count; i++) {
+    const a = samples[(i - 2 + count) % count];
+    const b = samples[(i + 2) % count];
+    samples[i].slope = (b.z - a.z) / (4 * step);
   }
 
   const maxHalfWidth = Math.max(...samples.map((x) => x.hw));
@@ -199,6 +212,46 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
  * Projette un point sur la ligne centrale. Recherche locale autour de `hint`
  * (indice précédent) pour rester en O(1) ; `window` en nombre d'échantillons.
  */
+/** Hauteur au point f (fraction du tour) : interpolation cosinus entre les repères, boucle fermée. */
+export function elevationAt(def: TrackDef, f: number): number {
+  const e = def.elevation;
+  if (!e || e.length === 0) return 0;
+  const pts = [...e].sort((a, b) => a[0] - b[0]);
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    const fa = a[0];
+    const fb = i + 1 < pts.length ? b[0] : b[0] + 1;
+    const ff = f < fa && i === 0 ? f + 1 : f;
+    if ((ff >= fa && ff < fb) || (i === pts.length - 1 && ff >= fa)) {
+      const u = (ff - fa) / (fb - fa || 1);
+      const w = (1 - Math.cos(Math.PI * Math.max(0, Math.min(1, u)))) / 2;
+      return a[1] + (b[1] - a[1]) * w;
+    }
+  }
+  // f avant le premier repère : entre le dernier et le premier.
+  const last = pts[pts.length - 1];
+  const first = pts[0];
+  const u = (f + 1 - last[0]) / (first[0] + 1 - last[0] || 1);
+  const w = (1 - Math.cos(Math.PI * Math.max(0, Math.min(1, u)))) / 2;
+  return last[1] + (first[1] - last[1]) * w;
+}
+
+/**
+ * Hauteur du terrain en (x, y) : celle du sentier le plus proche, qui redescend doucement
+ * vers 0 au-delà du bas-côté (sur 70 m).
+ */
+export function terrainHeight(track: Track, x: number, y: number, hint = -1): number {
+  const p = projectOnTrack(track, x, y, hint);
+  const s = track.samples[p.index];
+  if (s.z === 0) return 0;
+  const edge = s.hw + track.def.verge;
+  const off = Math.abs(p.d) - edge;
+  if (off <= 0) return s.z;
+  const t = Math.min(1, off / 70);
+  return s.z * (1 - t * t * (3 - 2 * t));
+}
+
 export function projectOnTrack(track: Track, x: number, y: number, hint = -1, window = 40): TrackProjection {
   const { samples } = track;
   const n = samples.length;

@@ -119,6 +119,13 @@ le même jour (10 bots). Bonus de 100 pièces à la première arrivée du jour.
 À chaque record sur un circuit, la trajectoire est enregistrée (10 poses par seconde, stockée à part :
 `panache.ghost.<circuit>`) et rejouée ensuite en orignal translucide. Désactivable dans les Réglages.
 
+## Dénivelé
+
+Profil de hauteur par circuit (`elevation` : hauteurs à des fractions du tour, interpolées en douceur). En montée
+l'orignal ralentit, en descente il prend de l'élan (gravité atténuée). Le terrain, le décor, les objets et la
+caméra suivent le relief. Fort dénivelé aux Lacs de Banff (30 m), montées à la Promenade des Glaciers et au Col
+du Kicking Horse.
+
 ## Vent et racines
 
 - **Vent de travers** (Crépuscule du Manitoba, et plus léger sur le Blé de Saskatchewan) : rafales régulières qui

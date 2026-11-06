@@ -22,7 +22,7 @@ export class ChaseCamera {
     this.camera.updateProjectionMatrix();
   }
 
-  update(x: number, y: number, heading: number, speedRatio: number, dt: number, boosting = false, shake = 0): void {
+  update(x: number, y: number, heading: number, speedRatio: number, dt: number, boosting = false, shake = 0, z = 0): void {
     const c = this.cfg;
     if (!this.initialized) {
       this.yaw = heading;
@@ -38,12 +38,12 @@ export class ChaseCamera {
     const wz = simToWorldZ(y);
     const targetPos = new THREE.Vector3(
       wx - simToWorldX(fx) * c.distance,
-      c.height,
+      c.height + z,
       wz - simToWorldZ(fy) * c.distance,
     );
     const targetLook = new THREE.Vector3(
       wx + simToWorldX(fx) * c.lookAhead,
-      c.lookHeight,
+      c.lookHeight + z,
       wz + simToWorldZ(fy) * c.lookAhead,
     );
     if (!this.initialized) {
@@ -68,13 +68,13 @@ export class ChaseCamera {
   }
 
   /** Vue vitrine pour les menus : la caméra tourne lentement devant l'orignal. */
-  showcase(x: number, y: number, heading: number, time: number): void {
+  showcase(x: number, y: number, heading: number, time: number, z = 0): void {
     const a = heading + Math.PI * 0.22 + Math.sin(time * 0.25) * 0.45;
     const dist = 8.5;
     const wx = simToWorldX(x);
     const wz = simToWorldZ(y);
-    this.camera.position.set(wx + simToWorldX(Math.cos(a)) * dist, 3.2, wz + simToWorldZ(Math.sin(a)) * dist);
-    this.camera.lookAt(wx, 2.6, wz);
+    this.camera.position.set(wx + simToWorldX(Math.cos(a)) * dist, 3.2 + z, wz + simToWorldZ(Math.sin(a)) * dist);
+    this.camera.lookAt(wx, 2.6 + z, wz);
     if (this.camera.fov !== this.cfg.fov) {
       this.camera.fov = this.cfg.fov;
       this.camera.updateProjectionMatrix();

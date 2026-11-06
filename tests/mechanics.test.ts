@@ -157,3 +157,24 @@ describe('vent de travers et racines', () => {
     expect(b.speed).toBeLessThan(a.speed * 0.9);
   });
 });
+
+describe('dénivelé', () => {
+  it('on ralentit en montée et on prend de l\'élan en descente', () => {
+    const flat = createMooseState(0, 0, 0, 20);
+    const up = createMooseState(0, 0, 0, 20);
+    const down = createMooseState(0, 0, 0, 20);
+    for (let i = 0; i < 120; i++) {
+      stepMoose(flat, NO_COMMANDS, S.sentier, P, DT, 0);
+      stepMoose(up, NO_COMMANDS, S.sentier, P, DT, 0.1);
+      stepMoose(down, NO_COMMANDS, S.sentier, P, DT, -0.1);
+    }
+    expect(up.speed).toBeLessThan(flat.speed - 0.5);
+    expect(down.speed).toBeGreaterThan(flat.speed + 0.5);
+  });
+
+  it('les Lacs de Banff ont un fort dénivelé', () => {
+    const race = createRace(trackById('lacs-banff')!, balance);
+    const zs = race.track.samples.map((s) => s.z);
+    expect(Math.max(...zs) - Math.min(...zs)).toBeGreaterThan(25);
+  });
+});

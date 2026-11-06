@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import type { Balance } from '../data';
 import { raceTime, rankOf, type Race } from '../sim/race';
+import { terrainHeight } from '../sim/track';
 import { ChaseCamera } from './camera';
 import { simToWorldX, simToWorldZ } from './coords';
 import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
@@ -80,6 +81,8 @@ export class GameView {
   private barragePool: THREE.Group[] = [];
   private shields: THREE.Mesh[] = [];
   private clock = 0;
+  /** Hauteur du sol sous l'orignal du joueur (pour les particules). */
+  private groundZ = 0;
   /** Densité du décor (qualité) : réduite sur les appareils modestes. */
   private density = 1;
   /** Qualité auto-adaptative : moyenne glissante des FPS. */
@@ -216,12 +219,16 @@ export class GameView {
         bank.position.set(0, 0.2, side * 3.8);
         g.add(bank);
       }
-      g.position.set(simToWorldX((b.ax + b.bx) / 2), 0, simToWorldZ((b.ay + b.by) / 2));
+      const za = race.track.samples[b.from].z;
+      const zb = race.track.samples[b.to].z;
+      g.position.set(simToWorldX((b.ax + b.bx) / 2), (za + zb) / 2, simToWorldZ((b.ay + b.by) / 2));
       g.rotation.y = Math.atan2(b.by - b.ay, b.bx - b.ax);
+      // Inclinaison du canal si ses deux bouts ne sont pas à la même hauteur.
+      g.rotation.z = Math.atan2(zb - za, b.length);
       this.hazardGroup.add(g);
-      for (const [x, y] of [[b.ax, b.ay], [b.bx, b.by]]) {
+      for (const [x, y, z] of [[b.ax, b.ay, za], [b.bx, b.by, zb]]) {
         const sign = createWarningSprite('~', '#2C7BB6');
-        sign.position.set(simToWorldX(x), 4, simToWorldZ(y));
+        sign.position.set(simToWorldX(x), z + 4, simToWorldZ(y));
         this.hazardGroup.add(sign);
       }
     }
@@ -240,29 +247,30 @@ export class GameView {
     h.bears.forEach((b, i) => {
       const v = this.bearViews[i];
       const s = race.track.samples[b.index];
-      v.root.position.set(simToWorldX(b.x), 0, simToWorldZ(b.y));
+      const bz = race.track.samples[b.index].z;
+      v.root.position.set(simToWorldX(b.x), bz, simToWorldZ(b.y));
       // L'ours regarde dans le sens de sa marche (à travers la piste).
       const dir = b.d - v.lastD;
       v.lastD = b.d;
       const ang = Math.atan2(s.ny * Math.sign(dir || b.side * -1), s.nx * Math.sign(dir || b.side * -1));
       v.root.rotation.y = ang;
-      v.root.position.y = b.active ? Math.abs(Math.sin(this.clock * 9)) * 0.15 : 0;
+      v.root.position.y = bz + (b.active ? Math.abs(Math.sin(this.clock * 9)) * 0.15 : 0);
       v.warn.visible = b.warning;
       const ws = race.track.samples[b.index];
       const lo = b.lineOffset;
-      v.warn.position.set(simToWorldX(ws.x + ws.nx * lo), 4.5 + Math.sin(this.clock * 8) * 0.3, simToWorldZ(ws.y + ws.ny * lo));
+      v.warn.position.set(simToWorldX(ws.x + ws.nx * lo), ws.z + 4.5 + Math.sin(this.clock * 8) * 0.3, simToWorldZ(ws.y + ws.ny * lo));
     });
     h.beavers.forEach((bv, i) => {
       const v = this.beaverViews[i];
       v.visible = bv.respawn <= 0;
-      v.position.set(simToWorldX(bv.x), Math.abs(Math.sin(this.clock * 3 + i)) * 0.25, simToWorldZ(bv.y));
+      v.position.set(simToWorldX(bv.x), race.track.samples[bv.index].z + Math.abs(Math.sin(this.clock * 3 + i)) * 0.25, simToWorldZ(bv.y));
       v.rotation.y = this.clock * 1.5 + i;
     });
     this.barragePool.forEach((b, i) => {
       const br = h.barrages[i];
       b.visible = !!br;
       if (br) {
-        b.position.set(simToWorldX(br.x), 0, simToWorldZ(br.y));
+        b.position.set(simToWorldX(br.x), terrainHeight(race.track, br.x, br.y), simToWorldZ(br.y));
         b.rotation.y = br.heading;
       }
     });
@@ -433,12 +441,19 @@ export class GameView {
         const cam = this.chase.camera.position;
         const dist = Math.hypot(cam.x - simToWorldX(x), cam.z - simToWorldZ(y));
         tag.visible = !this.showcaseOn && race.phase !== 'countdown' && dist > 12 && dist < 70;
-        tag.position.set(simToWorldX(x), 4.6 * race.racers[i].size, simToWorldZ(y));
+        tag.position.set(simToWorldX(x), race.track.samples[race.racers[i].proj.index].z + 4.6 * race.racers[i].size, simToWorldZ(y));
         tag.material.opacity = Math.max(0, Math.min(1, (70 - dist) / 20));
       }
       // À la nage dans le bief : l'orignal est à moitié immergé.
       const swimming = race.racers[i].swim >= 0;
-      view.root.position.set(simToWorldX(x), swimming ? -1.3 : 0, simToWorldZ(y));
+      let groundZ = race.track.samples[race.racers[i].proj.index].z;
+      const bief = race.hazards?.bief;
+      if (swimming && bief) {
+        // Dans le canal : hauteur interpolée entre l'embouchure et la sortie.
+        const u = Math.min(1, race.racers[i].swim / bief.length);
+        groundZ = race.track.samples[bief.from].z + (race.track.samples[bief.to].z - race.track.samples[bief.from].z) * u;
+      }
+      view.root.position.set(simToWorldX(x), groundZ + (swimming ? -1.3 : 0), simToWorldZ(y));
       view.root.rotation.y = heading;
       let pose: 'race' | 'idle' | 'victory' | 'defeat' = 'race';
       if (this.showcaseOn) pose = 'idle';
@@ -449,11 +464,12 @@ export class GameView {
       view.update(m, dt, pose);
       if (i === 0 && this.showcaseOn) {
         this.showcaseTime += dt;
-        this.chase.showcase(x, y, heading, this.showcaseTime);
+        this.chase.showcase(x, y, heading, this.showcaseTime, groundZ);
       } else if (i === 0) {
         const reduce = document.documentElement.classList.contains('reduce-motion');
         const shake = !reduce && (race.tick - race.racers[0].lastContactTick < 12 || m.stunTime > 0) ? 0.25 : 0;
-        this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt, m.galloping || m.boostTime > 0, shake);
+        this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt, m.galloping || m.boostTime > 0, shake, groundZ);
+        this.groundZ = groundZ;
         this.effects(race, x, y, heading, dt);
       }
     }
@@ -461,7 +477,7 @@ export class GameView {
       const pose = race.phase === 'countdown' || this.showcaseOn ? null : this.ghost(raceTime(race));
       this.ghostView.root.visible = !!pose;
       if (pose) {
-        this.ghostView.root.position.set(simToWorldX(pose.x), 0, simToWorldZ(pose.y));
+        this.ghostView.root.position.set(simToWorldX(pose.x), terrainHeight(race.track, pose.x, pose.y), simToWorldZ(pose.y));
         this.ghostView.root.rotation.y = pose.heading;
         this.ghostView.update({ ...race.racers[0].moose, speed: 22, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false } as never, dt);
       }
@@ -516,9 +532,10 @@ export class GameView {
     const m = r.moose;
     const ch = Math.cos(heading);
     const sh = Math.sin(heading);
+    const gz = this.groundZ;
     const at = (back: number, side: number, h: number): [number, number, number] => [
       simToWorldX(x + ch * back - sh * side),
-      h,
+      h + gz,
       simToWorldZ(y + sh * back + ch * side),
     ];
     const rnd = (a: number) => (Math.random() - 0.5) * a;

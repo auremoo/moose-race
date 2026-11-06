@@ -189,6 +189,8 @@ export function stepMoose(
   surface: SurfaceParams,
   p: MooseParams,
   dt: number,
+  /** Pente le long du cap (dz/ds) : en montée l'orignal ralentit, en descente il prend de l'élan. */
+  slope = 0,
 ): void {
   // Étourdi : l'orignal ne pousse plus et se dirige mal, le temps de reprendre ses esprits.
   if (s.stunTime > 0) {
@@ -306,6 +308,8 @@ export function stepMoose(
   }
   if (brake > 0 && v > 0) a -= Math.min(brake * p.brakeDecel, Math.max(budget, 0.25 * p.brakeDecel));
   s.braking = brake > 0 && v > 0.5;
+  // Gravité le long de la pente (atténuée : jeu d'arcade).
+  a -= 9.81 * 0.6 * slope;
   if (s.drifting) a -= p.driftDecel;
   else if (s.sliding) a -= p.scrubFactor * Math.min(excess, p.scrubMaxExcess) + p.slideFlatDecel;
 

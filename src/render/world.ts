@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { createRng } from '../sim/rng';
 import type { RacingLine } from '../sim/racingLine';
-import type { SurfaceId, Track } from '../sim/track';
+import { terrainHeight, type SurfaceId, type Track } from '../sim/track';
 import { decorate, paletteFor, skyDome, trackSigns, type Biome } from './biomes';
 import { simToWorldX, simToWorldZ } from './coords';
 
@@ -65,7 +65,7 @@ function ribbon(
       const d = side === 0 ? d1(i) : d2(i);
       const o = (j * 2 + side) * 3;
       pos[o] = simToWorldX(s.x + s.nx * d);
-      pos[o + 1] = y;
+      pos[o + 1] = y + s.z;
       pos[o + 2] = simToWorldZ(s.y + s.ny * d);
       col[o] = c.r;
       col[o + 1] = c.g;
@@ -117,6 +117,24 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   ground.position.y = -0.05;
   group.add(ground);
 
+  // Relief : terrain qui épouse la hauteur du sentier et redescend au loin.
+  if (track.samples.some((p) => p.z !== 0)) {
+    const T = track.samples;
+    const cx = T.reduce((a, p) => a + p.x, 0) / T.length;
+    const cy = T.reduce((a, p) => a + p.y, 0) / T.length;
+    const geo = new THREE.PlaneGeometry(1300, 1300, 96, 96);
+    geo.rotateX(-Math.PI / 2);
+    const pos = geo.getAttribute('position');
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i) + cx;
+      const y = -(pos.getZ(i)) + cy;
+      pos.setY(i, Math.max(0, terrainHeight(track, x, y) - 0.12));
+    }
+    geo.translate(simToWorldX(cx), 0, simToWorldZ(cy));
+    geo.computeVertexNormals();
+    group.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: pal.ground })));
+  }
+
   const S = track.samples;
   const verge = track.def.verge;
   const hwAt = (i: number) => S[i].hw;
@@ -167,7 +185,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   const start = new THREE.Mesh(new THREE.PlaneGeometry(2, hw * 2), new THREE.MeshBasicMaterial({ map: tex }));
   start.rotation.x = -Math.PI / 2;
   start.rotation.z = Math.atan2(s0.ty, s0.tx);
-  start.position.set(simToWorldX(s0.x), 0.05, simToWorldZ(s0.y));
+  start.position.set(simToWorldX(s0.x), 0.05 + s0.z, simToWorldZ(s0.y));
   // La texture est allongée dans le sens de la largeur de piste.
   tex.rotation = Math.PI / 2;
   tex.center.set(0.5, 0.5);
@@ -179,11 +197,11 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   const pillarGeo = new THREE.BoxGeometry(0.8, 10, 0.8);
   for (const side of [-1, 1]) {
     const p = new THREE.Mesh(pillarGeo, archMat);
-    p.position.set(simToWorldX(s0.x + s0.nx * (hw + 1.5) * side), 5, simToWorldZ(s0.y + s0.ny * (hw + 1.5) * side));
+    p.position.set(simToWorldX(s0.x + s0.nx * (hw + 1.5) * side), 5 + s0.z, simToWorldZ(s0.y + s0.ny * (hw + 1.5) * side));
     arch.add(p);
   }
   const beam = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, hw * 2 + 4), archMat);
-  beam.position.set(simToWorldX(s0.x), 10, simToWorldZ(s0.y));
+  beam.position.set(simToWorldX(s0.x), 10 + s0.z, simToWorldZ(s0.y));
   beam.rotation.y = Math.atan2(s0.ty, s0.tx);
   arch.add(beam);
   group.add(arch);
@@ -200,7 +218,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
     for (const side of [-1, 1]) {
       const s = S[i];
       const limit = limitAt(i);
-      m4.makeTranslation(simToWorldX(s.x + s.nx * limit * side), 0.6, simToWorldZ(s.y + s.ny * limit * side));
+      m4.makeTranslation(simToWorldX(s.x + s.nx * limit * side), 0.6 + s.z, simToWorldZ(s.y + s.ny * limit * side));
       posts.setMatrixAt(pi++, m4);
     }
   }
@@ -213,7 +231,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   trackSigns(group, track, line, rng);
 
   // Ligne centrale de débogage (masquée par défaut).
-  const linePts = S.map((s) => new THREE.Vector3(simToWorldX(s.x), 0.12, simToWorldZ(s.y)));
+  const linePts = S.map((s) => new THREE.Vector3(simToWorldX(s.x), 0.12 + s.z, simToWorldZ(s.y)));
   linePts.push(linePts[0].clone());
   const debugLine = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(linePts),
@@ -243,10 +261,10 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   const flags = new THREE.InstancedMesh(flagGeo, new THREE.MeshLambertMaterial({ color: COLORS.corde }), Math.max(1, line.apexes.length));
   line.apexes.forEach((ap, i) => {
     const s = S[ap.index];
-    m4.makeTranslation(simToWorldX(s.x + s.nx * ap.offset), 0.07, simToWorldZ(s.y + s.ny * ap.offset));
+    m4.makeTranslation(simToWorldX(s.x + s.nx * ap.offset), 0.07 + s.z, simToWorldZ(s.y + s.ny * ap.offset));
     disc.setMatrixAt(i, m4);
     const edge = ap.side * (s.hw + 0.6);
-    m4.makeTranslation(simToWorldX(s.x + s.nx * edge), 0, simToWorldZ(s.y + s.ny * edge));
+    m4.makeTranslation(simToWorldX(s.x + s.nx * edge), s.z, simToWorldZ(s.y + s.ny * edge));
     flags.setMatrixAt(i, m4);
   });
   disc.count = line.apexes.length;
