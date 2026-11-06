@@ -8,6 +8,7 @@ import coursesJson from './courses.json';
 import mooseJson from './moose.json';
 import botsJson from './bots.json';
 import accessoriesJson from './accessories.json';
+import chestsJson from './chests.json';
 import type { MooseParams, SurfaceParams } from '../sim/moose';
 import type { SurfaceId, TrackDef } from '../sim/track';
 
@@ -374,7 +375,12 @@ export interface AccessoryDef {
   colors: string[];
   price: number;
   name: { fr: string; en: string };
+  /** Objectif qui l'offre (sinon : coffre ou achat seulement). */
+  unlock?: { type: ObjectiveType; n: number };
 }
+
+/** Compteurs d'objectifs : courses, victoires, podiums, défis du jour, coffres ouverts, circuits gagnés. */
+export type ObjectiveType = 'races' | 'wins' | 'podiums' | 'dailies' | 'chests' | 'circuits';
 
 export interface AccessoryCatalog {
   /** Accessoires possédés d'office. */
@@ -405,3 +411,42 @@ export function accessoryById(id: string | undefined): AccessoryDef {
   const found = list.find((a) => a.id === id) ?? list.find((a) => a.id === accessoryCatalog.defaultFor[id ?? '']);
   return found ?? list.find((a) => a.id === 'aucun')!;
 }
+
+// ---------- Coffres de récompense ----------
+
+export type ChestType = 'bois' | 'erable' | 'or' | 'aurore';
+
+export interface ChestTypeDef {
+  unlockMinutes: number;
+  coins: [number, number];
+  fragments: [number, number];
+  accessoryChance: number;
+  color: string;
+  name: { fr: string; en: string };
+}
+
+export interface ChestCatalog {
+  slots: number;
+  skipCoinsPerMinute: number;
+  skipMin: number;
+  /** Pièces données à la place d'un accessoire quand on les a tous. */
+  duplicateAccessoryCoins: number;
+  types: Record<ChestType, ChestTypeDef>;
+  /** Chances de chaque coffre selon la place (1er, 2e, 3e). */
+  dropByRank: Record<string, Record<ChestType, number>>;
+  dailyChest: ChestType;
+}
+
+export const CHEST_ORDER: ChestType[] = ['bois', 'erable', 'or', 'aurore'];
+
+function validateChests(raw: unknown): ChestCatalog {
+  const c = raw as ChestCatalog;
+  for (const [rank, odds] of Object.entries(c.dropByRank)) {
+    const sum = CHEST_ORDER.reduce((a, t) => a + (odds[t] ?? 0), 0);
+    if (Math.abs(sum - 1) > 1e-6) throw new Error(`Chances de coffre (place ${rank}) : somme ${sum}`);
+  }
+  for (const t of CHEST_ORDER) if (!c.types[t]) throw new Error(`Coffre manquant : ${t}`);
+  return c;
+}
+
+export const chestCatalog: ChestCatalog = validateChests(chestsJson);

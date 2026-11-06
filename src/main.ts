@@ -7,7 +7,7 @@ import '@fontsource/nunito/latin-600.css';
 import '@fontsource/nunito/latin-800.css';
 import '@fontsource/nunito/latin-900.css';
 import './ui/styles.css';
-import { balance, courses, trackById, tracks, type CourseDef, type DifficultyId } from './data';
+import { accessoryById, balance, courses, trackById, tracks, type CourseDef, type DifficultyId } from './data';
 import { InputManager } from './input/input';
 import { coinsFor, FIRST_WIN_BONUS, firstWinKey } from './meta/economy';
 import { exportSave, importSave, loadSave, writeSave } from './meta/settings';
@@ -16,11 +16,12 @@ import { DAILY_BONUS, dailyChallenge, type DailyChallenge } from './meta/daily';
 import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
 import { accessoryOf } from './meta/accessories';
+import { recordRace } from './meta/rewards';
 import { createRace, estimatedFinishTime, raceTime, standings, stepRace, surfaceUnder, type Race } from './sim/race';
 import { buildEntrants } from './sim/roster';
 import { GameView, type Pose } from './render/view';
 import { Hud } from './ui/hud';
-import { detectLang, setLang, t } from './ui/i18n';
+import { detectLang, getLang, setLang, t } from './ui/i18n';
 import { Menus } from './ui/menus';
 import { Tutorial } from './ui/tutorial';
 import { SoundEngine } from './audio/sound';
@@ -384,12 +385,16 @@ function onFinish(): void {
     save.firstWins.push(key);
   }
   // Défi du jour : bonus à la première arrivée du jour.
-  if (daily && !save.dailyDone.includes(daily.key)) {
+  const dailyFirst = !!daily && !save.dailyDone.includes(daily.key);
+  if (daily && dailyFirst) {
     bonus += DAILY_BONUS;
     save.dailyDone = [...save.dailyDone.slice(-29), daily.key];
     menus.toast(t('dailyBonus').replace('{n}', String(DAILY_BONUS)));
   }
   coins += bonus;
+  // Coffre au podium, compteurs d'objectifs, accessoires débloqués.
+  const rewards = recordRace(save, rank, N, dailyFirst);
+  for (const id of rewards.unlocked) menus.toast(t('newAcc').replace('{name}', accessoryById(id).name[getLang()]));
   save.coins += coins;
   const results = order.map((i) => ({
     name: race.racers[i].name,
@@ -430,6 +435,7 @@ function onFinish(): void {
       standings: results,
       balance: save.coins,
       photo: view.takePhoto(),
+      rewards,
     });
     menus.refreshCoins();
   }, 900 + podiumMs);

@@ -1504,3 +1504,122 @@ body {
 .moose-card.owned-acc {
   opacity: 0.75;
 }
+
+/* ---------- Coffres ---------- */
+.chest-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.chest-slot {
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 0 var(--gris-levre);
+  padding: 4px 2px 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  font-family: var(--font-texte);
+  color: var(--brun);
+  cursor: pointer;
+  min-height: 62px;
+  justify-content: center;
+}
+.chest-slot .ic,
+.chest-slot svg {
+  width: 38px;
+  height: 38px;
+  display: block;
+}
+.chest-slot small {
+  font-weight: 900;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.chest-slot.empty {
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+  border: 2px dashed rgba(91, 58, 41, 0.35);
+  cursor: default;
+}
+.chest-slot.is-unlocking small {
+  color: var(--vert);
+}
+.chest-slot.is-ready {
+  outline: 3px solid var(--or, #f5b301);
+}
+.chest-slot.is-ready .ic {
+  animation: chest-bounce 1.1s ease-in-out infinite;
+}
+@keyframes chest-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.chest-big {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto;
+}
+.chest-big svg {
+  width: 100%;
+  height: 100%;
+}
+#chest-reveal .chest-big {
+  animation: chest-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes chest-pop {
+  from {
+    transform: scale(0.4) rotate(-10deg);
+  }
+  to {
+    transform: scale(1) rotate(0);
+  }
+}
+.chest-loot {
+  list-style: none;
+  margin: 4px 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-weight: 900;
+  font-size: 1.05rem;
+}
+.chest-loot li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.chest-loot .acc-swatch {
+  width: 26px;
+  height: 26px;
+  border-width: 2px;
+}
+.res-chest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 900;
+  margin: 6px 0;
+}
+.res-chest svg {
+  width: 40px;
+  height: 40px;
+}
+.res-chest.lost {
+  opacity: 0.6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chest-slot.is-ready .ic,
+  #chest-reveal .chest-big {
+    animation: none;
+  }
+}

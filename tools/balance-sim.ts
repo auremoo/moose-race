@@ -82,6 +82,12 @@ if (worst > 0.6) process.exitCode = 1;
 import { coinsFor, FIRST_WIN_BONUS, firstWinKey } from '../src/meta/economy';
 import { buildEntrants } from '../src/sim/roster';
 import { upgradeCost } from '../src/meta/collection';
+import { openChest, startUnlock } from '../src/meta/chests';
+import { recordRace } from '../src/meta/rewards';
+import { defaultSave } from '../src/meta/settings';
+// Coffres comptés au pire : le joueur les ouvre tous (minuteries ignorées).
+let chestCoins = 0;
+let raceCoins = 0;
 const careers: number[] = [];
 const players = Math.max(3, Math.round(N / 100));
 for (let p = 0; p < players; p++) {
@@ -89,6 +95,7 @@ for (let p = 0; p < players; p++) {
   let level = 1;
   let races = 0;
   const wins = new Set<string>();
+  const meta = defaultSave();
   while (level < 10 && races < 120) {
     const c = courses[(races * 3 + p) % courses.length];
     const entrants = buildEntrants({
@@ -111,7 +118,18 @@ for (let p = 0; p < players; p++) {
           race.racers[b].distance - race.racers[a].distance,
       );
     const rank = order.indexOf(0) + 1;
-    coins += coinsFor(rank, 11, balance.difficulties.moyen.coinMul, 1);
+    const earned = coinsFor(rank, 11, balance.difficulties.moyen.coinMul, 1);
+    coins += earned;
+    raceCoins += earned;
+    recordRace(meta, rank, 11, false);
+    for (const ch of [...meta.chests]) {
+      startUnlock(meta, ch.id, 0);
+      const got = openChest(meta, ch.id, Infinity);
+      if (got) {
+        coins += got.coins;
+        chestCoins += got.coins;
+      }
+    }
     const key = firstWinKey(c.id, 'moyen');
     if (rank === 1 && !wins.has(key)) {
       wins.add(key);
@@ -128,6 +146,7 @@ for (let p = 0; p < players; p++) {
   careers.push(races);
 }
 const avg = careers.reduce((a, b) => a + b, 0) / careers.length;
+console.log(`   (pièces des coffres : ${((100 * chestCoins) / Math.max(1, raceCoins + chestCoins)).toFixed(1)} % du total)`);
 console.log(
   `4. Courses pour améliorer un Commun au niveau 10 : ${careers.join(', ')} (moyenne ${avg.toFixed(1)}, attendu 25 à 40) ${avg >= 25 && avg <= 40 ? '✓' : '✗'}`,
 );

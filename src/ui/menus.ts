@@ -17,6 +17,7 @@ import type { SaveData } from '../meta/settings';
 import { formatTime } from './hud';
 import { DAILY_BONUS, dailyChallenge } from '../meta/daily';
 import { CollectionScreens } from './collectionScreens';
+import { ChestUI } from './chests';
 import { getLang, t, type TextKey } from './i18n';
 
 export type MenuScreen = 'home' | 'map' | 'prep' | 'enclos' | 'comptoir';
@@ -57,6 +58,7 @@ export class Menus {
   private selected: CourseDef = courses[0];
   private toastTimer = 0;
   readonly collection: CollectionScreens;
+  readonly chests: ChestUI;
 
   constructor(
     private save: SaveData,
@@ -87,6 +89,11 @@ export class Menus {
       },
       (m) => this.toast(m),
     );
+    this.chests = new ChestUI(save, () => {
+      this.refreshCoins();
+      this.renderHome();
+      this.cb.onCollectionChange();
+    });
     $('btn-play').addEventListener('click', () => this.show('map'));
     $('btn-daily').addEventListener('click', () => this.cb.onDaily());
     document.querySelector('.tile[data-feature="enclos"]')?.addEventListener('click', () => this.show('enclos'));
@@ -192,6 +199,7 @@ export class Menus {
     this.rarityChip($('active-rarity'), m.rarity);
     $('active-cote').textContent = `${t('rating')} ${mooseRating(m, this.save.levels[m.id] ?? 1)}`;
     document.querySelectorAll<HTMLElement>('.coin-balance').forEach((c) => (c.textContent = String(this.save.coins)));
+    this.chests.render();
   }
 
   private renderCourses(): void {

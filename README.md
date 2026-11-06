@@ -100,10 +100,23 @@ Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000
 ## Accessoires
 
 Cosmétiques, sans effet sur la course : 12 accessoires (tuques unies, rayée ou à carreaux, foulards, clochettes,
-ceinture fléchée, ou rien). Les accessoires d'origine sont offerts ; les autres s'achètent au Comptoir
-(150 à 600 pièces). Dans l'Enclos, la fiche d'un orignal possédé permet de changer ce qu'il porte ; l'accessoire
-suit en course, à l'accueil et au podium. Catalogue : `src/data/accessories.json`. Sauvegarde en schéma 3
-(migration automatique depuis le 2).
+ceinture fléchée, ou rien). Les accessoires d'origine sont offerts. Les autres s'obtiennent de trois façons :
+**objectif** (5 courses, 3 victoires, 3 défis du jour, 20 circuits gagnés…, progrès affiché au Comptoir),
+**coffre**, ou **achat** au Comptoir (150 à 600 pièces). Dans l'Enclos, la fiche d'un orignal possédé permet de
+changer ce qu'il porte ; l'accessoire suit en course, à l'accueil et au podium. Catalogue :
+`src/data/accessories.json`.
+
+## Coffres
+
+Un podium (1er, 2e ou 3e, avec au moins un adversaire) rapporte un coffre ; le premier défi du jour terminé, un
+coffre doré. Quatre emplacements sur l'accueil : au-delà, le coffre est perdu. Un seul coffre se déverrouille à
+la fois, en temps réel (caisse en bois 15 min, érable 1 h, doré 3 h, aurore boréale 8 h) ; on peut l'ouvrir tout
+de suite pour 1 pièce par minute restante. **Jamais d'argent réel.** Contenu : pièces, fragments de panache et,
+selon le coffre, un accessoire pas encore possédé (toujours dans l'aurore boréale). Plus la place est bonne,
+meilleur est le coffre en moyenne. Réglages : `src/data/chests.json`.
+
+L'équilibrage compte les coffres au pire (tous ouverts) : ils font 8,8 % des pièces et un Commun se monte au
+niveau 10 en 30,9 courses (critère du cahier : 25 à 40). Sauvegarde en schéma 4 (migration automatique).
 
 ## Mode Ours et castors
 

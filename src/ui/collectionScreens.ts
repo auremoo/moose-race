@@ -16,7 +16,7 @@ import {
   upgrade,
   upgradeCost,
 } from '../meta/collection';
-import { accessoryOf, buyAccessory, equipAccessory, ownedAccessories, ownsAccessory } from '../meta/accessories';
+import { accessoryOf, buyAccessory, equipAccessory, objectiveProgress, ownedAccessories, ownsAccessory } from '../meta/accessories';
 import { writeSave, type SaveData } from '../meta/settings';
 import { accessoryCatalog, type AccessoryDef } from '../data';
 import { getLang, t, type TextKey } from './i18n';
@@ -92,7 +92,10 @@ export class CollectionScreens {
       b.innerHTML = `<span class="acc-swatch"></span><strong></strong><small></small>`;
       accessorySwatch(b.querySelector('.acc-swatch') as HTMLElement, a);
       (b.querySelector('strong') as HTMLElement).textContent = a.name[getLang()];
-      (b.querySelector('small') as HTMLElement).textContent = owned ? t('ownedLbl') : String(a.price);
+      // Pas encore possédé : progrès de l'objectif qui l'offre, et prix pour l'acheter tout de suite.
+      const p = objectiveProgress(this.save, a);
+      const goal = p && a.unlock ? fmt(`objective_${a.unlock.type}` as TextKey, { a: p.have, b: p.need }) : '';
+      (b.querySelector('small') as HTMLElement).textContent = owned ? t('ownedLbl') : goal ? `${goal} · ${a.price}` : String(a.price);
       b.disabled = owned;
       b.addEventListener('click', () => {
         if (!buyAccessory(this.save, a.id)) {

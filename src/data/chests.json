@@ -1,0 +1,18 @@
+{
+  "slots": 4,
+  "skipCoinsPerMinute": 1,
+  "skipMin": 5,
+  "duplicateAccessoryCoins": 40,
+  "types": {
+    "bois": { "unlockMinutes": 15, "coins": [12, 24], "fragments": [1, 2], "accessoryChance": 0.1, "color": "#A0703F", "name": { "fr": "Caisse en bois", "en": "Wooden crate" } },
+    "erable": { "unlockMinutes": 60, "coins": [30, 50], "fragments": [2, 4], "accessoryChance": 0.35, "color": "#D8461B", "name": { "fr": "Coffre d'érable", "en": "Maple chest" } },
+    "or": { "unlockMinutes": 180, "coins": [70, 110], "fragments": [5, 8], "accessoryChance": 0.7, "color": "#F5B301", "name": { "fr": "Coffre doré", "en": "Golden chest" } },
+    "aurore": { "unlockMinutes": 480, "coins": [150, 220], "fragments": [10, 15], "accessoryChance": 1, "color": "#3FC1C9", "name": { "fr": "Coffre aurore boréale", "en": "Northern lights chest" } }
+  },
+  "dropByRank": {
+    "1": { "bois": 0.4, "erable": 0.42, "or": 0.15, "aurore": 0.03 },
+    "2": { "bois": 0.6, "erable": 0.32, "or": 0.07, "aurore": 0.01 },
+    "3": { "bois": 0.75, "erable": 0.22, "or": 0.03, "aurore": 0 }
+  },
+  "dailyChest": "or"
+}

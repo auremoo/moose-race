@@ -4,7 +4,7 @@
  */
 const KEY = 'panache.v1';
 /** Version actuelle du schéma. Chaque hausse ajoute une étape à MIGRATIONS. */
-export const SCHEMA = 3;
+export const SCHEMA = 4;
 
 export interface SaveData {
   schema: number;
@@ -51,6 +51,12 @@ export interface SaveData {
   /** Accessoires possédés (tuques, foulards…) et accessoire porté par chaque orignal. */
   accessories: string[];
   equipped: Record<string, string>;
+  /** Coffres en attente (4 emplacements au plus) ; fin de déverrouillage en ms, null s'il n'a pas commencé. */
+  chests: { id: number; type: 'bois' | 'erable' | 'or' | 'aurore'; unlockEndsAt: number | null }[];
+  /** Compteur de coffres gagnés (identifiants et graine du contenu). */
+  chestSeq: number;
+  /** Compteurs des objectifs. */
+  stats: { races: number; wins: number; podiums: number; dailies: number; chests: number };
 }
 
 const DEFAULTS: SaveData = {
@@ -84,6 +90,9 @@ const DEFAULTS: SaveData = {
   bestLaps: {},
   accessories: ['tuque-rouge', 'foulard-rouge', 'clochette-doree', 'aucun'],
   equipped: {},
+  chests: [],
+  chestSeq: 0,
+  stats: { races: 0, wins: 0, podiums: 0, dailies: 0, chests: 0 },
 };
 
 type Raw = Record<string, unknown> & { schema?: number };
@@ -100,6 +109,14 @@ const MIGRATIONS: Record<number, (s: Raw) => Raw> = {
   },
   // 2 → 3 : accessoires à collectionner ; chacun garde l'accessoire d'origine de son orignal.
   2: (s) => ({ ...s, accessories: ['tuque-rouge', 'foulard-rouge', 'clochette-doree', 'aucun'], equipped: {}, schema: 3 }),
+  // 3 → 4 : coffres et objectifs. Compteurs repris de l'historique connu (victoires : au moins une par
+  // couple circuit-difficulté déjà gagné ; les podiums ne sont pas connus, on prend la même valeur).
+  3: (s) => {
+    const wins = Array.isArray(s.firstWins) ? s.firstWins.length : 0;
+    const dailies = Array.isArray(s.dailyDone) ? s.dailyDone.length : 0;
+    const races = typeof s.raceCount === 'number' ? s.raceCount : 0;
+    return { ...s, chests: [], chestSeq: 0, stats: { races, wins, podiums: wins, dailies, chests: 0 }, schema: 4 };
+  },
 };
 
 /** Applique les migrations et complète les champs manquants. */

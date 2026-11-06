@@ -88,3 +88,22 @@ test('le mode Ours et castors démarre avec des ours', async ({ page }) => {
   await expect(page.locator('#btn-castor')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("un coffre prêt s'ouvre depuis l'accueil", async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'panache.v1',
+      JSON.stringify({ schema: 4, tutorialDone: true, chestSeq: 1, chests: [{ id: 1, type: 'erable', unlockEndsAt: Date.now() - 1000 }] }),
+    ),
+  );
+  await page.reload();
+  await page.locator('.chest-slot.is-ready').click({ force: true });
+  await expect(page.locator('#chest-reveal')).toBeVisible();
+  const s = await page.evaluate(() => JSON.parse(localStorage.getItem('panache.v1')!));
+  expect(s.chests).toHaveLength(0);
+  expect(s.coins).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});

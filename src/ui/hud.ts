@@ -4,6 +4,8 @@
 import type { SteerTouchVisual } from '../input/input';
 import { countdownRemaining, rankOf, raceTime, windAt, type Race } from '../sim/race';
 import { getLang, ordinal, t, type Lang, type TextKey } from './i18n';
+import { chestCatalog, type ChestType } from '../data';
+import { chestSvg } from './chests';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const tk = (k: string) => t(k as TextKey);
@@ -23,6 +25,8 @@ export interface ResultsInfo {
   standings: { name: string; rating: number; coat: string; time: number; isPlayer: boolean }[];
   /** Photo-finish si l'arrivée était serrée. */
   photo?: { url: string; gap: number; rival: string } | null;
+  /** Coffre gagné à cette course. */
+  rewards?: { chest: ChestType | null; chestStored: boolean };
 }
 
 export interface HudCallbacks {
@@ -309,6 +313,16 @@ export class Hud {
         )
           .replace('{name}', info.photo.rival)
           .replace('{n}', n)}`;
+      }
+      const chestEl = $('res-chest');
+      const rw = info.rewards;
+      chestEl.hidden = !rw?.chest;
+      if (rw?.chest) {
+        chestEl.innerHTML = chestSvg(rw.chest);
+        const span = document.createElement('span');
+        span.textContent = rw.chestStored ? t('chestWon').replace('{name}', chestCatalog.types[rw.chest].name[getLang()]) : t('chestFull');
+        chestEl.appendChild(span);
+        chestEl.classList.toggle('lost', !rw.chestStored);
       }
       const coinsEl = $('res-coins');
       coinsEl.innerHTML = `<span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><b>+0</b><small></small>`;

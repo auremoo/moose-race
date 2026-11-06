@@ -97,6 +97,7 @@
           <div id="res-laps"></div>
           <div id="res-record" class="record"></div>
           <ol id="res-standings" class="standings"></ol>
+          <div id="res-chest" class="res-chest" hidden></div>
           <div id="res-coins" class="res-coins"></div>
           <button class="btn btn-red" id="btn-replay"></button>
           <button class="btn btn-white" id="btn-improve" data-t="improve"></button>
@@ -136,6 +137,7 @@
             <small id="daily-info"></small>
           </button>
           <button class="btn btn-red btn-big" id="btn-play" data-t="play"></button>
+          <div class="chest-row" id="chest-row"></div>
           <div class="tile-grid">
             <button class="tile" data-feature="enclos"><svg viewBox="0 0 24 24"><use href="#i-fence"/></svg><span data-t="enclos"></span></button>
             <button class="tile" data-feature="comptoir"><svg viewBox="0 0 24 24"><use href="#i-shop"/></svg><span data-t="comptoir"></span></button>
@@ -249,6 +251,26 @@
           <button class="btn btn-red" id="detail-main"></button>
           <button class="btn btn-white" id="detail-second"></button>
           <button class="btn btn-white" id="detail-close"></button>
+        </div>
+      </div>
+
+      <div class="overlay" id="chest-sheet" hidden>
+        <div class="card reveal">
+          <div class="chest-big" id="chest-icon"></div>
+          <h2 id="chest-title"></h2>
+          <p class="prep-desc" id="chest-desc"></p>
+          <button class="btn btn-red" id="chest-main"></button>
+          <button class="btn btn-white" id="chest-second"></button>
+          <button class="btn btn-white" id="chest-close"></button>
+        </div>
+      </div>
+
+      <div class="overlay" id="chest-reveal" hidden>
+        <div class="card reveal">
+          <div class="chest-big open" id="chest-reveal-icon"></div>
+          <h2 id="chest-reveal-title"></h2>
+          <ul class="chest-loot" id="chest-loot"></ul>
+          <button class="btn btn-red" id="chest-ok"></button>
         </div>
       </div>
 

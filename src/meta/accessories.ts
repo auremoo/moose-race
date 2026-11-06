@@ -34,3 +34,24 @@ export function equipAccessory(save: SaveData, mooseId: string, id: string): boo
 export function ownedAccessories(save: SaveData): AccessoryDef[] {
   return accessoryCatalog.accessories.filter((a) => ownsAccessory(save, a.id));
 }
+
+/** Progrès vers l'objectif d'un accessoire : valeur atteinte et valeur visée. */
+export function objectiveProgress(save: SaveData, a: AccessoryDef): { have: number; need: number } | null {
+  if (!a.unlock) return null;
+  const need = a.unlock.n;
+  const circuits = new Set(save.firstWins.map((k) => k.split('|')[0])).size;
+  const have = a.unlock.type === 'circuits' ? circuits : (save.stats[a.unlock.type] ?? 0);
+  return { have: Math.min(have, need), need };
+}
+
+/** Ajoute les accessoires dont l'objectif est atteint ; renvoie les nouveaux. */
+export function checkUnlocks(save: SaveData): string[] {
+  const fresh: string[] = [];
+  for (const a of accessoryCatalog.accessories) {
+    if (ownsAccessory(save, a.id)) continue;
+    const p = objectiveProgress(save, a);
+    if (p && p.have >= p.need) fresh.push(a.id);
+  }
+  if (fresh.length) save.accessories = [...save.accessories, ...fresh];
+  return fresh;
+}
