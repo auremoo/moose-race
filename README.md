@@ -104,6 +104,11 @@ plus offensive que tu es loin au classement ; réapparition après 5 s. Bouton C
 Les bots suivent les mêmes règles. Pièces +25 %. Tout est tiré avec la graine de la course (même comportement
 en multijoueur). Non fait : le Bief (raccourci d'eau), voir les issues.
 
+## Fantôme
+
+À chaque record sur un circuit, la trajectoire est enregistrée (10 poses par seconde, stockée à part :
+`panache.ghost.<circuit>`) et rejouée ensuite en orignal translucide. Désactivable dans les Réglages.
+
 ## Vent et racines
 
 - **Vent de travers** (Crépuscule du Manitoba, et plus léger sur le Blé de Saskatchewan) : rafales régulières qui

@@ -3,7 +3,7 @@
  */
 import * as THREE from 'three';
 import type { Balance } from '../data';
-import { rankOf, type Race } from '../sim/race';
+import { raceTime, rankOf, type Race } from '../sim/race';
 import { ChaseCamera } from './camera';
 import { simToWorldX, simToWorldZ } from './coords';
 import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
@@ -63,6 +63,9 @@ export class GameView {
   readonly chase: ChaseCamera;
   private moose: MooseView[] = [];
   private tags: (THREE.Sprite | null)[] = [];
+  /** Pose du fantôme au temps de course t, ou null (fournie par l'appelant). */
+  private ghost: ((t: number) => Pose | null) | null = null;
+  private ghostView: MooseView | null = null;
   private debugLine!: THREE.Line;
   private world!: THREE.Group;
   private ideal!: IdealLine;
@@ -242,6 +245,34 @@ export class GameView {
     });
   }
 
+  /** Fantôme du meilleur temps : fonction qui donne sa pose à l'instant t (null pour l'enlever). */
+  setGhost(g: ((t: number) => Pose | null) | null): void {
+    if (this.ghostView) {
+      this.scene.remove(this.ghostView.root);
+      this.disposeObject(this.ghostView.root);
+      this.ghostView = null;
+    }
+    this.ghost = g;
+    if (!g) return;
+    const v = createMooseView({ coat: '#ffffff' });
+    v.root.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.material) return;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mesh.material = mats.map((m) => {
+        const c = m.clone() as THREE.MeshLambertMaterial;
+        c.transparent = true;
+        c.opacity = 0.32;
+        c.depthWrite = false;
+        if ('color' in c) c.color.lerp(new THREE.Color(0x9fd3ff), 0.6);
+        return c;
+      });
+      if (mats.length === 1) mesh.material = (mesh.material as THREE.Material[])[0];
+    });
+    this.ghostView = v;
+    this.scene.add(v.root);
+  }
+
   /** Menus : caméra vitrine devant l'orignal au lieu de la vue poursuite. */
   setShowcase(on: boolean): void {
     this.showcaseOn = on;
@@ -338,6 +369,15 @@ export class GameView {
         const shake = !reduce && (race.tick - race.racers[0].lastContactTick < 12 || m.stunTime > 0) ? 0.25 : 0;
         this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt, m.galloping || m.boostTime > 0, shake);
         this.effects(race, x, y, heading, dt);
+      }
+    }
+    if (this.ghostView && this.ghost) {
+      const pose = race.phase === 'countdown' || this.showcaseOn ? null : this.ghost(raceTime(race));
+      this.ghostView.root.visible = !!pose;
+      if (pose) {
+        this.ghostView.root.position.set(simToWorldX(pose.x), 0, simToWorldZ(pose.y));
+        this.ghostView.root.rotation.y = pose.heading;
+        this.ghostView.update({ ...race.racers[0].moose, speed: 22, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false } as never, dt);
       }
     }
     if (this.idealOn && !this.showcaseOn) this.colorIdealLine(race);

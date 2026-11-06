@@ -11,9 +11,10 @@ import { balance, courses, trackById, tracks, type CourseDef, type DifficultyId 
 import { InputManager } from './input/input';
 import { coinsFor, FIRST_WIN_BONUS, firstWinKey } from './meta/economy';
 import { exportSave, importSave, loadSave, writeSave } from './meta/settings';
+import { ghostPose, GhostRecorder, loadGhost, saveGhost } from './meta/ghost';
 import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
-import { createRace, estimatedFinishTime, standings, stepRace, type Race } from './sim/race';
+import { createRace, estimatedFinishTime, raceTime, standings, stepRace, type Race } from './sim/race';
 import { buildEntrants } from './sim/roster';
 import { GameView, type Pose } from './render/view';
 import { Hud } from './ui/hud';
@@ -58,6 +59,12 @@ function newRace(): Race {
 }
 
 let race: Race = newRace();
+const ghostRec = new GhostRecorder();
+/** Affiche le fantôme du record de ce circuit, s'il existe et si le réglage est actif. */
+function applyGhost(): void {
+  const g = save.ghostOn ? loadGhost(trackDef.id, race.laps) : null;
+  view.setGhost(g ? (time) => ghostPose(g, time) : null);
+}
 const view = new GameView(canvas, race, balance);
 const input = new InputManager(
   zone,
@@ -199,6 +206,10 @@ const bindCheck = (id: string, get: () => boolean, set: (v: boolean) => void) =>
 bindCheck('chk-sound', () => save.soundOn, (v) => { save.soundOn = sound.sfxOn = v; sound.applyToggles(); });
 bindCheck('chk-music', () => save.musicOn, (v) => { save.musicOn = sound.musicOn = v; sound.applyToggles(); });
 bindCheck('chk-haptics', () => save.hapticsOn, (v) => { save.hapticsOn = sound.hapticsOn = v; });
+bindCheck('chk-ghost', () => save.ghostOn, (v) => {
+  save.ghostOn = v;
+  applyGhost();
+});
 bindCheck('chk-motion', () => save.reduceMotion, (v) => {
   save.reduceMotion = v;
   document.documentElement.classList.toggle('reduce-motion', v);
@@ -259,6 +270,8 @@ function restart(trackChanged = false): void {
   race.racers.forEach((r) => prev.push({ x: r.moose.x, y: r.moose.y, heading: r.moose.heading }));
   view.setRace(race, trackChanged);
   view.setIdealLine(lineVisible());
+  ghostRec.reset();
+  applyGhost();
   resultsShown = false;
   hud.hideResults();
   hud.resetHint();
@@ -295,7 +308,11 @@ function onFinish(): void {
   const bestLap = Math.min(...r.lapTimes);
   const prevBest = save.bestTimes[trackDef.id];
   const record = prevBest === undefined || r.finishTime < prevBest;
-  if (record) save.bestTimes[trackDef.id] = r.finishTime;
+  if (record) {
+    save.bestTimes[trackDef.id] = r.finishTime;
+    // Nouveau record : la trajectoire devient le fantôme de ce circuit (même nombre de tours).
+    saveGhost(ghostRec.result(trackDef.id, race.laps, r.finishTime, r.coat));
+  }
   if (save.bestLaps[trackDef.id] === undefined || bestLap < save.bestLaps[trackDef.id]) save.bestLaps[trackDef.id] = bestLap;
   writeSave(save);
   resultsShown = true;
@@ -360,6 +377,10 @@ function frame(now: number): void {
       });
       const wasFinished = race.phase === 'finished';
       stepRace(race, [cmd]);
+      if (race.phase === 'running') {
+        const me = race.racers[0].moose;
+        ghostRec.sample(raceTime(race), me.x, me.y, me.heading);
+      }
       if (!wasFinished && race.phase === 'finished') onFinish();
       acc -= dt;
       steps++;

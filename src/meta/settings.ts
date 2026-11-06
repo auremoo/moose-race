@@ -19,6 +19,8 @@ export interface SaveData {
   hapticsOn: boolean;
   reduceMotion: boolean;
   tutorialDone: boolean;
+  /** Fantôme du meilleur temps affiché en course. */
+  ghostOn: boolean;
   /** Langue choisie ; absente = langue du téléphone. */
   lang?: 'fr' | 'en';
   /** Solde de pièces à feuille d'érable (l'économie arrive au jalon 7). */
@@ -54,6 +56,7 @@ const DEFAULTS: SaveData = {
   hapticsOn: true,
   reduceMotion: false,
   tutorialDone: false,
+  ghostOn: true,
   coins: 0,
   activeMoose: 'bucheron',
   owned: ['bucheron'],
