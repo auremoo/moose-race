@@ -165,36 +165,117 @@ function instanced(geo: THREE.BufferGeometry, mat: THREE.Material, spots: { x: n
   return mesh;
 }
 
-/** Arbres, montagnes, champs, lacs, bâtiments selon le biome. */
-export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: boolean, rng: Rng, density: number): void {
-  const pine = new THREE.ConeGeometry(2.6, 7, 7);
-  pine.translate(0, 5.5, 0);
-  const trunk = new THREE.CylinderGeometry(0.35, 0.45, 2, 6);
-  trunk.translate(0, 1, 0);
-  const round = new THREE.IcosahedronGeometry(2.6, 0);
-  round.translate(0, 5, 0);
-  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x6b4426 });
+/** Distances (m) de passage aux niveaux de détail moyen et lointain. */
+export const LOD_NEAR = 70;
+export const LOD_FAR = 200;
+
+/** Décor qui se met à jour avec la caméra (niveaux de détail). */
+export interface Decor {
+  update(camX: number, camZ: number): void;
+  /** Nombre d'arbres par niveau de détail, pour les tests et le mode debug. */
+  readonly tiers: [number, number, number];
+}
+
+interface TreeItem {
+  m: THREE.Matrix4;
+  c: THREE.Color;
+  wx: number;
+  wz: number;
+  kind: 'pine' | 'round';
+}
+
+/**
+ * Arbres en trois niveaux de détail : près, toutes les faces ; à mi-distance, sapins à 5 faces et tronc
+ * à 3 faces ; au loin, sapins en pyramide et feuillus en octaèdre. La répartition est refaite quand la caméra
+ * a bougé de quelques mètres : quelques centaines de matrices copiées, sans allocation.
+ */
+function treeLod(group: THREE.Group, items: TreeItem[], snowy: boolean): Decor {
   const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x6b4426 });
+  const cone = (r: number, h: number, seg: number, y: number) => new THREE.ConeGeometry(r, h, seg).translate(0, y, 0);
+  const pineG = [cone(2.6, 7, 7, 5.5), cone(2.6, 7, 5, 5.5), cone(2.6, 7.6, 3, 5.2)];
+  const ico = () => new THREE.IcosahedronGeometry(2.6, 0).translate(0, 5, 0);
+  const roundG = [ico(), ico(), new THREE.OctahedronGeometry(2.6, 0).scale(1, 1.25, 1).translate(0, 5, 0)];
+  const trunkG = new THREE.CylinderGeometry(0.35, 0.45, 2, 6).translate(0, 1, 0);
+  const trunkLowG = new THREE.CylinderGeometry(0.35, 0.45, 2.6, 3).translate(0, 1.3, 0);
+  const pines = items.filter((t) => t.kind === 'pine');
+  const rounds = items.filter((t) => t.kind === 'round');
+  const mk = (g: THREE.BufferGeometry, mat: THREE.Material, cap: number) => {
+    const m = new THREE.InstancedMesh(g, mat, Math.max(1, cap));
+    m.count = 0;
+    m.frustumCulled = false;
+    if (mat === leafMat) m.setColorAt(0, new THREE.Color());
+    group.add(m);
+    return m;
+  };
+  const pineM = pineG.map((g) => mk(g, leafMat, pines.length));
+  const roundM = roundG.map((g) => mk(g, leafMat, rounds.length));
+  const trunkM = mk(trunkG, trunkMat, items.length);
+  const trunkLowM = mk(trunkLowG, trunkMat, items.length);
+  const capM = snowy ? mk(cone(1.1, 2.2, 7, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }), pines.length) : null;
+  const tiers: [number, number, number] = [0, 0, 0];
+  let lastX = Infinity;
+  let lastZ = Infinity;
+  const near2 = LOD_NEAR * LOD_NEAR;
+  const far2 = LOD_FAR * LOD_FAR;
+  const fill = (list: TreeItem[], meshes: THREE.InstancedMesh[], cx: number, cz: number) => {
+    const n = [0, 0, 0];
+    for (const t of list) {
+      const d2 = (t.wx - cx) ** 2 + (t.wz - cz) ** 2;
+      const tier = d2 < near2 ? 0 : d2 < far2 ? 1 : 2;
+      const mesh = meshes[tier];
+      mesh.setMatrixAt(n[tier], t.m);
+      mesh.setColorAt(n[tier], t.c);
+      n[tier]++;
+      tiers[tier]++;
+      const tm = tier === 0 ? trunkM : trunkLowM;
+      tm.setMatrixAt(tm.count++, t.m);
+      if (capM && tier < 2 && t.kind === 'pine') capM.setMatrixAt(capM.count++, t.m);
+    }
+    meshes.forEach((m, i) => {
+      m.count = n[i];
+      m.instanceMatrix.needsUpdate = true;
+      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    });
+  };
+  return {
+    tiers,
+    update(cx: number, cz: number) {
+      if ((cx - lastX) ** 2 + (cz - lastZ) ** 2 < 16) return;
+      lastX = cx;
+      lastZ = cz;
+      tiers[0] = tiers[1] = tiers[2] = 0;
+      trunkM.count = trunkLowM.count = 0;
+      if (capM) capM.count = 0;
+      fill(pines, pineM, cx, cz);
+      fill(rounds, roundM, cx, cz);
+      trunkM.instanceMatrix.needsUpdate = trunkLowM.instanceMatrix.needsUpdate = true;
+      if (capM) capM.instanceMatrix.needsUpdate = true;
+    },
+  };
+}
+
+/** Arbres, montagnes, champs, lacs, bâtiments selon le biome. */
+export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: boolean, rng: Rng, density: number): Decor {
   const greens = [0x2e8b57, 0x1f6b40, 0x2b7a4b];
   const snowGreens = [0x3c6e57, 0x557f6c];
   const maples = [0xd8461b, 0xe8742a, 0xc22f1f, 0xf0a030];
   const n = Math.round((biome === 'plaine' ? 160 : biome === 'rocheuses' ? 520 : 760) * density);
   const spots = freeSpots(track, rng, n, 3, 140);
-  const trees = spots.map((p) => {
+  const up = new THREE.Vector3(0, 1, 0);
+  const trees: TreeItem[] = spots.map((p) => {
     const isMaple = biome === 'foret' && rng.next() < 0.35;
     const isPoplar = biome === 'plaine';
     const palette = isMaple ? maples : snowy ? snowGreens : greens;
-    return { ...p, s: rng.range(0.7, 1.4) * (biome === 'rocheuses' ? 1.15 : 1), r: rng.range(0, 6.28), c: new THREE.Color(palette[Math.floor(rng.next() * palette.length)]), kind: isMaple || isPoplar ? 'round' : 'pine' };
+    const sc = rng.range(0.7, 1.4) * (biome === 'rocheuses' ? 1.15 : 1);
+    const r = rng.range(0, 6.28);
+    const c = new THREE.Color(palette[Math.floor(rng.next() * palette.length)]);
+    const wx = simToWorldX(p.x);
+    const wz = simToWorldZ(p.y);
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(wx, p.z, wz), new THREE.Quaternion().setFromAxisAngle(up, r), new THREE.Vector3(sc, sc, sc));
+    return { m, c, wx, wz, kind: isMaple || isPoplar ? 'round' : 'pine' };
   });
-  group.add(instanced(trunk, trunkMat, trees.map(({ x, y, z, s: sc, r }) => ({ x, y, z, s: sc, r }))));
-  group.add(instanced(pine, leafMat, trees.filter((t) => t.kind === 'pine')));
-  group.add(instanced(round, leafMat, trees.filter((t) => t.kind === 'round')));
-  if (snowy) {
-    // Neige sur la pointe des sapins.
-    const cap = new THREE.ConeGeometry(1.1, 2.2, 7);
-    cap.translate(0, 8.0, 0);
-    group.add(instanced(cap, new THREE.MeshLambertMaterial({ color: 0xffffff }), trees.filter((t) => t.kind === 'pine')));
-  }
+  const decor = treeLod(group, trees, snowy);
 
   const S = track.samples;
   const cx = S.reduce((a, s) => a + s.x, 0) / S.length;
@@ -294,6 +375,7 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
       group.add(g);
     }
   }
+  return decor;
 }
 
 function inukshuk(mat: THREE.Material, x: number, y: number, z: number, rot: number): THREE.Group {

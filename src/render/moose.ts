@@ -43,6 +43,49 @@ function mergeStatic(group: THREE.Object3D, keep: Set<THREE.Object3D>): void {
 }
 
 /** États animés du cahier : attente, départ, trot, galop, glissade, choc, étourdi, victoire, défaite. */
+/** Distances (m) de passage à l'orignal simplifié puis à la silhouette. */
+export const MOOSE_LOD = [40, 120] as const;
+
+/** Pièce colorée pour un modèle simplifié (fusionné en un seul appel de dessin). */
+function part(g: THREE.BufferGeometry, color: THREE.Color, x: number, y: number, z: number, rz = 0): THREE.BufferGeometry {
+  const geo = (g.index ? g.toNonIndexed() : g).rotateZ(rz).translate(x, y, z);
+  const n = geo.attributes.position.count;
+  const c = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) color.toArray(c, i * 3);
+  geo.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  geo.deleteAttribute('uv');
+  return geo;
+}
+
+/**
+ * Orignal simplifié, sans animation des pattes : niveau 1 (formes à peu de faces) ou 2 (boîtes).
+ * Une seule géométrie à couleurs par sommet : un appel de dessin au lieu d'une douzaine.
+ */
+function mooseProxy(color: THREE.Color, level: 1 | 2, accessory?: string): THREE.Mesh {
+  const dark = color.clone().multiplyScalar(0.6);
+  const antler = new THREE.Color(0xe8d3a8);
+  const parts: THREE.BufferGeometry[] = [];
+  if (level === 1) {
+    parts.push(part(new THREE.CapsuleGeometry(0.75, 1.7, 2, 6), color, 0, 1.9, 0, Math.PI / 2));
+    parts.push(part(new THREE.SphereGeometry(0.7, 6, 4), color, 0.6, 2.35, 0));
+    parts.push(part(new THREE.CylinderGeometry(0.32, 0.45, 1.1, 5), color, 1.35, 2.55, 0, -0.9));
+    parts.push(part(new THREE.CapsuleGeometry(0.32, 0.7, 2, 5), dark, 1.95, 2.85, 0, Math.PI / 2 - 0.35));
+    for (const side of [-1, 1]) parts.push(part(new THREE.SphereGeometry(1, 6, 3).scale(0.32, 0.12, 0.75), antler, 1.85, 3.3, side * 0.72));
+    for (const [x, z] of [[0.85, 0.4], [0.85, -0.4], [-0.85, 0.4], [-0.85, -0.4]])
+      parts.push(part(new THREE.CylinderGeometry(0.13, 0.1, 1.45, 4), dark, x, 0.78, z));
+    if (accessory === 'tuque') parts.push(part(new THREE.ConeGeometry(0.32, 0.55, 6), new THREE.Color(0xd80621), 1.95, 3.35, 0));
+    if (accessory === 'foulard') parts.push(part(new THREE.TorusGeometry(0.46, 0.13, 4, 8).rotateY(Math.PI / 2), new THREE.Color(0xd80621), 1.25, 2.45, 0));
+  } else {
+    parts.push(part(new THREE.BoxGeometry(3.0, 1.4, 1.3), color, 0, 2.0, 0));
+    parts.push(part(new THREE.BoxGeometry(1.0, 0.55, 0.55), dark, 1.9, 2.8, 0, -0.35));
+    parts.push(part(new THREE.BoxGeometry(0.4, 0.12, 2.6), antler, 1.85, 3.3, 0));
+    for (const x of [0.85, -0.85]) parts.push(part(new THREE.BoxGeometry(0.22, 1.5, 1.0), dark, x, 0.75, 0));
+  }
+  const merged = mergeGeometries(parts, false)!;
+  merged.computeVertexNormals();
+  return new THREE.Mesh(merged, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+}
+
 export type MoosePose = 'race' | 'idle' | 'victory' | 'defeat';
 
 export interface MooseView {
@@ -211,6 +254,19 @@ export function createMooseView(look: MooseLook = {}): MooseView {
       legs.length = 0;
       for (const l of glbLegs) legs.push(l as THREE.Group);
     }
+  }
+
+  // Niveaux de détail (formes du code seulement) : complet, simplifié, silhouette.
+  if (!glb) {
+    const lod = new THREE.LOD();
+    root.remove(yawSlip);
+    lod.addLevel(yawSlip, 0, 0.1);
+    for (const [i, level] of [1, 2].entries()) {
+      const proxy = mooseProxy(color, level as 1 | 2, look.accessory);
+      proxy.scale.setScalar(size);
+      lod.addLevel(proxy, MOOSE_LOD[i], 0.1);
+    }
+    root.add(lod);
   }
 
   let phase = 0;

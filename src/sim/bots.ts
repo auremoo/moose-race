@@ -70,7 +70,9 @@ export function botCommand(r: Race, racer: Racer): Commands {
     // Décalage visé par rapport à l'orignal à doubler, pas par rapport à la ligne.
     const want = o.proj.d + side * cfg.overtakeShift;
     brain.laneTarget = Math.max(-8, Math.min(8, want - line.offset[racer.proj.index]));
-    if (gap < 5 && Math.abs(lat) < cfg.followLateral) followSpeed = Math.min(followSpeed, o.moose.speed + (gap - 3.5) * 0.5);
+    // Plancher à 3 m/s : derrière un orignal arrêté (joueur immobile sur la grille), le bot avance
+    // au pas le temps de se décaler, au lieu de rester bloqué (un orignal ne se déplace pas de côté à l'arrêt).
+    if (gap < 5 && Math.abs(lat) < cfg.followLateral) followSpeed = Math.min(followSpeed, Math.max(3, o.moose.speed + (gap - 3.5) * 0.5));
   }
   // Évitement : un orignal à côté (même hauteur) → on s'écarte de lui.
   for (const o of r.racers) {

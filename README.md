@@ -162,6 +162,23 @@ baisse sous 45 FPS et remonte au-dessus de 58 FPS ; le décor s'allège sous 30 
   corde parfaite, élan, castor, ours, chocs, compte à rebours, bramé de victoire, musique légère par biome.
   Vibrations si le navigateur le permet. Réglages : bruitages, musique, vibrations, réduire les animations.
 
+## Accueil
+
+Les menus s'affichent devant un enclos dédié (scène à part de la course) : prairie, clôture de perches,
+balles de foin, abreuvoir, cabane en rondins, forêt et sommets au loin. L'orignal actif y attend, la caméra
+tourne doucement autour de lui.
+
+## Niveaux de détail
+
+Trois niveaux, selon la distance à la caméra :
+
+- **Arbres** (instanciés) : complets à moins de 70 m ; sapins à 5 faces et tronc à 3 faces jusqu'à 200 m ;
+  pyramides et octaèdres au-delà. Répartition refaite quand la caméra a bougé de 4 m.
+- **Orignaux** (`THREE.LOD`) : complet et animé à moins de 40 m ; simplifié en un seul appel de dessin
+  jusqu'à 120 m ; silhouette en boîtes au-delà. Désactivé quand un modèle GLB est fourni.
+
+Mesure (Plaine, 11 orignaux, 25 s de course) : 43 900 → 32 000 triangles, appels de dessin quasi inchangés (73 → 77).
+
 ## Modèles 3D (GLB)
 
 Chaque forme générée par le code peut être remplacée par un fichier GLB sans toucher à la simulation :

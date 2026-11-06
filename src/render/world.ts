@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { createRng } from '../sim/rng';
 import type { RacingLine } from '../sim/racingLine';
 import { terrainHeight, type SurfaceId, type Track } from '../sim/track';
-import { decorate, paletteFor, skyDome, trackSigns, type Biome } from './biomes';
+import { decorate, paletteFor, skyDome, trackSigns, type Biome, type Decor } from './biomes';
 import { simToWorldX, simToWorldZ } from './coords';
 
 const COLORS = {
@@ -43,6 +43,7 @@ export interface World {
   group: THREE.Group;
   debugLine: THREE.Line;
   ideal: IdealLine;
+  decor: Decor;
 }
 
 /** Ruban entre deux décalages latéraux d1 < d2 le long de la piste, couleur par échantillon. */
@@ -237,7 +238,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
 
   // Décor du biome et repères de pilotage, graine fixe par circuit.
   const rng = createRng(1234 + track.def.id.length * 97);
-  decorate(group, track, biome, snowy, rng, density);
+  const decor = decorate(group, track, biome, snowy, rng, density);
   trackSigns(group, track, line, rng);
 
   // Ligne centrale de débogage (masquée par défaut).
@@ -282,5 +283,5 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   disc.renderOrder = 1;
   group.add(disc, flags);
 
-  return { group, debugLine, ideal: { mesh: idealMesh, colors: idealGeo.getAttribute('color') as THREE.BufferAttribute } };
+  return { group, debugLine, decor, ideal: { mesh: idealMesh, colors: idealGeo.getAttribute('color') as THREE.BufferAttribute } };
 }

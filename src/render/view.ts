@@ -10,7 +10,8 @@ import { simToWorldX, simToWorldZ } from './coords';
 import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
 import { createMooseView, type MooseView } from './moose';
 import { Particles, RainStreaks } from './particles';
-import type { Biome } from './biomes';
+import type { Biome, Decor } from './biomes';
+import { createHomeScene, type HomeScene } from './home';
 import { buildWorld, type IdealLine } from './world';
 
 export interface Pose {
@@ -71,6 +72,7 @@ export class GameView {
   private ghostView: MooseView | null = null;
   private debugLine!: THREE.Line;
   private world!: THREE.Group;
+  private decor: Decor | null = null;
   private ideal!: IdealLine;
   private idealOn = true;
   private dust = new Particles(120, 0.7, false, -0.5);
@@ -94,6 +96,8 @@ export class GameView {
   private pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
   private podium: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; views: MooseView[]; t: number } | null = null;
   private showcaseOn = false;
+  /** Enclos de l'accueil, créé à la première ouverture d'un menu. */
+  private home: HomeScene | null = null;
   private showcaseTime = 0;
   private lastW = 0;
   private lastH = 0;
@@ -123,6 +127,7 @@ export class GameView {
     this.world = w.group;
     this.debugLine = w.debugLine;
     this.ideal = w.ideal;
+    this.decor = w.decor;
     this.ideal.mesh.visible = this.idealOn;
   }
 
@@ -428,6 +433,14 @@ export class GameView {
       this.renderer.render(pd.scene, pd.camera);
       return;
     }
+    if (this.showcaseOn) {
+      this.home ??= createHomeScene();
+      const r0 = race.racers[0];
+      this.home.setMoose({ coat: r0.coat, size: r0.size, accessory: r0.accessory ?? '' });
+      this.home.update(dt, this.chase.camera.aspect);
+      this.renderer.render(this.home.scene, this.home.camera);
+      return;
+    }
     for (let i = 0; i < race.racers.length; i++) {
       const m = race.racers[i].moose;
       const p = prev[i];
@@ -498,6 +511,8 @@ export class GameView {
     this.dust.update(dt);
     this.sparks.update(dt);
     this.breath.update(dt);
+    const camPos = this.chase.camera.position;
+    this.decor?.update(camPos.x, camPos.z);
     this.renderer.render(this.scene, this.chase.camera);
   }
 

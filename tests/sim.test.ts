@@ -154,3 +154,18 @@ describe('les 20 circuits', () => {
     expect(raceTime(race)).toBeLessThan(140);
   });
 });
+
+describe('bots derrière un joueur immobile', () => {
+  it('aucun bot ne reste bloqué sur la grille', async () => {
+    const { buildEntrants } = await import('../src/sim/roster');
+    const { NO_COMMANDS } = await import('../src/sim/moose');
+    const { createRace: create, stepRace: step } = await import('../src/sim/race');
+    const { balance: b, trackById: byId } = await import('../src/data');
+    for (const seed of [1, 2, 3]) {
+      const entrants = buildEntrants({ playerName: 'J', playerMooseId: 'bucheron', playerLevel: 1, difficulty: 'moyen', botCount: 10, seed, balance: b });
+      const r = create(byId('boucle-grise')!, b, { laps: 1, entrants, difficulty: 'moyen', seed });
+      for (let i = 0; i < 60 * 20; i++) step(r, [NO_COMMANDS]);
+      for (const x of r.racers.slice(1)) expect(x.distance, `graine ${seed}, ${x.name}`).toBeGreaterThan(30);
+    }
+  });
+});
