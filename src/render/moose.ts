@@ -4,7 +4,43 @@
  */
 import * as THREE from 'three';
 import type { MooseState } from '../sim/moose';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { legNodes, modelInstance } from './models';
+
+/**
+ * Fusionne les maillages fixes d'un groupe en un maillage par matériau (moins d'appels de dessin).
+ * Les objets de `keep` (parties animées) ne sont pas touchés.
+ */
+function mergeStatic(group: THREE.Object3D, keep: Set<THREE.Object3D>): void {
+  group.updateMatrix();
+  const byMat = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  const remove: THREE.Object3D[] = [];
+  for (const child of group.children) {
+    const mesh = child as THREE.Mesh;
+    if (keep.has(child) || !mesh.isMesh || Array.isArray(mesh.material)) continue;
+    mesh.updateMatrix();
+    const g = mesh.geometry.clone().applyMatrix4(mesh.matrix);
+    const list = byMat.get(mesh.material) ?? [];
+    list.push(g.index ? g : g);
+    byMat.set(mesh.material, list);
+    remove.push(child);
+  }
+  for (const [mat, geos] of byMat) {
+    if (geos.length < 2) {
+      geos.forEach((g) => g.dispose());
+      remove.splice(0, remove.length, ...remove.filter((r) => (r as THREE.Mesh).material !== mat));
+      continue;
+    }
+    const merged = mergeGeometries(geos, false);
+    geos.forEach((g) => g.dispose());
+    if (!merged) {
+      remove.splice(0, remove.length, ...remove.filter((r) => (r as THREE.Mesh).material !== mat));
+      continue;
+    }
+    group.add(new THREE.Mesh(merged, mat));
+  }
+  for (const r of remove) group.remove(r);
+}
 
 /** États animés du cahier : attente, départ, trot, galop, glissade, choc, étourdi, victoire, défaite. */
 export type MoosePose = 'race' | 'idle' | 'victory' | 'defeat';
@@ -160,6 +196,10 @@ export function createMooseView(look: MooseLook = {}): MooseView {
   stars.position.set(1.9, 3.9, 0);
   stars.visible = false;
   lean.add(stars);
+
+  // Parties fixes fusionnées par matériau ; tête, queue, pattes, panache et étoiles restent animés.
+  mergeStatic(panache, new Set());
+  mergeStatic(lean, new Set<THREE.Object3D>([head, tail, panache, stars, ...legs]));
 
   // Modèle GLB fourni : il remplace les formes du code (les pattes sont animées si elles sont nommées).
   const glb = modelInstance('moose', look.coat);

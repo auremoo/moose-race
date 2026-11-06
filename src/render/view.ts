@@ -51,8 +51,9 @@ function nameTag(name: string, rating: number, coat: string): THREE.Sprite {
   g.fillText(`${name} · ${rating}`, 52, 33);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
-  s.scale.set(4, 1, 1);
+  // Taille constante à l'écran, quelle que soit la distance.
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, sizeAttenuation: false }));
+  s.scale.set(0.13, 0.0325, 1);
   return s;
 }
 
@@ -316,7 +317,7 @@ export class GameView {
       if (tag) {
         const cam = this.chase.camera.position;
         const dist = Math.hypot(cam.x - simToWorldX(x), cam.z - simToWorldZ(y));
-        tag.visible = !this.showcaseOn && dist < 70;
+        tag.visible = !this.showcaseOn && race.phase !== 'countdown' && dist > 12 && dist < 70;
         tag.position.set(simToWorldX(x), 4.6 * race.racers[i].size, simToWorldZ(y));
         tag.material.opacity = Math.max(0, Math.min(1, (70 - dist) / 20));
       }

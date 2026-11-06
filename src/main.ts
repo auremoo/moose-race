@@ -479,4 +479,4 @@ void preloadModels().then(() => view.setRace(race, false));
 requestAnimationFrame(frame);
 
 // Point d'accès pour le débogage depuis la console.
-(window as unknown as { panache: unknown }).panache = { get race() { return race; }, balance };
+(window as unknown as { panache: unknown }).panache = { get race() { return race; }, balance, view };
