@@ -12,6 +12,8 @@ export class ChaseCamera {
   private pos = new THREE.Vector3();
   private look = new THREE.Vector3();
   private initialized = false;
+  /** Animations réduites : champ de vision fixe (pas d'effet de zoom au galop). */
+  calm = false;
 
   constructor(private cfg: Balance['camera']) {
     this.camera = new THREE.PerspectiveCamera(cfg.fov, 9 / 16, 0.3, 900);
@@ -55,7 +57,7 @@ export class ChaseCamera {
     this.camera.lookAt(this.look);
 
     // Le champ s'élargit au galop et pendant l'élan, un peu avec la vitesse.
-    const fov = c.fov + c.galopFovBoost * ((boosting ? 1 : 0) + Math.max(0, Math.min(1, (speedRatio - 0.9) * 5)) * 0.3);
+    const fov = this.calm ? c.fov : c.fov + c.galopFovBoost * ((boosting ? 1 : 0) + Math.max(0, Math.min(1, (speedRatio - 0.9) * 5)) * 0.3);
     if (Math.abs(this.camera.fov - fov) > 0.05) {
       this.camera.fov += (fov - this.camera.fov) * Math.min(1, 4 * dt);
       this.camera.updateProjectionMatrix();

@@ -151,6 +151,7 @@ function lineVisible(): boolean {
 }
 view.setIdealLine(lineVisible());
 const menus = new Menus(save, {
+  snapshot: (look) => view.snapshotMoose(look),
   onStart: (c, setup) => {
     const def = trackById(c.trackId ?? '');
     if (!def) return;
@@ -262,6 +263,8 @@ bindCheck(
     save.hapticsOn = sound.hapticsOn = v;
   },
 );
+// Vibrations : réglage masqué si le navigateur n'a pas l'API (cas de tous les navigateurs sur iPhone).
+if (!('vibrate' in navigator)) document.getElementById('chk-haptics')?.closest('label')?.setAttribute('hidden', '');
 bindCheck(
   'chk-ghost',
   () => save.ghostOn,

@@ -103,7 +103,8 @@ Cosmétiques, sans effet sur la course : 12 accessoires (tuques unies, rayée ou
 ceinture fléchée, ou rien). Les accessoires d'origine sont offerts. Les autres s'obtiennent de trois façons :
 **objectif** (5 courses, 3 victoires, 3 défis du jour, 20 circuits gagnés…, progrès affiché au Comptoir),
 **coffre**, ou **achat** au Comptoir (150 à 600 pièces). Dans l'Enclos, la fiche d'un orignal possédé permet de
-changer ce qu'il porte ; l'accessoire suit en course, à l'accueil et au podium. Catalogue :
+changer ce qu'il porte, avec un aperçu 3D de l'orignal ; au Comptoir, un aperçu montre l'orignal actif avec
+l'accessoire avant l'achat. L'accessoire suit en course, à l'accueil et au podium. Catalogue :
 `src/data/accessories.json`.
 
 ## Coffres

@@ -216,6 +216,32 @@ function freeSpots(track: Track, rng: Rng, count: number, margin: number, reach:
   return out;
 }
 
+/** Marge (m) entre le bord d'un lac et le bas-côté de la piste. */
+export const LAKE_CLEARANCE = 3;
+
+/**
+ * Lacs : le rayon est tiré d'abord, puis le centre est cherché à au moins rayon + marge du bas-côté.
+ * (Avant, seul le centre était tenu à 30 m : un lac de 45 m de rayon pouvait recouvrir la piste.)
+ */
+function lakeSpots(track: Track, rng: Rng, count: number, rMin: number, rMax: number, reach: number): (Spot & { r: number })[] {
+  const out: (Spot & { r: number })[] = [];
+  for (let i = 0; i < count; i++) {
+    const r = rng.range(rMin, rMax);
+    const spot = freeSpots(track, rng, 1, r + LAKE_CLEARANCE, reach + r)[0];
+    if (spot) out.push({ ...spot, r });
+  }
+  return out;
+}
+
+function lakeMesh(l: Spot & { r: number }, color: number): THREE.Mesh {
+  const lake = new THREE.Mesh(new THREE.CircleGeometry(l.r, 24), new THREE.MeshLambertMaterial({ color }));
+  lake.rotation.x = -Math.PI / 2;
+  lake.position.set(simToWorldX(l.x), 0.03 + l.z, simToWorldZ(l.y));
+  // Repère pour les tests : centre et rayon dans le plan de la piste.
+  lake.userData.water = { x: l.x, y: l.y, r: l.r };
+  return lake;
+}
+
 function instanced(
   geo: THREE.BufferGeometry,
   mat: THREE.Material,
@@ -373,13 +399,7 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
     const caps = peaks.map((p) => ({ ...p, h: p.s * 0.58, s: p.s * 0.45 }));
     group.add(instanced(capG, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), caps));
     // Lac turquoise et inukshuks.
-    const lakes = freeSpots(track, rng, 2, 30, 90);
-    for (const l of lakes) {
-      const lake = new THREE.Mesh(new THREE.CircleGeometry(rng.range(25, 45), 24), new THREE.MeshLambertMaterial({ color: 0x3fc1c9 }));
-      lake.rotation.x = -Math.PI / 2;
-      lake.position.set(simToWorldX(l.x), 0.03 + l.z, simToWorldZ(l.y));
-      group.add(lake);
-    }
+    for (const l of lakeSpots(track, rng, 2, 25, 45, 90)) group.add(lakeMesh(l, 0x3fc1c9));
     const stone = new THREE.MeshLambertMaterial({ color: 0x8e8a85, flatShading: true });
     for (const p of freeSpots(track, rng, 5, 4, 30)) group.add(inukshuk(stone, p.x, p.y, p.z, rng.range(0, 6.28)));
   }
@@ -420,12 +440,9 @@ export function decorate(group: THREE.Group, track: Track, biome: Biome, snowy: 
 
   if (biome === 'foret') {
     // Lacs, canots, cabane à sucre.
-    for (const l of freeSpots(track, rng, 3, 30, 100)) {
-      const r = rng.range(22, 40);
-      const lake = new THREE.Mesh(new THREE.CircleGeometry(r, 24), new THREE.MeshLambertMaterial({ color: 0x3c7fb0 }));
-      lake.rotation.x = -Math.PI / 2;
-      lake.position.set(simToWorldX(l.x), 0.03 + l.z, simToWorldZ(l.y));
-      group.add(lake);
+    for (const l of lakeSpots(track, rng, 3, 22, 40, 100)) {
+      const r = l.r;
+      group.add(lakeMesh(l, 0x3c7fb0));
       const canoe = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 3.6, 4, 8), new THREE.MeshLambertMaterial({ color: 0xc8361f }));
       canoe.rotation.z = Math.PI / 2;
       canoe.scale.set(1, 1, 0.45);

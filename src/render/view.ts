@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { Balance } from '../data';
 import { raceTime, rankOf, surfaceUnder, windAt, type Race } from '../sim/race';
 import { terrainHeight } from '../sim/track';
+import { biefWaterSpan } from '../sim/bief';
 import { ChaseCamera } from './camera';
 import { simToWorldX, simToWorldZ } from './coords';
 import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
@@ -108,6 +109,8 @@ export class GameView {
   private podium: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; views: MooseView[]; t: number } | null = null;
   private showcaseOn = false;
   private photo: PhotoFinish | null = null;
+  /** Portion en eau du bief (m depuis l'embouchure), null sans bief. */
+  private biefSpan: [number, number] | null = null;
   private photoChecked = false;
   /** Enclos de l'accueil, créé à la première ouverture d'un menu. */
   private home: HomeScene | null = null;
@@ -227,29 +230,42 @@ export class GameView {
       this.hazardGroup.add(b);
       this.barragePool.push(b);
     }
-    // Bief : canal d'eau signalé entre l'embouchure et la sortie.
+    // Bief : canal d'eau signalé entre l'embouchure et la sortie, du bord de la piste au bord de la piste,
+    // posé sur le terrain (il suit le relief au lieu d'être un plan tendu entre les deux bouts).
+    this.biefSpan = null;
     if (h.bief) {
       const b = h.bief;
-      const g = new THREE.Group();
-      const water = new THREE.Mesh(
-        new THREE.PlaneGeometry(b.length + 6, 7),
-        new THREE.MeshLambertMaterial({ color: 0x3c8fd0, transparent: true, opacity: 0.85 }),
-      );
-      water.rotation.x = -Math.PI / 2;
-      water.position.y = 0.05;
-      g.add(water);
-      for (const side of [-1, 1]) {
-        const bank = new THREE.Mesh(new THREE.BoxGeometry(b.length + 6, 0.4, 0.6), new THREE.MeshLambertMaterial({ color: 0x8a5a36 }));
-        bank.position.set(0, 0.2, side * 3.8);
-        g.add(bank);
-      }
+      const [t0, t1] = biefWaterSpan(race.track, b);
+      this.biefSpan = [t0, t1];
+      const ux = (b.bx - b.ax) / b.length;
+      const uy = (b.by - b.ay) / b.length;
+      const strip = (d1: number, d2: number, lift: number, color: number) => {
+        const n = Math.max(2, Math.ceil((t1 - t0) / 2) + 1);
+        const pos: number[] = [];
+        const idx: number[] = [];
+        for (let k = 0; k < n; k++) {
+          const t = t0 + ((t1 - t0) * k) / (n - 1);
+          for (const d of [d1, d2]) {
+            const x = b.ax + ux * t - uy * d;
+            const y = b.ay + uy * t + ux * d;
+            pos.push(simToWorldX(x), terrainHeight(race.track, x, y) + lift, simToWorldZ(y));
+          }
+          if (k > 0) {
+            const a = (k - 1) * 2;
+            idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+          }
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setIndex(idx);
+        geo.computeVertexNormals();
+        return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide }));
+      };
+      this.hazardGroup.add(strip(-3.5, 3.5, 0.06, 0x3c8fd0));
+      this.hazardGroup.add(strip(-4.2, -3.5, 0.3, 0x8a5a36));
+      this.hazardGroup.add(strip(3.5, 4.2, 0.3, 0x8a5a36));
       const za = race.track.samples[b.from].z;
       const zb = race.track.samples[b.to].z;
-      g.position.set(simToWorldX((b.ax + b.bx) / 2), (za + zb) / 2, simToWorldZ((b.ay + b.by) / 2));
-      g.rotation.y = Math.atan2(b.by - b.ay, b.bx - b.ax);
-      // Inclinaison du canal si ses deux bouts ne sont pas à la même hauteur.
-      g.rotation.z = Math.atan2(zb - za, b.length);
-      this.hazardGroup.add(g);
       for (const [x, y, z] of [
         [b.ax, b.ay, za],
         [b.bx, b.by, zb],
@@ -448,7 +464,7 @@ export class GameView {
       pd.camera.lookAt(0, 2.8, 0);
       const still = { ...race.racers[0].moose, speed: 0, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false, galloping: false };
       pd.views.forEach((v, i) => v.update(still, dt, i === 0 ? 'victory' : 'idle'));
-      this.renderer.render(pd.scene, pd.camera);
+      this.draw(pd.scene, pd.camera);
       return;
     }
     if (this.showcaseOn) {
@@ -456,7 +472,7 @@ export class GameView {
       const r0 = race.racers[0];
       this.home.setMoose({ coat: r0.coat, size: r0.size, accessory: r0.accessory ?? '' });
       this.home.update(dt, this.chase.camera.aspect);
-      this.renderer.render(this.home.scene, this.home.camera);
+      this.draw(this.home.scene, this.home.camera);
       return;
     }
     for (let i = 0; i < race.racers.length; i++) {
@@ -483,12 +499,11 @@ export class GameView {
       const swimming = race.racers[i].swim >= 0;
       let groundZ = race.track.samples[race.racers[i].proj.index].z;
       const bief = race.hazards?.bief;
-      if (swimming && bief) {
-        // Dans le canal : hauteur interpolée entre l'embouchure et la sortie.
-        const u = Math.min(1, race.racers[i].swim / bief.length);
-        groundZ = race.track.samples[bief.from].z + (race.track.samples[bief.to].z - race.track.samples[bief.from].z) * u;
-      }
-      view.root.position.set(simToWorldX(x), groundZ + (swimming ? -1.3 : 0), simToWorldZ(y));
+      // Dans l'eau seulement entre les deux bords de piste : avant et après, il marche sur la chaussée.
+      const inWater =
+        swimming && !!bief && !!this.biefSpan && race.racers[i].swim >= this.biefSpan[0] && race.racers[i].swim <= this.biefSpan[1];
+      if (swimming && bief) groundZ = terrainHeight(race.track, x, y);
+      view.root.position.set(simToWorldX(x), groundZ + (inWater ? -1.3 : 0), simToWorldZ(y));
       view.root.rotation.y = heading;
       let pose: 'race' | 'idle' | 'victory' | 'defeat' = 'race';
       if (this.showcaseOn) pose = 'idle';
@@ -502,6 +517,7 @@ export class GameView {
         this.chase.showcase(x, y, heading, this.showcaseTime, groundZ);
       } else if (i === 0) {
         const reduce = document.documentElement.classList.contains('reduce-motion');
+        this.chase.calm = reduce;
         const shake = !reduce && (race.tick - race.racers[0].lastContactTick < 12 || m.stunTime > 0) ? 0.25 : 0;
         this.chase.update(x, y, heading, m.speed / race.balance.moose.topSpeed, dt, m.galloping || m.boostTime > 0, shake, groundZ);
         this.groundZ = groundZ;
@@ -535,7 +551,59 @@ export class GameView {
       this.photoChecked = true;
       this.photo = this.photoFinish(race);
     }
-    this.renderer.render(this.scene, this.chase.camera);
+    this.draw(this.scene, this.chase.camera);
+  }
+
+  private lastFrame: { scene: THREE.Scene; camera: THREE.Camera } | null = null;
+  private snapScene: THREE.Scene | null = null;
+
+  private draw(scene: THREE.Scene, camera: THREE.Camera): void {
+    this.lastFrame = { scene, camera };
+    this.renderer.render(scene, camera);
+  }
+
+  /**
+   * Cliché d'un orignal (robe, taille, accessoire), de trois quarts, en image PNG carrée.
+   * Rendu avec le moteur de la partie puis l'image courante est redessinée dans la même tâche :
+   * le navigateur n'affiche que cette dernière, donc rien ne clignote.
+   */
+  snapshotMoose(look: { coat: string; size: number; accessory: string }, px = 256): string {
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    if (!w || !h) return '';
+    if (!this.snapScene) {
+      const sc = new THREE.Scene();
+      sc.add(new THREE.HemisphereLight(0xffffff, 0xc8a070, 1.9));
+      const sun = new THREE.DirectionalLight(0xfff3dd, 1.5);
+      sun.position.set(6, 10, 8);
+      sc.add(sun);
+      this.snapScene = sc;
+    }
+    const scene = this.snapScene;
+    scene.background = new THREE.Color(0xf6efe4);
+    const mv = createMooseView(look);
+    mv.root.rotation.y = -0.6;
+    mv.update({ speed: 0, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false, galloping: false, curvature: 0 } as never, 0.016, 'idle');
+    scene.add(mv.root);
+    const cam = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
+    // Cadre carré au centre : on recule selon l'étroitesse de l'écran.
+    const side = Math.min(w, h);
+    const dist = 8.5 * (h / side);
+    cam.position.set(Math.sin(0.2) * dist, 2.6 + 0.6, Math.cos(0.2) * dist);
+    cam.lookAt(0.4, 2.2, 0);
+    this.renderer.render(scene, cam);
+    const out = document.createElement('canvas');
+    out.width = out.height = px;
+    const g = out.getContext('2d');
+    if (g) g.drawImage(this.canvas, (w - side) / 2, (h - side) / 2, side, side, 0, 0, px, px);
+    scene.remove(mv.root);
+    this.disposeObject(mv.root);
+    if (this.lastFrame) this.renderer.render(this.lastFrame.scene, this.lastFrame.camera);
+    try {
+      return out.toDataURL('image/png');
+    } catch {
+      return '';
+    }
   }
 
   /** Photo-finish de la dernière course (null si l'arrivée n'était pas serrée). */

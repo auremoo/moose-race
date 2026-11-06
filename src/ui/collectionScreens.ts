@@ -47,6 +47,17 @@ export function accessorySwatch(el: HTMLElement, a: AccessoryDef): void {
   el.title = a.name[getLang()];
 }
 
+/** Remplace le contenu par un cliché 3D. */
+function showShot(el: HTMLElement, url: string, alt: string): void {
+  el.classList.remove('silhouette');
+  el.className = el.className.replace(/\bacc-swatch\S*/g, '').trim();
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = alt;
+  img.className = 'shot';
+  el.replaceChildren(img);
+}
+
 function rarityChip(el: HTMLElement, def: MooseDef): void {
   el.textContent = tk(`rarity_${def.rarity}`);
   el.style.background = mooseCatalog.rarities[def.rarity].color;
@@ -60,12 +71,15 @@ export class CollectionScreens {
     private save: SaveData,
     private onChange: () => void,
     private toast: (msg: string) => void,
+    private snapshot: (look: { coat: string; size: number; accessory: string }) => string = () => '',
   ) {
     $('detail-close').addEventListener('click', () => ($('moose-detail').hidden = true));
     $('detail-main').addEventListener('click', () => this.detailAction('main'));
     $('detail-second').addEventListener('click', () => this.detailAction('second'));
     $('btn-loot').addEventListener('click', () => this.loot());
     $('reveal-ok').addEventListener('click', () => ($('loot-reveal').hidden = true));
+    $('acc-sheet-close').addEventListener('click', () => ($('acc-sheet').hidden = true));
+    $('acc-sheet-buy').addEventListener('click', () => this.buyFromSheet());
     $('acc-prev').addEventListener('click', () => this.cycleAccessory(-1));
     $('acc-next').addEventListener('click', () => this.cycleAccessory(1));
   }
@@ -78,6 +92,43 @@ export class CollectionScreens {
     equipAccessory(this.save, this.detailId, next.id);
     this.commit();
     this.renderDetail();
+  }
+
+  private sheetAcc: AccessoryDef | null = null;
+
+  /** Aperçu avant achat : l'orignal actif porte l'accessoire. */
+  private openAccessorySheet(a: AccessoryDef): void {
+    this.sheetAcc = a;
+    const def = mooseCatalog.moose.find((m) => m.id === this.save.activeMoose) ?? mooseCatalog.moose[0];
+    const shot = this.snapshot({ coat: def.coat, size: def.size, accessory: a.id });
+    const box = $('acc-sheet-shot');
+    if (shot) showShot(box, shot, a.name[getLang()]);
+    else {
+      const sw = document.createElement('span');
+      accessorySwatch(sw, a);
+      box.replaceChildren(sw);
+    }
+    $('acc-sheet-name').textContent = a.name[getLang()];
+    const p = objectiveProgress(this.save, a);
+    $('acc-sheet-goal').textContent = p && a.unlock ? fmt(`objective_${a.unlock.type}` as TextKey, { a: p.have, b: p.need }) : '';
+    const buy = $<HTMLButtonElement>('acc-sheet-buy');
+    buy.textContent = fmt('buyFor', { n: a.price });
+    buy.classList.toggle('poor', this.save.coins < a.price);
+    $('acc-sheet-close').textContent = t('close');
+    $('acc-sheet').hidden = false;
+  }
+
+  private buyFromSheet(): void {
+    const a = this.sheetAcc;
+    if (!a) return;
+    if (!buyAccessory(this.save, a.id)) {
+      this.toast(t('notEnough'));
+      return;
+    }
+    this.commit();
+    $('acc-sheet').hidden = true;
+    this.toast(fmt('boughtAcc', { name: a.name[getLang()] }));
+    this.renderComptoir();
   }
 
   private renderAccessoryShop(): void {
@@ -97,15 +148,7 @@ export class CollectionScreens {
       const goal = p && a.unlock ? fmt(`objective_${a.unlock.type}` as TextKey, { a: p.have, b: p.need }) : '';
       (b.querySelector('small') as HTMLElement).textContent = owned ? t('ownedLbl') : goal ? `${goal} · ${a.price}` : String(a.price);
       b.disabled = owned;
-      b.addEventListener('click', () => {
-        if (!buyAccessory(this.save, a.id)) {
-          this.toast(t('notEnough'));
-          return;
-        }
-        this.commit();
-        this.toast(fmt('boughtAcc', { name: a.name[getLang()] }));
-        this.renderComptoir();
-      });
+      b.addEventListener('click', () => this.openAccessorySheet(a));
       grid.appendChild(b);
     }
   }
@@ -190,7 +233,10 @@ export class CollectionScreens {
     const def = mooseCatalog.moose.find((m) => m.id === this.detailId)!;
     const owned = owns(this.save, def.id);
     const level = levelOf(this.save, def.id);
-    portrait($('detail-portrait'), def, true);
+    // Aperçu 3D avec l'accessoire porté (repli : portrait dessiné).
+    const shot = this.snapshot({ coat: def.coat, size: def.size, accessory: accessoryOf(this.save, def.id).id });
+    if (shot) showShot($('detail-portrait'), shot, def.name);
+    else portrait($('detail-portrait'), def, true);
     rarityChip($('detail-rarity'), def);
     $('detail-name').textContent = def.name;
     $('detail-style').textContent = def.style ?? '';

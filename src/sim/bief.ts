@@ -58,3 +58,23 @@ export function findBief(track: Track): Bief | null {
   cache.set(track, best);
   return best;
 }
+
+/**
+ * Portion du canal réellement en eau : du bord de la piste à l'embouchure jusqu'au bord de la piste à
+ * la sortie (abscisses en m, mesurées depuis l'embouchure le long du canal). Le canal relie deux points
+ * de l'axe de la piste : sans ce découpage, l'eau recouvrait la chaussée aux deux bouts.
+ */
+export function biefWaterSpan(track: Track, b: Bief): [number, number] {
+  const S = track.samples;
+  const at = (t: number) => {
+    const x = b.ax + ((b.bx - b.ax) * t) / b.length;
+    const y = b.ay + ((b.by - b.ay) * t) / b.length;
+    const p = projectOnTrack(track, x, y);
+    return Math.abs(p.d) > S[p.index].hw + 0.5;
+  };
+  let t0 = 0;
+  while (t0 < b.length / 2 && !at(t0)) t0 += 0.5;
+  let t1 = b.length;
+  while (t1 > b.length / 2 && !at(t1)) t1 -= 0.5;
+  return [t0, t1];
+}

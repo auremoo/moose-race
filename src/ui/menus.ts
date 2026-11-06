@@ -35,6 +35,8 @@ export interface MenuCallbacks {
   onCollectionChange(): void;
   onTutorial(): void;
   onDaily(): void;
+  /** Cliché 3D d'un orignal avec un accessoire (aperçu), ou '' si indisponible. */
+  snapshot(look: { coat: string; size: number; accessory: string }): string;
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -88,6 +90,7 @@ export class Menus {
         this.cb.onCollectionChange();
       },
       (m) => this.toast(m),
+      (look) => this.cb.snapshot(look),
     );
     this.chests = new ChestUI(save, () => {
       this.refreshCoins();

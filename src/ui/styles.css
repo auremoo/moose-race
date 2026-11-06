@@ -1623,3 +1623,21 @@ body {
     animation: none;
   }
 }
+
+.setting[hidden] {
+  display: none;
+}
+
+/* Aperçus 3D (fiche de l'orignal, accessoire au Comptoir). */
+img.shot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.acc-shot {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+}
