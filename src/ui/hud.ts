@@ -254,6 +254,13 @@ export class Hud {
     this.eventTimer = 1;
   }
 
+  showPodiumTitle(on: boolean): void {
+    const el = $('podium-title');
+    el.textContent = t('podium');
+    el.hidden = !on;
+    $('app').classList.toggle('on-podium', on);
+  }
+
   showPause(on: boolean): void {
     this.pauseMenu.hidden = !on;
   }

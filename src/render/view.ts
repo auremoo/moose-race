@@ -85,6 +85,7 @@ export class GameView {
   private fpsAvg = 60;
   private qualityTimer = 0;
   private pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  private podium: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; views: MooseView[]; t: number } | null = null;
   private showcaseOn = false;
   private showcaseTime = 0;
   private lastW = 0;
@@ -144,6 +145,7 @@ export class GameView {
 
   /** Nouvelle course : participants recréés ; décor reconstruit seulement si le circuit change. */
   setRace(race: Race, trackChanged = true): void {
+    this.hidePodium();
     if (trackChanged) {
       const debugOn = this.debugLine.visible;
       this.scene.remove(this.world);
@@ -245,6 +247,49 @@ export class GameView {
     });
   }
 
+  /**
+   * Podium d'arrivée : les trois premiers sur des marches (1er au centre, qui se cabre).
+   * Scène à part, rendue à la place de la course jusqu'à hidePodium().
+   */
+  showPodium(top: { coat: string; size: number; accessory: string }[]): void {
+    this.hidePodium();
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffe9c7);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xc8a070, 1.8));
+    const sun = new THREE.DirectionalLight(0xfff3dd, 1.6);
+    sun.position.set(6, 12, 10);
+    scene.add(sun);
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(30, 32), new THREE.MeshLambertMaterial({ color: 0x8cc160 }));
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+    const colors = [0xf5b301, 0xc0c6cc, 0xc8814a];
+    const heights = [2.4, 1.6, 1.0];
+    const xs = [0, -3.7, 3.7];
+    const views: MooseView[] = [];
+    top.slice(0, 3).forEach((look, i) => {
+      const block = new THREE.Mesh(new THREE.BoxGeometry(3.4, heights[i], 3.4), new THREE.MeshLambertMaterial({ color: colors[i] }));
+      block.position.set(xs[i], heights[i] / 2, 0);
+      scene.add(block);
+      const mv = createMooseView(look);
+      mv.root.position.set(xs[i], heights[i], 0);
+      // Face à la caméra (qui regarde vers -z).
+      mv.root.rotation.y = -Math.PI / 2;
+      mv.root.scale.setScalar(0.85);
+      scene.add(mv.root);
+      views.push(mv);
+    });
+    const camera = new THREE.PerspectiveCamera(50, this.chase.camera.aspect, 0.1, 200);
+    camera.position.set(0, 6.5, 27);
+    camera.lookAt(0, 2.8, 0);
+    this.podium = { scene, camera, views, t: 0 };
+  }
+
+  hidePodium(): void {
+    if (!this.podium) return;
+    this.disposeObject(this.podium.scene);
+    this.podium = null;
+  }
+
   /** Fantôme du meilleur temps : fonction qui donne sa pose à l'instant t (null pour l'enlever). */
   setGhost(g: ((t: number) => Pose | null) | null): void {
     if (this.ghostView) {
@@ -275,6 +320,7 @@ export class GameView {
 
   /** Menus : caméra vitrine devant l'orignal au lieu de la vue poursuite. */
   setShowcase(on: boolean): void {
+    if (on) this.hidePodium();
     this.showcaseOn = on;
     this.chase.reset();
   }
@@ -332,6 +378,18 @@ export class GameView {
   render(race: Race, prev: Pose[], alpha: number, dt: number): void {
     if (this.canvas.clientWidth !== this.lastW || this.canvas.clientHeight !== this.lastH) this.resize();
     this.adaptQuality(dt);
+    if (this.podium) {
+      const pd = this.podium;
+      pd.t += dt;
+      pd.camera.aspect = this.chase.camera.aspect;
+      pd.camera.updateProjectionMatrix();
+      pd.camera.position.x = Math.sin(pd.t * 0.4) * 2;
+      pd.camera.lookAt(0, 2.8, 0);
+      const still = { ...race.racers[0].moose, speed: 0, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false, galloping: false };
+      pd.views.forEach((v, i) => v.update(still, dt, i === 0 ? 'victory' : 'idle'));
+      this.renderer.render(pd.scene, pd.camera);
+      return;
+    }
     for (let i = 0; i < race.racers.length; i++) {
       const m = race.racers[i].moose;
       const p = prev[i];

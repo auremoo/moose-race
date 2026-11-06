@@ -293,6 +293,7 @@ function restart(trackChanged = false): void {
   ghostRec.reset();
   applyGhost();
   resultsShown = false;
+  hud.showPodiumTitle(false);
   hud.hideResults();
   hud.resetHint();
   paused = false;
@@ -342,10 +343,22 @@ function onFinish(): void {
   if (save.bestLaps[trackDef.id] === undefined || bestLap < save.bestLaps[trackDef.id]) save.bestLaps[trackDef.id] = bestLap;
   writeSave(save);
   resultsShown = true;
+  // Podium 3D des trois premiers, puis l'écran des résultats.
+  const finishedRace = race;
+  const podiumMs = N > 1 && !save.reduceMotion ? 2600 : 0;
   setTimeout(() => {
+    if (race !== finishedRace) return;
+    if (podiumMs) {
+      view.showPodium(order.slice(0, 3).map((i) => race.racers[i]));
+      hud.showPodiumTitle(true);
+    }
+  }, 900);
+  setTimeout(() => {
+    if (race !== finishedRace) return;
+    hud.showPodiumTitle(false);
     hud.showResults(race, record, { rank, participants: N, coins, bonus, standings: results, balance: save.coins });
     menus.refreshCoins();
-  }, 900);
+  }, 900 + podiumMs);
 }
 
 // Pause automatique si la page passe en arrière-plan.
