@@ -14,6 +14,17 @@ import type { Biome, Decor } from './biomes';
 import { createHomeScene, type HomeScene } from './home';
 import { buildWorld, type IdealLine } from './world';
 
+/** Écart maximal (s) avec un rival pour déclencher le photo-finish. */
+export const PHOTO_GAP = 0.3;
+
+export interface PhotoFinish {
+  /** Image JPEG (data URL) de la ligne vue de côté. */
+  url: string;
+  /** Écart en secondes, positif si le joueur devance le rival. */
+  gap: number;
+  rival: string;
+}
+
 export interface Pose {
   x: number;
   y: number;
@@ -96,6 +107,8 @@ export class GameView {
   private pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
   private podium: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; views: MooseView[]; t: number } | null = null;
   private showcaseOn = false;
+  private photo: PhotoFinish | null = null;
+  private photoChecked = false;
   /** Enclos de l'accueil, créé à la première ouverture d'un menu. */
   private home: HomeScene | null = null;
   private showcaseTime = 0;
@@ -159,6 +172,8 @@ export class GameView {
   /** Nouvelle course : participants recréés ; décor reconstruit seulement si le circuit change. */
   setRace(race: Race, trackChanged = true): void {
     this.hidePodium();
+    this.photo = null;
+    this.photoChecked = false;
     if (trackChanged) {
       const debugOn = this.debugLine.visible;
       this.scene.remove(this.world);
@@ -513,7 +528,85 @@ export class GameView {
     this.breath.update(dt);
     const camPos = this.chase.camera.position;
     this.decor?.update(camPos.x, camPos.z);
+    if (!this.photoChecked && race.racers[0].finished) {
+      this.photoChecked = true;
+      this.photo = this.photoFinish(race);
+    }
     this.renderer.render(this.scene, this.chase.camera);
+  }
+
+  /** Photo-finish de la dernière course (null si l'arrivée n'était pas serrée). */
+  takePhoto(): PhotoFinish | null {
+    return this.photo;
+  }
+
+  /**
+   * À l'image où le joueur franchit la ligne : si un rival est à moins de PHOTO_GAP secondes,
+   * on rend la ligne vue de côté, on la recadre en 16:9 et on la vire au sépia, avec le fil rouge.
+   */
+  private photoFinish(race: Race): PhotoFinish | null {
+    const me = race.racers[0];
+    let best: { gap: number; name: string } | null = null;
+    const total = race.laps * race.track.length;
+    for (const o of race.racers.slice(1)) {
+      // Écart en secondes : positif si le joueur devance ce rival.
+      const gap = o.finished ? o.finishTime - me.finishTime : (total - o.distance) / Math.max(1, o.moose.speed);
+      if (Math.abs(gap) < PHOTO_GAP && (!best || Math.abs(gap) < Math.abs(best.gap))) best = { gap, name: o.name };
+    }
+    if (!best) return null;
+    const s0 = race.track.samples[0];
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    if (!w || !h) return null;
+    const aspect = w / h;
+    const D = s0.hw + 7;
+    // Bande de 16:9 prise au centre de l'image ; on veut ~5,5 m de haut dans cette bande.
+    const bandFrac = Math.min(1, (aspect * 9) / 16);
+    const fov = (2 * Math.atan(5.5 / bandFrac / 2 / D) * 180) / Math.PI;
+    const cam = new THREE.PerspectiveCamera(fov, aspect, 0.1, 400);
+    const z = s0.z;
+    cam.position.set(simToWorldX(s0.x + s0.nx * D), z + 1.7, simToWorldZ(s0.y + s0.ny * D));
+    cam.lookAt(simToWorldX(s0.x), z + 1.7, simToWorldZ(s0.y));
+    const tagsShown = this.tags.map((t) => t?.visible ?? false);
+    this.tags.forEach((t) => t && (t.visible = false));
+    // L'arche cacherait la ligne : la caméra de photo-finish est censée être posée dessus.
+    const arch = this.world.getObjectByName('finish-arch');
+    if (arch) arch.visible = false;
+    // Instant du cliché : quand le museau du joueur touche la ligne (la course compte le centre de
+    // l'orignal). On recule chaque orignal de sa vitesse × Δt le long de son cap.
+    const nose = 2.2 * me.size;
+    const dt = (Math.max(0, me.distance - total) + nose) / Math.max(1, me.moose.speed);
+    const saved = this.moose.map((v) => v.root.position.clone());
+    race.racers.forEach((r, i) => {
+      const v = this.moose[i];
+      if (!v) return;
+      const back = r.finished && r !== me && r.finishTime < me.finishTime - 1 ? 0 : r.moose.speed * dt;
+      const x = r.moose.x - Math.cos(r.moose.heading) * back;
+      const y = r.moose.y - Math.sin(r.moose.heading) * back;
+      v.root.position.set(simToWorldX(x), v.root.position.y, simToWorldZ(y));
+    });
+    this.renderer.render(this.scene, cam);
+    this.moose.forEach((v, i) => v.root.position.copy(saved[i]));
+    if (arch) arch.visible = true;
+    const out = document.createElement('canvas');
+    out.width = 640;
+    out.height = 360;
+    const g = out.getContext('2d');
+    if (!g) return null;
+    const bh = w * (9 / 16);
+    g.filter = 'sepia(0.7) contrast(1.15) saturate(0.8)';
+    g.drawImage(this.canvas, 0, Math.max(0, (h - bh) / 2), w, Math.min(h, bh), 0, 0, 640, 360);
+    g.filter = 'none';
+    g.fillStyle = '#D80621';
+    g.fillRect(319, 0, 3, 360);
+    this.tags.forEach((t, i) => t && (t.visible = tagsShown[i]));
+    let url = '';
+    try {
+      url = out.toDataURL('image/jpeg', 0.82);
+    } catch {
+      return null;
+    }
+    return { url, gap: best.gap, rival: best.name };
   }
 
   /**

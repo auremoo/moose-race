@@ -160,5 +160,8 @@
   "textSize": "Text size",
   "highContrast": "High contrast",
   "weatherRain": "Rain: slippery trail",
-  "weatherFog": "Fog: limited visibility"
+  "weatherFog": "Fog: limited visibility",
+  "photoFinish": "Photo finish",
+  "photoAhead": "Ahead of {name} by {n} s",
+  "photoBehind": "Behind {name} by {n} s"
 }

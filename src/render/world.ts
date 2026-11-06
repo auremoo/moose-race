@@ -205,6 +205,7 @@ export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, b
   // Arche de départ simple.
   const archMat = new THREE.MeshLambertMaterial({ color: COLORS.curbRed });
   const arch = new THREE.Group();
+  arch.name = 'finish-arch';
   const pillarGeo = new THREE.BoxGeometry(0.8, 10, 0.8);
   for (const side of [-1, 1]) {
     const p = new THREE.Mesh(pillarGeo, archMat);

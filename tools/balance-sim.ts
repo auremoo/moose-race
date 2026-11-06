@@ -46,7 +46,9 @@ if (c2 > 0.8) process.exitCode = 1;
 const targetRating = 58;
 const levelFor = (m: MooseDef) => Math.max(1, Math.min(10, Math.round((targetRating - mooseRating(m, 1)) / 2) + 1));
 const pool = mooseCatalog.moose.filter((m) => Math.abs(mooseRating(m, levelFor(m)) - targetRating) <= 1);
-const per = Math.max(10, Math.round(N / pool.length));
+// On garde le maximum de 20 taux : avec 50 duels par orignal, le bruit (± 7 points) suffit à frôler
+// les 60 % sans déséquilibre réel. Trois fois plus de duels pour ce critère.
+const per = Math.max(30, Math.round((3 * N) / pool.length));
 let worst = 0;
 let worstName = '';
 for (const m of pool) {

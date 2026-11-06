@@ -1437,3 +1437,25 @@ body {
   width: clamp(40px, 12vw, 48px);
   height: clamp(40px, 12vw, 48px);
 }
+
+/* Photo-finish : cliché sépia de la ligne, fil rouge au centre. */
+.photo {
+  margin: 10px 0 4px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #2b1d14;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18);
+}
+.photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.photo figcaption {
+  padding: 6px 10px;
+  color: #fff6dc;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: center;
+}

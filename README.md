@@ -114,6 +114,12 @@ traversée à la nage (9 m/s, gain de piste plafonné à 130 m, environ 3 s), sa
 Carte sur l'accueil : circuit, mode, difficulté et graine tirés de la date, identiques pour tous les joueurs
 le même jour (10 bots). Bonus de 100 pièces à la première arrivée du jour.
 
+## Photo-finish
+
+Si le joueur franchit la ligne à moins de 0,3 s d'un rival, une caméra posée sur la ligne prend un cliché
+de côté (sépia, fil rouge) à l'instant où le museau du joueur touche la ligne ; il s'affiche dans les résultats
+avec l'écart (« Devant Solange de 0,08 s »). La course, elle, se juge au centre de l'orignal.
+
 ## Fantôme
 
 À chaque record sur un circuit, la trajectoire est enregistrée (10 poses par seconde, stockée à part :

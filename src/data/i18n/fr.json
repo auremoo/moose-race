@@ -160,5 +160,8 @@
   "textSize": "Taille du texte",
   "highContrast": "Contraste renforcé",
   "weatherRain": "Pluie : sentier glissant",
-  "weatherFog": "Brouillard : on voit moins loin"
+  "weatherFog": "Brouillard : on voit moins loin",
+  "photoFinish": "Photo-finish",
+  "photoAhead": "Devant {name} de {n} s",
+  "photoBehind": "Derrière {name} de {n} s"
 }

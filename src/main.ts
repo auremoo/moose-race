@@ -380,7 +380,7 @@ function onFinish(): void {
   setTimeout(() => {
     if (race !== finishedRace) return;
     hud.showPodiumTitle(false);
-    hud.showResults(race, record, { rank, participants: N, coins, bonus, standings: results, balance: save.coins });
+    hud.showResults(race, record, { rank, participants: N, coins, bonus, standings: results, balance: save.coins, photo: view.takePhoto() });
     menus.refreshCoins();
   }, 900 + podiumMs);
 }

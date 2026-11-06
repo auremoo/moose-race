@@ -21,6 +21,8 @@ export interface ResultsInfo {
   bonus: number;
   balance: number;
   standings: { name: string; rating: number; coat: string; time: number; isPlayer: boolean }[];
+  /** Photo-finish si l'arrivée était serrée. */
+  photo?: { url: string; gap: number; rival: string } | null;
 }
 
 export interface HudCallbacks {
@@ -287,6 +289,15 @@ export class Hud {
           (li.querySelector('.tm') as HTMLElement).textContent = formatTime(st.time);
           list.appendChild(li);
         });
+      }
+      const fig = $('res-photo');
+      fig.hidden = !info.photo;
+      if (info.photo) {
+        (fig.querySelector('img') as HTMLImageElement).src = info.photo.url;
+        (fig.querySelector('img') as HTMLImageElement).alt = t('photoFinish');
+        const n = Math.abs(info.photo.gap).toFixed(2).replace('.', getLang() === 'fr' ? ',' : '.');
+        (fig.querySelector('figcaption') as HTMLElement).textContent =
+          `${t('photoFinish')} · ${t(info.photo.gap >= 0 ? 'photoAhead' : 'photoBehind').replace('{name}', info.photo.rival).replace('{n}', n)}`;
       }
       const coinsEl = $('res-coins');
       coinsEl.innerHTML = `<span class="coin"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><b>+0</b><small></small>`;
