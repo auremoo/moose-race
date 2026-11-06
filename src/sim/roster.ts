@@ -14,6 +14,8 @@ export interface RosterOptions {
   botCount: number;
   seed: number;
   balance: Balance;
+  /** Accessoire porté par l'orignal du joueur (identifiant du catalogue) ; sinon celui d'origine. */
+  playerAccessory?: string;
 }
 
 function entrantFor(def: MooseDef, level: number, name: string, balance: Balance, talent?: number, statOffset = 0): Entrant {
@@ -33,6 +35,7 @@ export function buildEntrants(o: RosterOptions): Entrant[] {
   const rng = createRng(o.seed ^ 0x5bd1e995);
   const playerDef = mooseById(o.playerMooseId) ?? mooseCatalog.moose[0];
   const entrants: Entrant[] = [entrantFor(playerDef, o.playerLevel, o.playerName, o.balance)];
+  if (o.playerAccessory) entrants[0].accessory = o.playerAccessory;
   const diff = o.balance.difficulties[o.difficulty];
   const target = mooseRating(playerDef, o.playerLevel) + diff.ratingOffset;
   const names = [...botNames];

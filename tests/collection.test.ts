@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mooseById, mooseCatalog } from '../src/data';
 import { buyDirect, exchangeFragments, openLoot, rollRarity, totalUpgradeCost, upgrade, upgradeCost } from '../src/meta/collection';
-import { defaultSave, exportSave, importSave, migrate } from '../src/meta/settings';
+import { defaultSave, exportSave, importSave, migrate, SCHEMA } from '../src/meta/settings';
 
 describe('améliorations', () => {
   it('coûtent base × n × multiplicateur (base 60 au cahier, réglée à 55)', () => {
@@ -82,7 +82,7 @@ describe('sauvegarde', () => {
   it('migre une sauvegarde du schéma 1', () => {
     const v1 = { schema: 1, sensitivity: 1.2, coins: 345, bestTimes: { 'boucle-grise': 100 }, owned: ['bucheron'] };
     const s = migrate(v1);
-    expect(s.schema).toBe(2);
+    expect(s.schema).toBe(SCHEMA);
     expect(s.coins).toBe(345);
     expect(s.sensitivity).toBe(1.2);
     expect(s.levels.bucheron).toBe(1);

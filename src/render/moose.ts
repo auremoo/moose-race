@@ -5,7 +5,52 @@
 import * as THREE from 'three';
 import type { MooseState } from '../sim/moose';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { accessoryById } from '../data';
 import { legNodes, modelInstance } from './models';
+
+/** Matériau d'accessoire : uni, rayé, à carreaux (bûcheron) ou fléché. */
+function accessoryMaterial(pattern: string | undefined, colors: string[]): THREE.MeshLambertMaterial {
+  const c0 = colors[0] ?? '#D80621';
+  let mat: THREE.MeshLambertMaterial;
+  if (!pattern || typeof document === 'undefined') mat = new THREE.MeshLambertMaterial({ color: c0 });
+  else {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 32;
+    const g = cv.getContext('2d')!;
+    g.fillStyle = c0;
+    g.fillRect(0, 0, 32, 32);
+    g.fillStyle = colors[1] ?? '#FFFFFF';
+    if (pattern === 'rayures') for (let y = 0; y < 32; y += 8) g.fillRect(0, y, 32, 4);
+    else if (pattern === 'carreaux') {
+      g.fillRect(0, 0, 16, 16);
+      g.fillRect(16, 16, 16, 16);
+      g.globalAlpha = 0.45;
+      g.fillRect(16, 0, 16, 16);
+      g.fillRect(0, 16, 16, 16);
+      g.globalAlpha = 1;
+    } else if (pattern === 'fleches') {
+      // Chevrons de couleurs alternées, façon ceinture fléchée.
+      colors.forEach((c, k) => {
+        g.fillStyle = c;
+        g.beginPath();
+        g.moveTo(0, k * 10);
+        g.lineTo(16, k * 10 + 8);
+        g.lineTo(32, k * 10);
+        g.lineTo(32, k * 10 + 5);
+        g.lineTo(16, k * 10 + 13);
+        g.lineTo(0, k * 10 + 5);
+        g.fill();
+      });
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 2);
+    tex.magFilter = THREE.NearestFilter;
+    mat = new THREE.MeshLambertMaterial({ map: tex });
+  }
+  return mat;
+}
 
 /**
  * Fusionne les maillages fixes d'un groupe en un maillage par matériau (moins d'appels de dessin).
@@ -78,9 +123,11 @@ function mooseProxy(color: THREE.Color, level: 1 | 2, accessory?: string): THREE
       [-0.85, -0.4],
     ])
       parts.push(part(new THREE.CylinderGeometry(0.13, 0.1, 1.45, 4), dark, x, 0.78, z));
-    if (accessory === 'tuque') parts.push(part(new THREE.ConeGeometry(0.32, 0.55, 6), new THREE.Color(0xd80621), 1.95, 3.35, 0));
-    if (accessory === 'foulard')
-      parts.push(part(new THREE.TorusGeometry(0.46, 0.13, 4, 8).rotateY(Math.PI / 2), new THREE.Color(0xd80621), 1.25, 2.45, 0));
+    const acc = accessoryById(accessory);
+    const ac = new THREE.Color(acc.colors[0] ?? '#D80621');
+    if (acc.kind === 'tuque') parts.push(part(new THREE.ConeGeometry(0.32, 0.55, 6), ac, 1.95, 3.35, 0));
+    if (acc.kind === 'foulard') parts.push(part(new THREE.TorusGeometry(0.46, 0.13, 4, 8).rotateY(Math.PI / 2), ac, 1.25, 2.45, 0));
+    if (acc.kind === 'ceinture') parts.push(part(new THREE.TorusGeometry(0.8, 0.13, 4, 10).rotateY(Math.PI / 2), ac, 0.15, 1.9, 0));
   } else {
     parts.push(part(new THREE.BoxGeometry(3.0, 1.4, 1.3), color, 0, 2.0, 0));
     parts.push(part(new THREE.BoxGeometry(1.0, 0.55, 0.55), dark, 1.9, 2.8, 0, -0.35));
@@ -191,34 +238,49 @@ export function createMooseView(look: MooseLook = {}): MooseView {
   tail.rotation.z = Math.PI / 2 + 0.6;
   lean.add(tail);
 
-  // Accessoire : tuque, foulard ou clochette (visibles de dos).
-  const red = new THREE.MeshLambertMaterial({ color: 0xd80621 });
-  const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  if (look.accessory === 'tuque') {
-    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.55, 10), red);
+  // Accessoire : tuque, foulard, clochette ou ceinture fléchée, aux couleurs du catalogue.
+  const acc = accessoryById(look.accessory);
+  const c0 = acc.colors[0] ?? '#D80621';
+  const c1 = acc.colors[1] ?? '#FFFFFF';
+  const main = accessoryMaterial(acc.pattern, acc.colors);
+  const second = new THREE.MeshLambertMaterial({ color: c1 });
+  if (acc.kind === 'tuque') {
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.55, 10), main);
     hat.position.set(1.95, 3.35, 0);
-    const brim = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.08, 6, 12), white);
+    const brim = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.08, 6, 12), second);
     brim.rotation.x = Math.PI / 2;
     brim.position.set(1.95, 3.1, 0);
-    const pom = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), white);
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), second);
     pom.position.set(1.95, 3.65, 0);
     lean.add(hat, brim, pom);
-  } else if (look.accessory === 'foulard') {
-    const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.13, 6, 14), red);
+  } else if (acc.kind === 'foulard') {
+    const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.13, 6, 14), main);
     scarf.rotation.y = Math.PI / 2;
     scarf.rotation.x = 0.5;
     scarf.position.set(1.25, 2.45, 0);
-    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.25), red);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.25), main);
     tail.position.set(0.85, 2.55, 0.3);
     tail.rotation.z = 0.4;
     lean.add(scarf, tail);
-  } else if (look.accessory === 'clochette') {
-    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshLambertMaterial({ color: 0xf5b301 }));
+  } else if (acc.kind === 'clochette') {
+    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshLambertMaterial({ color: c0 }));
     bell.position.set(1.45, 2.0, 0);
     const strap = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 6, 14), dark);
     strap.rotation.y = Math.PI / 2;
     strap.position.set(1.35, 2.35, 0);
     lean.add(bell, strap);
+  } else if (acc.kind === 'ceinture') {
+    // Ceinture fléchée nouée sur le flanc, deux pans qui pendent.
+    const belt = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.13, 6, 20), main);
+    belt.rotation.y = Math.PI / 2;
+    belt.position.set(0.15, 1.9, 0);
+    lean.add(belt);
+    for (const dz of [-0.12, 0.12]) {
+      const end = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.6, 0.05), main);
+      end.position.set(0.15 + dz, 1.45, 0.82);
+      end.rotation.z = dz * 1.5;
+      lean.add(end);
+    }
   }
 
   // Ombre portée simple.

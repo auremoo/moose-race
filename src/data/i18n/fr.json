@@ -163,5 +163,11 @@
   "weatherFog": "Brouillard : on voit moins loin",
   "photoFinish": "Photo-finish",
   "photoAhead": "Devant {name} de {n} s",
-  "photoBehind": "Derrière {name} de {n} s"
+  "photoBehind": "Derrière {name} de {n} s",
+  "shopAccessories": "Accessoires",
+  "accessoryLbl": "Accessoire",
+  "ownedLbl": "Possédé",
+  "boughtAcc": "Acheté : {name}",
+  "previous": "Précédent",
+  "next": "Suivant"
 }

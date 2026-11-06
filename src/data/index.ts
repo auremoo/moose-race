@@ -7,6 +7,7 @@ import { trackJsons } from './tracks';
 import coursesJson from './courses.json';
 import mooseJson from './moose.json';
 import botsJson from './bots.json';
+import accessoriesJson from './accessories.json';
 import type { MooseParams, SurfaceParams } from '../sim/moose';
 import type { SurfaceId, TrackDef } from '../sim/track';
 
@@ -360,3 +361,47 @@ export function mooseById(id: string): MooseDef | undefined {
 }
 
 export const botNames: string[] = (botsJson as { names: string[] }).names;
+
+// ---------- Accessoires (cosmétiques, sans effet sur la course) ----------
+
+export type AccessoryKind = 'tuque' | 'foulard' | 'clochette' | 'ceinture' | 'aucun';
+
+export interface AccessoryDef {
+  id: string;
+  kind: AccessoryKind;
+  /** Motif facultatif : rayures, carreaux (à la bûcheronne) ou flèches (ceinture fléchée). */
+  pattern?: 'rayures' | 'carreaux' | 'fleches';
+  colors: string[];
+  price: number;
+  name: { fr: string; en: string };
+}
+
+export interface AccessoryCatalog {
+  /** Accessoires possédés d'office. */
+  starters: string[];
+  /** Accessoire de départ pour chaque type d'accessoire d'origine des orignaux. */
+  defaultFor: Record<string, string>;
+  accessories: AccessoryDef[];
+}
+
+function validateAccessories(raw: unknown): AccessoryCatalog {
+  const c = raw as AccessoryCatalog;
+  const ids = new Set<string>();
+  for (const a of c.accessories) {
+    if (ids.has(a.id)) throw new Error(`Accessoire en double : ${a.id}`);
+    ids.add(a.id);
+    if (!['tuque', 'foulard', 'clochette', 'ceinture', 'aucun'].includes(a.kind)) throw new Error(`Type inconnu : ${a.id}`);
+    if (a.price < 0) throw new Error(`Prix négatif : ${a.id}`);
+  }
+  for (const s of [...c.starters, ...Object.values(c.defaultFor)]) if (!ids.has(s)) throw new Error(`Accessoire inconnu : ${s}`);
+  return c;
+}
+
+export const accessoryCatalog: AccessoryCatalog = validateAccessories(accessoriesJson);
+
+/** Accessoire par identifiant ; un type seul (« tuque ») donne l'accessoire de départ de ce type. */
+export function accessoryById(id: string | undefined): AccessoryDef {
+  const list = accessoryCatalog.accessories;
+  const found = list.find((a) => a.id === id) ?? list.find((a) => a.id === accessoryCatalog.defaultFor[id ?? '']);
+  return found ?? list.find((a) => a.id === 'aucun')!;
+}

@@ -15,6 +15,7 @@ import { ghostPose, GhostRecorder, loadGhost, saveGhost } from './meta/ghost';
 import { DAILY_BONUS, dailyChallenge, type DailyChallenge } from './meta/daily';
 import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
+import { accessoryOf } from './meta/accessories';
 import { createRace, estimatedFinishTime, raceTime, standings, stepRace, surfaceUnder, type Race } from './sim/race';
 import { buildEntrants } from './sim/roster';
 import { GameView, type Pose } from './render/view';
@@ -63,6 +64,7 @@ function newRace(): Race {
     botCount,
     seed,
     balance,
+    playerAccessory: accessoryOf(save, save.activeMoose).id,
   });
   return createRace(trackDef, balance, {
     seed,

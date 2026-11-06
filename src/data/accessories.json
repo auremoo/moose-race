@@ -1,0 +1,18 @@
+{
+  "starters": ["tuque-rouge", "foulard-rouge", "clochette-doree", "aucun"],
+  "defaultFor": { "tuque": "tuque-rouge", "foulard": "foulard-rouge", "clochette": "clochette-doree" },
+  "accessories": [
+    { "id": "tuque-rouge", "kind": "tuque", "colors": ["#D80621", "#FFFFFF"], "price": 0, "name": { "fr": "Tuque rouge", "en": "Red toque" } },
+    { "id": "tuque-bleue", "kind": "tuque", "colors": ["#1F5FAE", "#FFFFFF"], "price": 150, "name": { "fr": "Tuque bleue", "en": "Blue toque" } },
+    { "id": "tuque-verte", "kind": "tuque", "colors": ["#2E8B57", "#F5B301"], "price": 150, "name": { "fr": "Tuque verte", "en": "Green toque" } },
+    { "id": "tuque-rayee", "kind": "tuque", "pattern": "rayures", "colors": ["#D80621", "#FFFFFF"], "price": 300, "name": { "fr": "Tuque rayée", "en": "Striped toque" } },
+    { "id": "tuque-carreaux", "kind": "tuque", "pattern": "carreaux", "colors": ["#C8102E", "#151515"], "price": 400, "name": { "fr": "Tuque à carreaux", "en": "Plaid toque" } },
+    { "id": "foulard-rouge", "kind": "foulard", "colors": ["#D80621", "#FFFFFF"], "price": 0, "name": { "fr": "Foulard rouge", "en": "Red scarf" } },
+    { "id": "foulard-vert", "kind": "foulard", "colors": ["#2E8B57", "#FFFFFF"], "price": 150, "name": { "fr": "Foulard vert", "en": "Green scarf" } },
+    { "id": "foulard-carreaux", "kind": "foulard", "pattern": "carreaux", "colors": ["#C8102E", "#151515"], "price": 300, "name": { "fr": "Foulard à carreaux", "en": "Plaid scarf" } },
+    { "id": "ceinture-flechee", "kind": "ceinture", "pattern": "fleches", "colors": ["#C8102E", "#1F5FAE", "#F5B301"], "price": 600, "name": { "fr": "Ceinture fléchée", "en": "Arrow sash" } },
+    { "id": "clochette-doree", "kind": "clochette", "colors": ["#F5B301"], "price": 0, "name": { "fr": "Clochette dorée", "en": "Golden bell" } },
+    { "id": "clochette-argent", "kind": "clochette", "colors": ["#C0C6CC"], "price": 250, "name": { "fr": "Clochette d'argent", "en": "Silver bell" } },
+    { "id": "aucun", "kind": "aucun", "colors": [], "price": 0, "name": { "fr": "Rien", "en": "None" } }
+  ]
+}

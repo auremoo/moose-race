@@ -4,7 +4,7 @@
  */
 const KEY = 'panache.v1';
 /** Version actuelle du schéma. Chaque hausse ajoute une étape à MIGRATIONS. */
-export const SCHEMA = 2;
+export const SCHEMA = 3;
 
 export interface SaveData {
   schema: number;
@@ -48,6 +48,9 @@ export interface SaveData {
   pityCounter: number;
   bestTimes: Record<string, number>;
   bestLaps: Record<string, number>;
+  /** Accessoires possédés (tuques, foulards…) et accessoire porté par chaque orignal. */
+  accessories: string[];
+  equipped: Record<string, string>;
 }
 
 const DEFAULTS: SaveData = {
@@ -79,6 +82,8 @@ const DEFAULTS: SaveData = {
   pityCounter: 0,
   bestTimes: {},
   bestLaps: {},
+  accessories: ['tuque-rouge', 'foulard-rouge', 'clochette-doree', 'aucun'],
+  equipped: {},
 };
 
 type Raw = Record<string, unknown> & { schema?: number };
@@ -93,6 +98,8 @@ const MIGRATIONS: Record<number, (s: Raw) => Raw> = {
     for (const id of owned) levels[id] ??= 1;
     return { ...s, owned, levels, fragments: 0, lootCount: 0, pityCounter: 0, schema: 2 };
   },
+  // 2 → 3 : accessoires à collectionner ; chacun garde l'accessoire d'origine de son orignal.
+  2: (s) => ({ ...s, accessories: ['tuque-rouge', 'foulard-rouge', 'clochette-doree', 'aucun'], equipped: {}, schema: 3 }),
 };
 
 /** Applique les migrations et complète les champs manquants. */

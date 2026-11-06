@@ -97,6 +97,14 @@ Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000
   joueur simulé mettait 42 à 45 courses pour améliorer un Commun ; avec 55, 33 à 39 (cible 25 à 40).
 - Sauvegarde locale versionnée (schéma 2, migration depuis le schéma 1), export et import dans les Réglages.
 
+## Accessoires
+
+Cosmétiques, sans effet sur la course : 12 accessoires (tuques unies, rayée ou à carreaux, foulards, clochettes,
+ceinture fléchée, ou rien). Les accessoires d'origine sont offerts ; les autres s'achètent au Comptoir
+(150 à 600 pièces). Dans l'Enclos, la fiche d'un orignal possédé permet de changer ce qu'il porte ; l'accessoire
+suit en course, à l'accueil et au podium. Catalogue : `src/data/accessories.json`. Sauvegarde en schéma 3
+(migration automatique depuis le 2).
+
 ## Mode Ours et castors
 
 Ours noirs placés juste après les points de corde, sur la ligne idéale : un « ! » rouge apparaît 2 s avant

@@ -163,5 +163,11 @@
   "weatherFog": "Fog: limited visibility",
   "photoFinish": "Photo finish",
   "photoAhead": "Ahead of {name} by {n} s",
-  "photoBehind": "Behind {name} by {n} s"
+  "photoBehind": "Behind {name} by {n} s",
+  "shopAccessories": "Accessories",
+  "accessoryLbl": "Accessory",
+  "ownedLbl": "Owned",
+  "boughtAcc": "Bought: {name}",
+  "previous": "Previous",
+  "next": "Next"
 }

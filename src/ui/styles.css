@@ -1466,3 +1466,41 @@ body {
   font-size: 0.85rem;
   text-align: center;
 }
+
+/* Accessoires : pastille de couleur (unie, rayée, à carreaux ou fléchée). */
+.acc-swatch {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 3px solid var(--blanc);
+  box-shadow: 0 2px 0 var(--gris-levre);
+  background: var(--c0);
+}
+.acc-swatch.rayures {
+  background: repeating-linear-gradient(0deg, var(--c0) 0 6px, var(--c1) 6px 10px);
+}
+.acc-swatch.carreaux {
+  background: repeating-conic-gradient(var(--c1) 0 25%, var(--c0) 0 50%) 0 0 / 14px 14px;
+}
+.acc-swatch.fleches {
+  background: linear-gradient(135deg, var(--c0) 0 33%, var(--c1) 33% 66%, var(--c2) 66%);
+}
+.acc-swatch.aucun {
+  background: repeating-linear-gradient(45deg, #e6dccd 0 4px, #f6efe4 4px 8px);
+}
+.acc-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0;
+  font-weight: 800;
+}
+.acc-row #acc-name {
+  min-width: 9em;
+  text-align: center;
+}
+.moose-card.owned-acc {
+  opacity: 0.75;
+}

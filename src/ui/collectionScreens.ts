@@ -16,8 +16,10 @@ import {
   upgrade,
   upgradeCost,
 } from '../meta/collection';
+import { accessoryOf, buyAccessory, equipAccessory, ownedAccessories, ownsAccessory } from '../meta/accessories';
 import { writeSave, type SaveData } from '../meta/settings';
-import { t, type TextKey } from './i18n';
+import { accessoryCatalog, type AccessoryDef } from '../data';
+import { getLang, t, type TextKey } from './i18n';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const tk = (k: string) => t(k as TextKey);
@@ -36,6 +38,13 @@ export function portrait(el: HTMLElement, def: MooseDef, owned: boolean): void {
     <circle cx="20" cy="27" r="1.8" fill="#fff"/><circle cx="28" cy="27" r="1.8" fill="#fff"/>
     <circle cx="20.4" cy="27.3" r="1" fill="#2a1a12"/><circle cx="28.4" cy="27.3" r="1" fill="#2a1a12"/>
   </svg>`;
+}
+
+/** Pastille d'accessoire : couleurs et motif en variables CSS. */
+export function accessorySwatch(el: HTMLElement, a: AccessoryDef): void {
+  el.className = `acc-swatch ${a.pattern ?? (a.kind === 'aucun' ? 'aucun' : '')}`;
+  a.colors.forEach((c, i) => el.style.setProperty(`--c${i}`, c));
+  el.title = a.name[getLang()];
 }
 
 function rarityChip(el: HTMLElement, def: MooseDef): void {
@@ -57,6 +66,45 @@ export class CollectionScreens {
     $('detail-second').addEventListener('click', () => this.detailAction('second'));
     $('btn-loot').addEventListener('click', () => this.loot());
     $('reveal-ok').addEventListener('click', () => ($('loot-reveal').hidden = true));
+    $('acc-prev').addEventListener('click', () => this.cycleAccessory(-1));
+    $('acc-next').addEventListener('click', () => this.cycleAccessory(1));
+  }
+
+  /** Accessoire suivant ou précédent parmi ceux possédés, porté tout de suite. */
+  private cycleAccessory(dir: number): void {
+    const list = ownedAccessories(this.save);
+    const cur = list.findIndex((a) => a.id === accessoryOf(this.save, this.detailId).id);
+    const next = list[(cur + dir + list.length) % list.length];
+    equipAccessory(this.save, this.detailId, next.id);
+    this.commit();
+    this.renderDetail();
+  }
+
+  private renderAccessoryShop(): void {
+    const grid = $('acc-grid');
+    grid.replaceChildren();
+    for (const a of accessoryCatalog.accessories.filter((x) => x.price > 0)) {
+      const owned = ownsAccessory(this.save, a.id);
+      const b = document.createElement('button');
+      b.className = 'moose-card';
+      b.style.setProperty('--frame', a.colors[0] ?? '#ccc');
+      if (owned) b.classList.add('owned-acc');
+      b.innerHTML = `<span class="acc-swatch"></span><strong></strong><small></small>`;
+      accessorySwatch(b.querySelector('.acc-swatch') as HTMLElement, a);
+      (b.querySelector('strong') as HTMLElement).textContent = a.name[getLang()];
+      (b.querySelector('small') as HTMLElement).textContent = owned ? t('ownedLbl') : String(a.price);
+      b.disabled = owned;
+      b.addEventListener('click', () => {
+        if (!buyAccessory(this.save, a.id)) {
+          this.toast(t('notEnough'));
+          return;
+        }
+        this.commit();
+        this.toast(fmt('boughtAcc', { name: a.name[getLang()] }));
+        this.renderComptoir();
+      });
+      grid.appendChild(b);
+    }
   }
 
   private commit(): void {
@@ -125,6 +173,7 @@ export class CollectionScreens {
       b.addEventListener('click', () => this.openDetail(def.id, 'comptoir'));
       grid.appendChild(b);
     }
+    this.renderAccessoryShop();
   }
 
   openDetail(id: string, from: 'enclos' | 'comptoir'): void {
@@ -177,6 +226,13 @@ export class CollectionScreens {
       second.hidden = false;
       second.textContent = fmt('fragFor', { n: fragmentCost(def) });
       second.disabled = this.save.fragments < fragmentCost(def);
+    }
+    // Accessoire porté (orignaux possédés seulement).
+    $('detail-acc').hidden = !owned;
+    if (owned) {
+      const acc = accessoryOf(this.save, def.id);
+      accessorySwatch($('acc-swatch'), acc);
+      $('acc-name').textContent = `${t('accessoryLbl')} : ${acc.name[getLang()]}`;
     }
     $('detail-close').textContent = t('close');
   }
