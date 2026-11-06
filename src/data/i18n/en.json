@@ -184,5 +184,6 @@
   "objective_dailies": "{a}/{b} daily challenges",
   "objective_chests": "{a}/{b} chests opened",
   "objective_circuits": "{a}/{b} circuits won",
-  "perfectStart": "Perfect start!"
+  "perfectStart": "Perfect start!",
+  "recordsReset": "Tracks updated: {n} record(s) reset"
 }

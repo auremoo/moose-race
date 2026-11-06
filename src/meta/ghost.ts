@@ -11,6 +11,8 @@ export interface GhostData {
   laps: number;
   time: number;
   coat: string;
+  /** Empreinte du tracé sur lequel le fantôme a couru. */
+  sig?: string;
   /** x, y en décimètres et cap en centièmes de radian, à la suite. */
   points: number[];
 }
@@ -31,16 +33,18 @@ export class GhostRecorder {
     this.points.push(Math.round(x * 10), Math.round(y * 10), Math.round(heading * 100));
   }
 
-  result(trackId: string, laps: number, time: number, coat: string): GhostData {
-    return { trackId, laps, time, coat, points: this.points.slice() };
+  result(trackId: string, laps: number, time: number, coat: string, sig?: string): GhostData {
+    return { trackId, laps, time, coat, sig, points: this.points.slice() };
   }
 }
 
-export function loadGhost(trackId: string, laps: number): GhostData | null {
+export function loadGhost(trackId: string, laps: number, sig?: string): GhostData | null {
   try {
     const raw = localStorage.getItem(PREFIX + trackId);
     if (!raw) return null;
     const g = JSON.parse(raw) as GhostData;
+    // Fantôme d'un ancien tracé (circuit retouché) : il traverserait le décor, on l'ignore.
+    if (sig !== undefined && g.sig !== sig) return null;
     return g.laps === laps && Array.isArray(g.points) ? g : null;
   } catch {
     return null;

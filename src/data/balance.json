@@ -154,10 +154,7 @@
   "difficulties": {
     "facile": {
       "ratingOffset": -6,
-      "talent": [
-        0.3,
-        0.55
-      ],
+      "talent": [0.15, 0.4],
       "catchUp": 0.03,
       "coinMul": 1,
       "idealLine": true,
@@ -165,10 +162,7 @@
     },
     "moyen": {
       "ratingOffset": 0,
-      "talent": [
-        0.55,
-        0.78
-      ],
+      "talent": [0.45, 0.7],
       "catchUp": 0.03,
       "coinMul": 1.5,
       "idealLine": true,

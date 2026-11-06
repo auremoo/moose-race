@@ -319,3 +319,17 @@ export function projectOnTrack(track: Track, x: number, y: number, hint = -1, wi
   s = ((s % track.length) + track.length) % track.length;
   return { index: best, s, d };
 }
+
+/**
+ * Empreinte du tracé (géométrie, largeurs, bas-côtés, ligne de départ) : change dès qu'un circuit est
+ * retouché ou régénéré. Sert à écarter les records et fantômes enregistrés sur un ancien tracé.
+ */
+export function trackSignature(def: TrackDef): string {
+  const text = JSON.stringify([def.points, def.width, def.verge, def.startOffset, def.vergeZones ?? null, def.elevation ?? null]);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}

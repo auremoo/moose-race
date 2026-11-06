@@ -11,12 +11,14 @@ import { accessoryById, balance, courses, trackById, tracks, type CourseDef, typ
 import { InputManager } from './input/input';
 import { coinsFor, FIRST_WIN_BONUS, firstWinKey } from './meta/economy';
 import { exportSave, importSave, loadSave, writeSave } from './meta/settings';
+import { trackSignature } from './sim/track';
 import { ghostPose, GhostRecorder, loadGhost, saveGhost } from './meta/ghost';
 import { DAILY_BONUS, dailyChallenge, type DailyChallenge } from './meta/daily';
 import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
 import { accessoryOf } from './meta/accessories';
 import { recordRace } from './meta/rewards';
+import { pruneStaleRecords } from './meta/records';
 import { createRace, estimatedFinishTime, raceTime, standings, stepRace, surfaceUnder, type Race } from './sim/race';
 import { buildEntrants } from './sim/roster';
 import { GameView, type Pose } from './render/view';
@@ -28,6 +30,12 @@ import { SoundEngine } from './audio/sound';
 import { preloadModels } from './render/models';
 
 const save = loadSave();
+// Records enregistrés sur un ancien tracé (circuit régénéré) : écartés, avec un message plus bas.
+const staleRecords = pruneStaleRecords(save, (id) => {
+  const d = trackById(id);
+  return d ? trackSignature(d) : undefined;
+});
+if (staleRecords.length) writeSave(save);
 const sound = new SoundEngine();
 sound.sfxOn = save.soundOn;
 sound.musicOn = save.musicOn;
@@ -82,7 +90,7 @@ let race: Race = newRace();
 const ghostRec = new GhostRecorder();
 /** Affiche le fantôme du record de ce circuit, s'il existe et si le réglage est actif. */
 function applyGhost(): void {
-  const g = save.ghostOn ? loadGhost(trackDef.id, race.laps) : null;
+  const g = save.ghostOn ? loadGhost(trackDef.id, race.laps, trackSignature(trackDef)) : null;
   view.setGhost(g ? (time) => ghostPose(g, time) : null);
 }
 const view = new GameView(canvas, race, balance);
@@ -409,12 +417,14 @@ function onFinish(): void {
   const bestLap = Math.min(...r.lapTimes);
   const prevBest = save.bestTimes[trackDef.id];
   const record = prevBest === undefined || r.finishTime < prevBest;
+  const sig = trackSignature(trackDef);
   if (record) {
     save.bestTimes[trackDef.id] = r.finishTime;
     // Nouveau record : la trajectoire devient le fantôme de ce circuit (même nombre de tours).
-    saveGhost(ghostRec.result(trackDef.id, race.laps, r.finishTime, r.coat));
+    saveGhost(ghostRec.result(trackDef.id, race.laps, r.finishTime, r.coat, sig));
   }
   if (save.bestLaps[trackDef.id] === undefined || bestLap < save.bestLaps[trackDef.id]) save.bestLaps[trackDef.id] = bestLap;
+  save.trackSigs[trackDef.id] = sig;
   writeSave(save);
   resultsShown = true;
   // Podium 3D des trois premiers, puis l'écran des résultats.
@@ -622,6 +632,8 @@ function showUpdateBanner(): void {
 
 // Modèles GLB éventuels : chargés une fois, puis appliqués dès la course suivante.
 void preloadModels().then(() => view.setRace(race, false));
+
+if (staleRecords.length) menus.toast(t('recordsReset').replace('{n}', String(staleRecords.length)));
 
 requestAnimationFrame(frame);
 

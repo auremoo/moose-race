@@ -219,8 +219,10 @@ export function forkPursuit(f: Fork, racer: Racer, p: MooseParams, surfaces: Rec
 export function forkApproachOffset(track: Track, f: Fork, s: number, lineOffset: number): number | null {
   const sFrom = track.samples[f.from].s;
   const ahead = (sFrom - s + track.length) % track.length;
-  if (ahead > 70) return null;
-  const mouth = f.side * (track.samples[f.from].hw + 2.5);
-  const u = Math.min(1, (70 - ahead) / 45);
+  // Approche courte (45 m) : plus longue, elle commençait dans la chicane qui précède, où le bas-côté
+  // étroit empêche de se décaler, et les bots arrivaient trop près de la piste pour s'engager.
+  if (ahead > 45) return null;
+  const mouth = f.side * (track.samples[f.from].hw + 3);
+  const u = Math.min(1, (45 - ahead) / 30);
   return lineOffset + (mouth - lineOffset) * u * u * (3 - 2 * u);
 }

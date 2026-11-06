@@ -4,7 +4,7 @@ import { buyDirect, exchangeFragments, openLoot, rollRarity, totalUpgradeCost, u
 import { defaultSave, exportSave, importSave, migrate, SCHEMA } from '../src/meta/settings';
 
 describe('améliorations', () => {
-  it('coûtent base × n × multiplicateur (base 60 au cahier, réglée à 55)', () => {
+  it('coûtent base × n × multiplicateur (base 60, valeur du cahier)', () => {
     const base = mooseCatalog.upgradeBase;
     for (const m of mooseCatalog.moose) {
       const mult = mooseCatalog.rarities[m.rarity].costMultiplier;
@@ -98,5 +98,46 @@ describe('sauvegarde', () => {
     expect(back.coins).toBe(1234);
     expect(back.owned).toContain('sirop');
     expect(importSave('{"pas":"une sauvegarde"}')).toBeNull();
+  });
+});
+
+describe('records liés au tracé', () => {
+  it("un record d'un ancien tracé est écarté, un record du tracé actuel est gardé", async () => {
+    const { pruneStaleRecords } = await import('../src/meta/records');
+    const { trackSignature } = await import('../src/sim/track');
+    const { trackById } = await import('../src/data');
+    const s = defaultSave();
+    const def = trackById('boucle-grise')!;
+    s.bestTimes = { 'boucle-grise': 100, 'cap-diamant': 120 };
+    s.bestLaps = { 'boucle-grise': 50, 'cap-diamant': 60 };
+    s.trackSigs = { 'boucle-grise': trackSignature(def), 'cap-diamant': 'ancien' };
+    const stale = pruneStaleRecords(s, (id) => {
+      const d = trackById(id);
+      return d ? trackSignature(d) : undefined;
+    });
+    expect(stale).toEqual(['cap-diamant']);
+    expect(s.bestTimes).toEqual({ 'boucle-grise': 100 });
+    expect(s.bestLaps).toEqual({ 'boucle-grise': 50 });
+  });
+
+  it("la moindre retouche du tracé change l'empreinte", async () => {
+    const { trackSignature } = await import('../src/sim/track');
+    const { trackById } = await import('../src/data');
+    const def = trackById('boucle-grise')!;
+    const moved = { ...def, points: def.points.map((p, i) => (i === 3 ? ([p[0] + 0.5, p[1], p[2]] as typeof p) : p)) };
+    expect(trackSignature(moved)).not.toBe(trackSignature(def));
+    expect(trackSignature({ ...def })).toBe(trackSignature(def));
+  });
+
+  it("un fantôme d'un ancien tracé est ignoré", async () => {
+    const { loadGhost, saveGhost } = await import('../src/meta/ghost');
+    const store: Record<string, string> = {};
+    (globalThis as unknown as { localStorage: Storage }).localStorage = {
+      getItem: (k: string) => store[k] ?? null,
+      setItem: (k: string, v: string) => (store[k] = v),
+    } as unknown as Storage;
+    saveGhost({ trackId: 'x', laps: 2, time: 60, coat: '#000', sig: 'a', points: [0, 0, 0, 1, 1, 0] });
+    expect(loadGhost('x', 2, 'a')).not.toBeNull();
+    expect(loadGhost('x', 2, 'b')).toBeNull();
   });
 });

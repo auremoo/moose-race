@@ -82,10 +82,10 @@ Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000
 
 | Critère | Mesuré | Cible |
 | --- | --- | --- |
-| Expert contre moyen à puissance égale | 87,5 % | ≥ 85 % |
-| +10 de puissance, pilotage identique | 67,9 % | ≤ 80 % |
-| Meilleur orignal à puissance égale (Tempête) | 58,7 % | ≤ 60 % |
-| Courses pour améliorer un Commun au niveau 10 | 36,2 en moyenne (coffres compris) | 25 à 40 |
+| Expert contre moyen à puissance égale | 88,3 % | ≥ 85 % |
+| +10 de puissance, pilotage identique | 68,3 % | ≤ 80 % |
+| Meilleur orignal à puissance égale (Tempête) | 51,3 % | ≤ 60 % |
+| Courses pour améliorer un Commun au niveau 10 | 28,1 en moyenne (coffres compris) | 25 à 40 |
 
 ## Collection et économie
 
@@ -93,8 +93,8 @@ Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000
 - **Comptoir** : ravitaillement à 300 pièces (chances affichées : Commun 60 %, Peu commun 27 %, Rare 10 %,
   Épique 2,5 %, Légendaire 0,5 % ; Rare ou mieux garanti tous les 10), achat direct (sauf les communs),
   fragments de panache donnés par les doublons, échangeables contre l'orignal de son choix.
-- Coût d'un niveau : 55 × n × multiplicateur de rareté. **Écart assumé avec le cahier (60)** : avec 60, le
-  joueur simulé mettait 42 à 45 courses pour améliorer un Commun ; avec 55, 33 à 39 (cible 25 à 40).
+- Coût d'un niveau : 60 × n × multiplicateur de rareté (valeur du cahier). Un Commun se monte au niveau 10 en
+  28 courses en moyenne (cible 25 à 40), coffres compris.
 - Sauvegarde locale versionnée (schéma 2, migration depuis le schéma 1), export et import dans les Réglages.
 
 ## Accessoires
@@ -116,8 +116,8 @@ qu'il contient : 12, 30, 70 ou 150). Un toucher ouvre un coffre, tout de suite, 
 possédé (toujours dans l'aurore boréale). Plus la place est bonne, meilleur est le coffre en moyenne.
 Réglages : `src/data/chests.json`.
 
-L'équilibrage compte tous les coffres ouverts : ils font 6,7 % des pièces et un Commun se monte au
-niveau 10 en 36,2 courses (critère du cahier : 25 à 40). Sauvegarde en schéma 4 (migration automatique).
+L'équilibrage compte tous les coffres ouverts : ils font 12,3 % des pièces et un Commun se monte au
+niveau 10 en 28,1 courses (critère du cahier : 25 à 40). Sauvegarde en schéma 4 (migration automatique).
 
 ## Mode Ours et castors
 
@@ -173,10 +173,18 @@ Rocheuses : 15 % / 20 % ; jamais de pluie sur la neige). Même graine, même mé
   joueur : plus de rouge au galop en ligne droite.
 - **Herbe** : le bas-côté freine (l'orignal s'y enfonce, pleine résistance à 2 m du bord). Couper un virage par
   l'herbe ne paie plus (test sur 5 circuits ; avant, jusqu'à 5 s gagnées par tour). Les épingles serrées
-  (rayon ≤ 16 m) ont un bas-côté de 2,5 m bordé de foin.
+  (rayon ≤ 18 m) ont un bas-côté de 2,5 m bordé de foin.
 - **Départ parfait** : appuyer sur Fonce dans la dernière demi-seconde du compte à rebours donne 1 s d'élan ;
   trop tôt, rien. Les bots le réussissent selon leur talent.
 - **Direction** : braquage complet en 0,14 s. Lignes de vitesse sur les bords à haute vitesse et au galop.
+
+## Difficulté et records
+
+- Habileté des bots : Facile 0,15–0,40, Moyen 0,45–0,70, Difficile 0,80–0,96. Simulation de la première
+  course (Prairie tranquille, Facile, 10 bots) : un joueur débutant (0,4) gagne 17 % du temps et monte sur le
+  podium 43 % du temps ; un joueur correct (0,6), 60 % de victoires. Les nouveaux joueurs commencent en Facile.
+- Records et fantômes liés à une empreinte du tracé : un circuit régénéré écarte automatiquement ses anciens
+  records et son fantôme (message au démarrage). Sauvegarde en schéma 5.
 
 ## Chicanes
 

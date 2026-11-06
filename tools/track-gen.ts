@@ -331,9 +331,9 @@ function traceRaw(tokens: string[]): Traced {
       if (last && Math.abs(last[1] - start) < 1e-6 && last[2] === 1.5) last[1] = dist;
       else chicanes.push([start, dist, 1.5]);
     } else if (kind === 'R' || kind === 'L') {
-      // Épingle serrée (rayon ≤ 16 m, au moins 90°) : bas-côté de 2,5 m, sinon on la coupe par l'herbe.
+      // Épingle serrée (rayon ≤ 18 m, au moins 90°) : bas-côté de 2,5 m, sinon on la coupe par l'herbe.
       const [a, r] = tok.slice(1).split('@').map(Number);
-      if (r <= 16 && a >= 90) chicanes.push([start, dist, 2.5]);
+      if (r <= 18 && a >= 90) chicanes.push([start, dist, 2.5]);
     }
     if (kind === 'W') {
       base = Number(tok.slice(1));

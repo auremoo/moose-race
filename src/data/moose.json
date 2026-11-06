@@ -209,7 +209,7 @@
       "id": "tempete",
       "name": "Tempête",
       "rarity": "epique",
-      "stats": [54, 62, 60, 44, 40],
+      "stats": [54, 60, 58, 46, 42],
       "style": "Technique",
       "coat": "#2E3440",
       "accessory": "foulard",
@@ -264,5 +264,5 @@
       "legendaire": 40
     }
   },
-  "upgradeBase": 55
+  "upgradeBase": 60
 }

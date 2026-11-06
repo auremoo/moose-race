@@ -4,7 +4,7 @@
  */
 const KEY = 'panache.v1';
 /** Version actuelle du schéma. Chaque hausse ajoute une étape à MIGRATIONS. */
-export const SCHEMA = 4;
+export const SCHEMA = 5;
 
 export interface SaveData {
   schema: number;
@@ -48,6 +48,8 @@ export interface SaveData {
   pityCounter: number;
   bestTimes: Record<string, number>;
   bestLaps: Record<string, number>;
+  /** Empreinte du tracé au moment de chaque record (voir trackSignature). */
+  trackSigs: Record<string, string>;
   /** Accessoires possédés (tuques, foulards…) et accessoire porté par chaque orignal. */
   accessories: string[];
   equipped: Record<string, string>;
@@ -89,6 +91,7 @@ const DEFAULTS: SaveData = {
   pityCounter: 0,
   bestTimes: {},
   bestLaps: {},
+  trackSigs: {},
   accessories: ['tuque-rouge', 'foulard-rouge', 'clochette-doree', 'aucun'],
   equipped: {},
   chests: [],
@@ -118,6 +121,9 @@ const MIGRATIONS: Record<number, (s: Raw) => Raw> = {
     const races = typeof s.raceCount === 'number' ? s.raceCount : 0;
     return { ...s, chests: [], chestSeq: 0, stats: { races, wins, podiums: wins, dailies, chests: 0 }, schema: 4 };
   },
+  // 4 → 5 : records liés à l'empreinte du tracé. Les anciens records n'en ont pas : ils seront écartés
+  // au chargement (les circuits ont été régénérés pour les nouvelles chicanes).
+  4: (s) => ({ ...s, trackSigs: {}, schema: 5 }),
 };
 
 /** Applique les migrations et complète les champs manquants. */

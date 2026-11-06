@@ -6,6 +6,33 @@
  "surface": "sentier",
  "vergeSurface": "herbe",
  "startOffset": 20,
+ "vergeZones": [
+  {
+   "from": 0.1594,
+   "to": 0.2135,
+   "verge": 2.5
+  },
+  {
+   "from": 0.2869,
+   "to": 0.341,
+   "verge": 2.5
+  },
+  {
+   "from": 0.3987,
+   "to": 0.4529,
+   "verge": 2.5
+  },
+  {
+   "from": 0.5262,
+   "to": 0.5803,
+   "verge": 2.5
+  },
+  {
+   "from": 0.638,
+   "to": 0.6922,
+   "verge": 2.5
+  }
+ ],
  "points": [
   [0, 0, 13],
   [30, 0, 13],

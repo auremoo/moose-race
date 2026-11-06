@@ -8,6 +8,11 @@
  "startOffset": 20,
  "vergeZones": [
   {
+   "from": 0.3862,
+   "to": 0.4331,
+   "verge": 2.5
+  },
+  {
    "from": 0.5465,
    "to": 0.6289,
    "verge": 1.5
