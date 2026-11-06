@@ -104,7 +104,7 @@ function checkNumbers(obj: unknown, path: string, keys: string[]): void {
   }
 }
 
-const SURFACES: SurfaceId[] = ['sentier', 'herbe', 'boue', 'neige', 'glace'];
+const SURFACES: SurfaceId[] = ['sentier', 'herbe', 'boue', 'neige', 'glace', 'racines'];
 
 export function validateBalance(b: unknown): Balance {
   const o = b as Balance;

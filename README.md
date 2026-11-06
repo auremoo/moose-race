@@ -104,6 +104,13 @@ plus offensive que tu es loin au classement ; réapparition après 5 s. Bouton C
 Les bots suivent les mêmes règles. Pièces +25 %. Tout est tiré avec la graine de la course (même comportement
 en multijoueur). Non fait : le Bief (raccourci d'eau), voir les issues.
 
+## Vent et racines
+
+- **Vent de travers** (Crépuscule du Manitoba, et plus léger sur le Blé de Saskatchewan) : rafales régulières qui
+  poussent les orignaux sur le côté, d'autant plus qu'ils vont vite ; indicateur « Vent » sous la mini-carte
+  (flèche orientée par rapport à l'orignal, rouge pendant les rafales). Même vent pour tous (multijoueur).
+- **Racines** (Sentiers d'Algonquin) : surface qui retire un peu d'adhérence et de vitesse.
+
 ## Décors
 
 Trois biomes : **plaine** (champs de blé, silos et élévateurs à grain, peupliers ; ciel de crépuscule au

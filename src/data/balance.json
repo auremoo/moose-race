@@ -62,6 +62,10 @@
     "glace": {
       "grip": 0.45,
       "vmax": 1.0
+    },
+    "racines": {
+      "grip": 0.82,
+      "vmax": 0.85
     }
   },
   "barrier": {

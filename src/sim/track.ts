@@ -4,7 +4,7 @@
  * Aucune dépendance au DOM ni à Three.js.
  */
 
-export type SurfaceId = 'sentier' | 'herbe' | 'boue' | 'neige' | 'glace';
+export type SurfaceId = 'sentier' | 'herbe' | 'boue' | 'neige' | 'glace' | 'racines';
 
 export interface TrackDef {
   id: string;
@@ -29,6 +29,12 @@ export interface TrackDef {
    * Exemple : { from: 0.3, to: 0.36, surface: 'glace' }.
    */
   zones?: { from: number; to: number; surface: SurfaceId }[];
+  /**
+   * Vent de travers : rafales régulières qui poussent les orignaux sur le côté.
+   * strength = vitesse de dérive maximale (m/s), period = durée d'un cycle de rafale (s),
+   * direction = d'où souffle le vent (radians, 0 = vers +x).
+   */
+  wind?: { strength: number; period: number; direction: number };
 }
 
 export interface TrackSample {

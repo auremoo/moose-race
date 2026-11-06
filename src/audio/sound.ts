@@ -4,7 +4,7 @@
  * compte à rebours et petite musique par biome. Retour haptique quand le navigateur le permet.
  */
 
-type Surface = 'sentier' | 'herbe' | 'boue' | 'neige' | 'glace';
+type Surface = 'sentier' | 'herbe' | 'boue' | 'neige' | 'glace' | 'racines';
 
 const HOOF: Record<Surface, { freq: number; q: number; gain: number; dur: number }> = {
   sentier: { freq: 900, q: 1.2, gain: 0.5, dur: 0.07 },
@@ -12,6 +12,7 @@ const HOOF: Record<Surface, { freq: number; q: number; gain: number; dur: number
   boue: { freq: 260, q: 1.5, gain: 0.55, dur: 0.12 },
   neige: { freq: 2200, q: 0.6, gain: 0.25, dur: 0.1 },
   glace: { freq: 3200, q: 3, gain: 0.3, dur: 0.04 },
+  racines: { freq: 450, q: 2.5, gain: 0.6, dur: 0.06 },
 };
 
 /** Gammes pentatoniques (demi-tons depuis la tonique) et tempo par biome. */

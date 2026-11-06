@@ -149,5 +149,6 @@
   "tuto7": "Well done, you know it all! Finish the lap.",
   "tutoSkip": "Skip",
   "tutoDone": "Tutorial complete!",
-  "updateReady": "New version ready: tap to reload"
+  "updateReady": "New version ready: tap to reload",
+  "wind": "Wind"
 }

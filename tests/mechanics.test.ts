@@ -129,3 +129,31 @@ describe('peloton', () => {
     expect(Math.abs(mean('difficile') - 52)).toBeLessThanOrEqual(1.5);
   });
 });
+
+describe('vent de travers et racines', () => {
+  it('le vent pousse un orignal qui ne corrige pas sa direction', () => {
+    const drift = (id: string) => {
+      const race = createRace(trackById(id)!, balance, { laps: 1 });
+      race.phase = 'running';
+      race.tick = race.countdownTicks;
+      const m = race.racers[0].moose;
+      m.speed = 20;
+      const y0 = { x: m.x, y: m.y };
+      for (let i = 0; i < 60 * 3; i++) stepRace(race, [{ ...GO, steer: 0 }]);
+      // Écart latéral par rapport à la ligne droite suivie.
+      const dx = m.x - y0.x;
+      const dy = m.y - y0.y;
+      return Math.abs(-dx * Math.sin(m.heading) + dy * Math.cos(m.heading));
+    };
+    expect(drift('crepuscule-manitoba')).toBeGreaterThan(1);
+    expect(drift('prairie-tranquille')).toBeLessThan(0.01);
+  });
+
+  it('les racines ralentissent', () => {
+    const a = createMooseState(0, 0, 0, 0);
+    const b = createMooseState(0, 0, 0, 0);
+    run(a, GO, 10);
+    run(b, GO, 10, S.racines);
+    expect(b.speed).toBeLessThan(a.speed * 0.9);
+  });
+});

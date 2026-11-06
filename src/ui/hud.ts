@@ -2,7 +2,7 @@
  * Affichage en course et menus. Lit la simulation (lecture seule) et les réglages (meta/).
  */
 import type { SteerTouchVisual } from '../input/input';
-import { countdownRemaining, rankOf, raceTime, type Race } from '../sim/race';
+import { countdownRemaining, rankOf, raceTime, windAt, type Race } from '../sim/race';
 import { getLang, ordinal, t, type Lang, type TextKey } from './i18n';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -331,6 +331,18 @@ export class Hud {
       this.dots[i].style.left = `${(f * 100).toFixed(2)}%`;
     });
     this.updateMinimap(race);
+    // Vent de travers : flèche orientée par rapport à l'orignal (haut = devant), taille selon la rafale.
+    const windEl = $('hud-wind');
+    windEl.hidden = !race.track.def.wind;
+    if (race.track.def.wind) {
+      const w = windAt(race);
+      const ang = Math.atan2(w.y, w.x) - r.moose.heading;
+      const deg = (-ang * 180) / Math.PI + 90;
+      const arrow = document.getElementById('wind-arrow')!;
+      arrow.setAttribute('transform', `rotate(${deg.toFixed(0)} 12 12) scale(${(0.6 + 0.5 * w.gust).toFixed(2)})`);
+      arrow.style.transformOrigin = '12px 12px';
+      windEl.classList.toggle('gust', w.gust > 0.7);
+    }
     const lapNow = Math.min(race.laps, r.lapsDone + 1);
     this.lap.textContent = `${t('lap')} ${lapNow}/${race.laps}`;
     this.time.textContent = formatTime(r.finished ? r.finishTime : raceTime(race));

@@ -202,6 +202,20 @@ export function countdownRemaining(r: Race): number {
   return Math.max(0, r.countdownTicks - r.tick) * r.dt;
 }
 
+/**
+ * Vent de travers au temps t : vecteur de dérive (m/s) dans le plan de piste.
+ * Rafales régulières et direction qui oscille doucement ; même valeur pour tous les participants.
+ */
+export function windAt(r: Race): { x: number; y: number; gust: number } {
+  const w = r.track.def.wind;
+  if (!w) return { x: 0, y: 0, gust: 0 };
+  const t = raceTime(r);
+  const s = Math.sin((2 * Math.PI * t) / w.period);
+  const gust = 0.25 + 0.75 * Math.max(0, s) * Math.max(0, s);
+  const dir = w.direction + 0.35 * Math.sin(t / 23);
+  return { x: Math.cos(dir) * w.strength * gust, y: Math.sin(dir) * w.strength * gust, gust };
+}
+
 function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   const { track, balance } = r;
   const m = racer.moose;
@@ -209,6 +223,14 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   racer.onVerge = absD > track.samples[racer.proj.index].hw;
   const surfaceId = racer.onVerge ? track.def.vergeSurface : track.samples[racer.proj.index].surface;
   stepMoose(m, cmd, balance.surfaces[surfaceId], racer.params, r.dt);
+  // Vent de travers : il pousse l'orignal sur le côté, d'autant plus qu'il court vite et à découvert.
+  if (track.def.wind && r.phase !== 'countdown' && m.speed > 2) {
+    const w = windAt(r);
+    const exposure = Math.min(1, m.speed / 15);
+    const lat = -w.x * Math.sin(m.heading) + w.y * Math.cos(m.heading);
+    m.x += -Math.sin(m.heading) * lat * exposure * r.dt;
+    m.y += Math.cos(m.heading) * lat * exposure * r.dt;
+  }
 
   let proj = projectOnTrack(track, m.x, m.y, racer.proj.index);
 

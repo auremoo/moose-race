@@ -29,6 +29,7 @@ interface Spec {
   /** Surface de base du sentier (sentier par défaut). */
   surface?: SurfaceId;
   zones?: { from: number; to: number; surface: SurfaceId }[];
+  wind?: { strength: number; period: number; direction: number };
 }
 
 const SPECS: Spec[] = [
@@ -41,14 +42,22 @@ const SPECS: Spec[] = [
   { id: 'sentier-bleuets', name: 'Sentier des bleuets', biome: 'foret', province: 'QC', stars: 2, verge: 11,
     route: 'W19 S160 R70@35 S60 ESL45@30 S80 R110@30 S120 CHL35@28 S100 R90@30 S60 L60@35 R60@35 S100 R90@32' },
   { id: 'ble-saskatchewan', name: 'Blé de Saskatchewan', biome: 'plaine', province: 'SK', stars: 2, verge: 11,
+    wind: { strength: 1.2, period: 12, direction: 1.2 },
     route: 'W19 S400 CHL30@35 S200 R90@35 S120 R90@35 S150 L90@30 R90@30 S200 R90@35 S60 ESR40@35 S100 R90@35 S80' },
   { id: 'lacs-banff', name: 'Lacs de Banff', biome: 'rocheuses', province: 'AB', stars: 2, verge: 10,
     zones: [{ from: 0.62, to: 0.68, surface: 'boue' }],
     route: 'W18 S200 R120@40 S100 L60@45 R90@35 S150 R150@40 S80 L60@40 R60@40 S120 R60@35 S60 CHR30@30 S80' },
   { id: 'crepuscule-manitoba', name: 'Crépuscule du Manitoba', biome: 'plaine', province: 'MB', stars: 3, verge: 10,
+    wind: { strength: 2.6, period: 9, direction: 0.4 },
     route: 'W17 S150 CHL30@35 S150 R90@30 S80 CHR35@28 S60 R90@30 S100 L90@25 S40 R180@20 S40 L90@25 S150 R90@30 S100 ESL40@35 S60 R90@30' },
   { id: 'sentiers-algonquin', name: "Sentiers d'Algonquin", biome: 'foret', province: 'ON', stars: 3, verge: 9,
-    zones: [{ from: 0.2, to: 0.26, surface: 'boue' }, { from: 0.6, to: 0.65, surface: 'boue' }],
+    zones: [
+      { from: 0.08, to: 0.13, surface: 'racines' },
+      { from: 0.2, to: 0.26, surface: 'boue' },
+      { from: 0.42, to: 0.47, surface: 'racines' },
+      { from: 0.6, to: 0.65, surface: 'boue' },
+      { from: 0.82, to: 0.86, surface: 'racines' },
+    ],
     route: 'W15 S150 R90@24 S80 L90@24 S100 R90@24 S120 R60@22 S100 R30@30 S80 R180@20 S100 L90@25 S150 R90@26' },
   { id: 'automne-mauricie', name: 'Automne en Mauricie', biome: 'foret', province: 'QC', stars: 3, verge: 9,
     zones: [{ from: 0.45, to: 0.51, surface: 'boue' }],
@@ -288,6 +297,7 @@ for (const spec of all) {
       vergeSurface: 'herbe',
       startOffset: 20,
       ...(spec.zones ? { zones: spec.zones } : {}),
+      ...(spec.wind ? { wind: spec.wind } : {}),
       points: pts.map((p) => [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10, p.w] as [number, number, number]),
     };
     info = `retouche ${gap.toFixed(0)} m, écart brut (${raw[0]}, ${raw[1]})`;

@@ -1293,3 +1293,16 @@ body {
 #update-banner[hidden] {
   display: none;
 }
+
+.wind {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #2c7bb6;
+}
+.wind[hidden] {
+  display: none;
+}
+.wind.gust {
+  color: var(--rouge);
+}

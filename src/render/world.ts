@@ -31,6 +31,7 @@ const SURFACE_COLORS: Record<SurfaceId, number> = {
   boue: 0x6b4a2f,
   neige: 0xeef3f7,
   glace: 0xbfe6f5,
+  racines: 0x7a5034,
 };
 
 export interface IdealLine {

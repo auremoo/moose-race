@@ -8,14 +8,29 @@
  "startOffset": 20,
  "zones": [
   {
+   "from": 0.08,
+   "to": 0.13,
+   "surface": "racines"
+  },
+  {
    "from": 0.2,
    "to": 0.26,
    "surface": "boue"
   },
   {
+   "from": 0.42,
+   "to": 0.47,
+   "surface": "racines"
+  },
+  {
    "from": 0.6,
    "to": 0.65,
    "surface": "boue"
+  },
+  {
+   "from": 0.82,
+   "to": 0.86,
+   "surface": "racines"
   }
  ],
  "points": [

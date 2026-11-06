@@ -6,6 +6,11 @@
  "surface": "sentier",
  "vergeSurface": "herbe",
  "startOffset": 20,
+ "wind": {
+  "strength": 1.2,
+  "period": 12,
+  "direction": 1.2
+ },
  "points": [
   [0, 0, 19],
   [29.4, 0, 23],
