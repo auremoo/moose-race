@@ -59,6 +59,8 @@ export class Hud {
   private flash = $('hud-flash');
   private countdown = $('countdown');
   private hint = $('steer-hint');
+  private speedLines = $('speed-lines');
+  private speedFx = 0;
   private knobBase = $('knob-base');
   private knob = $('knob');
   private debugEl = $<HTMLPreElement>('debug');
@@ -354,9 +356,10 @@ export class Hud {
     this.results.hidden = true;
   }
 
-  resetHint(): void {
-    this.hintShown = true;
-    this.hint.classList.remove('hide');
+  /** Aide des commandes : seulement pour les premières courses, et elle s'efface d'elle-même. */
+  resetHint(show = true): void {
+    this.hintShown = show;
+    this.hint.classList.toggle('hide', !show);
   }
 
   update(race: Race, steer: SteerTouchVisual, bestLap: number | undefined, debugText: string | null): void {
@@ -491,8 +494,19 @@ export class Hud {
     // Bouton Galop : anneau d'endurance.
     this.gallopBtn.style.setProperty('--endurance', r.moose.endurance.toFixed(3));
     this.gallopBtn.classList.toggle('on', r.moose.galloping);
+    // Lignes de vitesse sur les bords : au-delà de 85 % de la vitesse de pointe, plus fortes au galop et
+    // pendant l'élan. Lissées pour ne pas clignoter.
+    const ratio = r.moose.speed / r.params.topSpeed;
+    const fxTarget = Math.max(0, Math.min(1, (ratio - 0.85) / 0.3)) * (r.moose.galloping || r.moose.boostTime > 0 ? 1 : 0.45);
+    this.speedFx += (fxTarget - this.speedFx) * 0.12;
+    this.speedLines.style.opacity = this.speedFx.toFixed(3);
     this.gallopBtn.classList.toggle('tired', r.moose.exhausted);
 
+    // L'aide s'efface 5 s après le départ, ou dès le premier coup de pouce.
+    if (this.hintShown && race.phase === 'running' && raceTime(race) > 5) {
+      this.hintShown = false;
+      this.hint.classList.add('hide');
+    }
     // Repère du pouce.
     if (steer.active) {
       if (this.hintShown) {

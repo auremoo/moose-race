@@ -98,10 +98,7 @@ test("un coffre prêt s'ouvre depuis l'accueil", async ({ page }) => {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await page.evaluate(() =>
-    localStorage.setItem(
-      'panache.v1',
-      JSON.stringify({ schema: 4, tutorialDone: true, chestSeq: 1, chests: [{ id: 1, type: 'erable', unlockEndsAt: Date.now() - 1000 }] }),
-    ),
+    localStorage.setItem('panache.v1', JSON.stringify({ schema: 4, tutorialDone: true, chestSeq: 1, chests: [{ id: 1, type: 'erable' }] })),
   );
   await page.reload();
   await page.locator('.chest-slot.is-ready').click({ force: true });

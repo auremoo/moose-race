@@ -82,10 +82,10 @@ Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000
 
 | Critère | Mesuré | Cible |
 | --- | --- | --- |
-| Expert contre moyen à puissance égale | 93,4 % | ≥ 85 % |
-| +10 de puissance, pilotage identique | 71,9 % | ≤ 80 % |
-| Meilleur orignal à puissance égale (Tempête) | 55,3 % | ≤ 60 % |
-| Courses pour améliorer un Commun au niveau 10 | 30,9 en moyenne (coffres compris) | 25 à 40 |
+| Expert contre moyen à puissance égale | 90,2 % | ≥ 85 % |
+| +10 de puissance, pilotage identique | 66,9 % | ≤ 80 % |
+| Meilleur orignal à puissance égale (Tempête) | 58,0 % | ≤ 60 % |
+| Courses pour améliorer un Commun au niveau 10 | 35,9 en moyenne (coffres compris) | 25 à 40 |
 
 ## Collection et économie
 
@@ -110,15 +110,14 @@ l'accessoire avant l'achat. L'accessoire suit en course, à l'accueil et au podi
 ## Coffres
 
 Un podium (1er, 2e ou 3e, avec au moins un adversaire) rapporte un coffre ; le premier défi du jour terminé, un
-coffre doré. Quatre emplacements sur l'accueil : s'ils sont pleins, le coffre est changé en pièces (le minimum qu'il
-contient : 12, 30, 70 ou 150). Un seul coffre se déverrouille à
-la fois, en temps réel (caisse en bois 15 min, érable 1 h, doré 3 h, aurore boréale 8 h) ; on peut l'ouvrir tout
-de suite pour 1 pièce par minute restante. **Jamais d'argent réel.** Contenu : pièces, fragments de panache et,
-selon le coffre, un accessoire pas encore possédé (toujours dans l'aurore boréale). Plus la place est bonne,
-meilleur est le coffre en moyenne. Réglages : `src/data/chests.json`.
+coffre doré. Quatre emplacements sur l'accueil : s'ils sont pleins, le coffre est changé en pièces (le minimum
+qu'il contient : 12, 30, 70 ou 150). Un toucher ouvre un coffre, tout de suite, sans attente ni coût.
+**Jamais d'argent réel.** Contenu : pièces, fragments de panache et, selon le coffre, un accessoire pas encore
+possédé (toujours dans l'aurore boréale). Plus la place est bonne, meilleur est le coffre en moyenne.
+Réglages : `src/data/chests.json`.
 
-L'équilibrage compte les coffres au pire (tous ouverts) : ils font 8,8 % des pièces et un Commun se monte au
-niveau 10 en 30,9 courses (critère du cahier : 25 à 40). Sauvegarde en schéma 4 (migration automatique).
+L'équilibrage compte tous les coffres ouverts : ils font 7,1 % des pièces et un Commun se monte au
+niveau 10 en 35,9 courses (critère du cahier : 25 à 40). Sauvegarde en schéma 4 (migration automatique).
 
 ## Mode Ours et castors
 
@@ -167,12 +166,19 @@ Rocheuses : 15 % / 20 % ; jamais de pluie sur la neige). Même graine, même mé
 - **Brouillard** : rendu seulement (on voit moins loin), aucune incidence sur la physique.
 - Annonce au départ (« Pluie : sentier glissant »). Pour tester : `?meteo=pluie`, `?meteo=brouillard` ou `?meteo=clair`.
 
+## Chicanes
+
+Deux virages serrés (≈ 64°, rayon ≈ 13 m) reliés par de courts bouts droits : la piste se décale d'environ
+25 m, plus que sa largeur. Dans la chicane, le bas-côté ne fait que 1,5 m et une rangée de balles de foin marque
+la barrière : impossible de la passer tout droit, ni par la piste ni par l'herbe (test sur les 16 circuits qui en
+ont). Le générateur (`tools/track-gen.ts`) produit ces zones (`vergeZones`) automatiquement.
+
 ## Bifurcation (Automne en Mauricie)
 
 Avant le virage du bas, à gauche de la carte, une branche étroite (7 m, racines sur 70 % de sa longueur) coupe
-le coin intérieur : 154 m au lieu de 193 m. Pour la prendre, on sort sur le bas-côté du côté du panneau jaune
+le coin intérieur : 149 m au lieu de 185 m. Pour la prendre, on sort sur le bas-côté du côté du panneau jaune
 avant l'embranchement ; la ligne de course n'y passe jamais, on ne s'y retrouve donc pas par hasard. Gain
-d'environ 0,2 s par tour en passage propre ; une touche de barrière ou une sortie dans l'herbe le fait perdre.
+d'environ 0,4 s par tour en passage propre ; une touche de barrière ou une sortie dans l'herbe le fait perdre.
 Les bots la tentent une fois sur cinq à une fois sur deux selon leur talent. Données : `fork` dans le JSON du
 circuit (`from`, `to`, `width`, `surface`, `bend`, `zones`), code dans `src/sim/fork.ts`.
 

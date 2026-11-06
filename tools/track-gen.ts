@@ -31,6 +31,7 @@ interface Spec {
   zones?: { from: number; to: number; surface: SurfaceId }[];
   wind?: { strength: number; period: number; direction: number };
   elevation?: [number, number][];
+  fork?: TrackDef['fork'];
 }
 
 const SPECS: Spec[] = [
@@ -131,6 +132,7 @@ const SPECS: Spec[] = [
     stars: 3,
     verge: 9,
     zones: [{ from: 0.45, to: 0.51, surface: 'boue' }],
+    fork: { from: 0.725, to: 0.88, width: 7, surface: 'sentier', bend: 0.35, zones: [{ from: 0.3, to: 0.7, surface: 'racines' }] },
     route: 'W15 S200 ESR60@30 R60@30 S120 R120@26 S100 L90@25 R90@25 S150 CHL35@24 S100 R90@26 S180 R90@28',
   },
   {
@@ -263,6 +265,8 @@ interface Pt {
 }
 
 interface Traced {
+  /** Portions en chicane : distances (m) depuis le départ du tracé brut. */
+  chicanes: [number, number][];
   pts: Pt[];
   turn: number;
   end: [number, number];
@@ -270,11 +274,20 @@ interface Traced {
 }
 
 /**
- * Raccourcis : CHL40@25 = chicane gauche-droite-gauche (L40 R80 L40), CHR = l'inverse ;
+ * Raccourcis : CHL40@25 = chicane gauche-droite-gauche, CHR = l'inverse ;
  * ESL60@30 = S gauche puis droite (L60 R60), ESR = l'inverse.
+ *
+ * Chicane : deux virages serrés (angle ≈ 1,6 × a, entre 55° et 75° ; rayon ≈ 0,7 × r, au moins 12 m)
+ * reliés par deux courts bouts droits fixes de 12 m. Le décalage latéral (≈ 25 m pour CHL40@18)
+ * dépasse la largeur de la piste plus le bas-côté : impossible de la passer tout droit.
+ * (L'ancienne forme L40 R80 L40 ne décalait la piste que de 8 m : on la traversait sans tourner.)
  */
+/** Jetons des chicanes (indices dans la liste développée), pour y rétrécir le bas-côté. */
+let chicaneTokens = new Set<number>();
+
 function expand(route: string): string[] {
   const out: string[] = [];
+  chicaneTokens = new Set<number>();
   for (const tok of route.trim().split(/\s+/)) {
     const m = /^(CH|ES)([LR])(\d+)@(\d+)$/.exec(tok);
     if (!m) {
@@ -283,8 +296,12 @@ function expand(route: string): string[] {
     }
     const [, kind, side, a, r] = m;
     const other = side === 'L' ? 'R' : 'L';
-    if (kind === 'CH') out.push(`${side}${a}@${r}`, `${other}${Number(a) * 2}@${r}`, `${side}${a}@${r}`);
-    else out.push(`${side}${a}@${r}`, `${other}${a}@${r}`);
+    if (kind === 'CH') {
+      const ang = Math.max(55, Math.min(75, Math.round(Number(a) * 1.6)));
+      const rad = Math.max(12, Math.round(Number(r) * 0.7));
+      for (let k = 0; k < 5; k++) chicaneTokens.add(out.length + k);
+      out.push(`${side}${ang}@${rad}`, 'F12', `${other}${ang * 2}@${rad}`, 'F12', `${side}${ang}@${rad}`);
+    } else out.push(`${side}${a}@${r}`, `${other}${a}@${r}`);
   }
   return out;
 }
@@ -297,11 +314,34 @@ function traceRaw(tokens: string[]): Traced {
   let h = 0;
   let base = 16;
   let turn = 0;
+  let dist = 0;
+  const chicanes: [number, number][] = [];
   const push = (w: number) => pts.push({ x, y, w });
   tokens.forEach((tok, ti) => {
     const kind = tok[0];
+    const start = dist;
+    dist +=
+      kind === 'S' || kind === 'F'
+        ? Number(tok.slice(1))
+        : kind === 'R' || kind === 'L'
+          ? (Number(tok.slice(1).split('@')[0]) * Math.PI * Number(tok.split('@')[1])) / 180
+          : 0;
+    if (chicaneTokens.has(ti)) {
+      const last = chicanes[chicanes.length - 1];
+      if (last && Math.abs(last[1] - start) < 1e-6) last[1] = dist;
+      else chicanes.push([start, dist]);
+    }
     if (kind === 'W') {
       base = Number(tok.slice(1));
+    } else if (kind === 'F') {
+      // Bout droit fixe (dans une chicane) : jamais retouché pour fermer la boucle.
+      const len = Number(tok.slice(1));
+      const n = Math.max(1, Math.round(len / 6));
+      for (let i = 0; i < n; i++) {
+        x += Math.cos(h) * (len / n);
+        y += Math.sin(h) * (len / n);
+        push(base);
+      }
     } else if (kind === 'S') {
       const len = Number(tok.slice(1));
       straights.push({ tokIndex: ti, dir: [Math.cos(h), Math.sin(h)], len });
@@ -332,14 +372,14 @@ function traceRaw(tokens: string[]): Traced {
       throw new Error(`segment inconnu ${tok}`);
     }
   });
-  return { pts, turn, end: [x, y], straights };
+  return { pts, turn, end: [x, y], straights, chicanes };
 }
 
 /**
  * Ferme la boucle exactement en allongeant ou raccourcissant deux lignes droites
  * de directions différentes (la paire qui demande la plus petite retouche).
  */
-function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number, number] } {
+function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number, number]; chicanes: [number, number][] } {
   const tokens = expand(spec.route);
   const first = traceRaw(tokens);
   const gx = -first.end[0];
@@ -349,7 +389,7 @@ function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number
     const pts = first.pts;
     const last = pts.pop()!;
     pts.unshift({ x: 0, y: 0, w: last.w });
-    return { pts, turn: first.turn, gap: 0, raw: [0, 0] };
+    return { pts, turn: first.turn, gap: 0, raw: [0, 0], chicanes: first.chicanes };
   }
   // Retouche de norme minimale répartie sur toutes les lignes droites (moindres carrés),
   // en gardant chaque ligne droite d'au moins 30 m.
@@ -404,7 +444,7 @@ function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number
   // Le dernier point coïncide avec le départ : on le remplace par le départ.
   const last = pts.pop()!;
   pts.unshift({ x: 0, y: 0, w: last.w });
-  return { pts, turn: res.turn, gap: cost, raw: [Math.round(-gx), Math.round(-gy)] };
+  return { pts, turn: res.turn, gap: cost, raw: [Math.round(-gx), Math.round(-gy)], chicanes: res.chicanes };
 }
 
 function selfClearance(def: TrackDef): { min: number; need: number } {
@@ -454,7 +494,7 @@ for (const spec of all) {
       failed = true;
       continue;
     }
-    const { pts, turn, gap, raw } = traced;
+    const { pts, turn, gap, raw, chicanes } = traced;
     if (Math.abs(Math.abs(turn) - 360) > 0.5) {
       console.error(`✗ ${spec.id} : somme des virages ${turn}° (attendu ±360°)`);
       failed = true;
@@ -470,8 +510,17 @@ for (const spec of all) {
       ...(spec.zones ? { zones: spec.zones } : {}),
       ...(spec.wind ? { wind: spec.wind } : {}),
       ...(spec.elevation ? { elevation: spec.elevation } : {}),
+      ...(spec.fork ? { fork: spec.fork } : {}),
+      ...(chicanes.length ? { vergeZones: [] } : {}),
       points: pts.map((p) => [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10, p.w] as [number, number, number]),
     };
+    // Chicanes : bas-côté de 1,5 m (avec 8 m de marge avant et après), en fractions du tour mesurées
+    // depuis la ligne de départ (décalée de startOffset sur le tracé).
+    if (chicanes.length) {
+      const L = buildTrack(def, 1).length;
+      const frac = (d: number) => Math.round((((((d - def.startOffset) / L) % 1) + 1) % 1) * 10000) / 10000;
+      def.vergeZones = chicanes.map(([a, b]) => ({ from: frac(a - 8), to: frac(b + 8), verge: 1.5 }));
+    }
     info = `retouche ${gap.toFixed(0)} m, écart brut (${raw[0]}, ${raw[1]})`;
     writeFileSync(
       `${outDir}/${spec.id}.json`,

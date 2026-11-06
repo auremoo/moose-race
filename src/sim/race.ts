@@ -305,7 +305,7 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   let proj = projectOnTrack(track, m.x, m.y, racer.proj.index);
 
   // Barrière souple au bord du bas-côté : repousse et ralentit, n'arrête jamais net.
-  const limit = track.samples[proj.index].hw + track.def.verge;
+  const limit = track.samples[proj.index].hw + track.samples[proj.index].verge;
   racer.onBarrier = false;
   if (Math.abs(proj.d) > limit) {
     racer.onBarrier = true;

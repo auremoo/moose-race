@@ -1,7 +1,7 @@
 /**
- * Coffres de récompense : gagnés sur le podium (et au défi du jour), rangés dans 4 emplacements.
- * Un seul se déverrouille à la fois, en temps réel ; on peut l'ouvrir tout de suite en payant en
- * pièces (jamais en argent réel). Contenu : pièces, fragments de panache, parfois un accessoire.
+ * Coffres de récompense : gagnés sur le podium (et au défi du jour), rangés dans 4 emplacements,
+ * ouverts d'un toucher, sans attente ni coût. Contenu : pièces, fragments de panache, parfois un
+ * accessoire. Jamais d'argent réel.
  */
 import { accessoryCatalog, CHEST_ORDER, chestCatalog, type ChestType } from '../data';
 import { createRng } from '../sim/rng';
@@ -9,7 +9,6 @@ import { checkUnlocks, ownsAccessory } from './accessories';
 import type { SaveData } from './settings';
 
 export type SavedChest = SaveData['chests'][number];
-export type ChestState = 'locked' | 'unlocking' | 'ready';
 
 export interface ChestReward {
   type: ChestType;
@@ -37,47 +36,14 @@ export function chestForRank(rank: number, participants: number, r: number): Che
 export function awardChest(save: SaveData, type: ChestType): boolean {
   if (save.chests.length >= chestCatalog.slots) return false;
   save.chestSeq++;
-  save.chests = [...save.chests, { id: save.chestSeq, type, unlockEndsAt: null }];
+  save.chests = [...save.chests, { id: save.chestSeq, type }];
   return true;
 }
 
-export function chestState(c: SavedChest, now: number): ChestState {
-  if (c.unlockEndsAt === null) return 'locked';
-  return now >= c.unlockEndsAt ? 'ready' : 'unlocking';
-}
-
-/** Millisecondes restantes (durée complète si le déverrouillage n'a pas commencé). */
-export function remainingMs(c: SavedChest, now: number): number {
-  if (c.unlockEndsAt === null) return chestCatalog.types[c.type].unlockMinutes * 60_000;
-  return Math.max(0, c.unlockEndsAt - now);
-}
-
-/** Prix en pièces pour ouvrir tout de suite. */
-export function skipCost(c: SavedChest, now: number): number {
-  const ms = remainingMs(c, now);
-  if (ms <= 0) return 0;
-  return Math.max(chestCatalog.skipMin, Math.ceil((ms / 60_000) * chestCatalog.skipCoinsPerMinute));
-}
-
-/** Lance le déverrouillage ; faux si un autre coffre est déjà en cours. */
-export function startUnlock(save: SaveData, id: number, now: number): boolean {
-  const c = save.chests.find((x) => x.id === id);
-  if (!c || c.unlockEndsAt !== null) return false;
-  if (save.chests.some((x) => chestState(x, now) === 'unlocking')) return false;
-  c.unlockEndsAt = now + chestCatalog.types[c.type].unlockMinutes * 60_000;
-  return true;
-}
-
-/** Ouvre un coffre prêt, ou tout de suite contre des pièces si `pay`. Null si impossible. */
-export function openChest(save: SaveData, id: number, now: number, pay = false): ChestReward | null {
+/** Ouvre un coffre (tout de suite, sans attente). Null s'il n'existe pas. */
+export function openChest(save: SaveData, id: number): ChestReward | null {
   const c = save.chests.find((x) => x.id === id);
   if (!c) return null;
-  if (chestState(c, now) !== 'ready') {
-    if (!pay) return null;
-    const cost = skipCost(c, now);
-    if (save.coins < cost) return null;
-    save.coins -= cost;
-  }
   const def = chestCatalog.types[c.type];
   // Contenu tiré d'une graine propre au coffre : rouvrir la même sauvegarde donne le même contenu.
   const rng = createRng(0x9e3779b9 ^ (c.id * 2654435761));

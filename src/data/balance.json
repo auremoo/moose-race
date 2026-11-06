@@ -11,7 +11,7 @@
     "aLat": 18,
     "maxSteerCurvature": 0.085,
     "steerGripMargin": 2.4,
-    "steerRate": 4.0,
+    "steerRate": 7.0,
     "scrubFactor": 0.25,
     "slideGrip": 0.75,
     "scrubMaxExcess": 40,

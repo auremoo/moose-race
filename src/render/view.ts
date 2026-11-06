@@ -682,6 +682,18 @@ export class GameView {
    * Ligne idéale : verte si la vitesse actuelle permet encore de passer le point en freinant,
    * rouge s'il faut freiner maintenant ; blanche et discrète au-delà de 160 m.
    */
+  private capCache = new WeakMap<Float64Array, number>();
+  /** Vitesse du profil en ligne droite (sa valeur maximale). */
+  private profileCap(p: Float64Array): number {
+    let c = this.capCache.get(p);
+    if (c === undefined) {
+      c = 0;
+      for (const v of p) c = Math.max(c, v);
+      this.capCache.set(p, c);
+    }
+    return c;
+  }
+
   private colorIdealLine(race: Race): void {
     const r = race.racers[0];
     const n = race.track.samples.length;
@@ -689,6 +701,11 @@ export class GameView {
     const decel = race.balance.moose.brakeDecel * 0.75;
     const arr = this.ideal.colors.array as Float32Array;
     const ahead = Math.round(160 / race.track.spacing);
+    // Profil de vitesse de l'orignal du joueur. Un point dont la vitesse limite est celle de la ligne
+    // droite n'impose rien : sans ça, la ligne rougissait au galop en pleine ligne droite (le galop
+    // dépasse la vitesse de pointe de la ligne droite, sans aucun virage à négocier).
+    const profile = r.profile;
+    const straightCap = this.profileCap(profile);
     for (let j = 0; j <= n; j++) {
       const i = j % n;
       let di = i - r.proj.index;
@@ -697,9 +714,10 @@ export class GameView {
       let fade = 0.25;
       if (di <= ahead) {
         const dist = di * race.track.spacing;
-        const vLine = race.line.speed[i];
+        const vLine = profile[i];
+        const limiting = vLine < straightCap - 0.5;
         const reachable = Math.sqrt(vLine * vLine + 2 * decel * Math.max(0, dist - 2));
-        const hot = v > reachable + 0.4;
+        const hot = limiting && v > reachable + 0.4;
         c = hot ? C.lineHot : C.lineOk;
         fade = 1 - (di / ahead) * 0.6;
         // Tirets quand il faut freiner : lisible aussi sans distinguer le rouge du vert.

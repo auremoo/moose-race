@@ -1691,3 +1691,23 @@ img.shot {
     height: 70px;
   }
 }
+
+/* Lignes de vitesse : traits radiaux sur les bords de l'écran, centre dégagé. */
+#speed-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: repeating-conic-gradient(from 0deg at 50% 46%, rgba(255, 255, 255, 0.55) 0deg 0.7deg, transparent 0.7deg 7deg);
+  -webkit-mask-image: radial-gradient(ellipse 60% 52% at 50% 46%, transparent 55%, #000 100%);
+  mask-image: radial-gradient(ellipse 60% 52% at 50% 46%, transparent 55%, #000 100%);
+  animation: speed-lines 0.25s steps(3) infinite;
+}
+@keyframes speed-lines {
+  to {
+    transform: rotate(2deg);
+  }
+}
+.reduce-motion #speed-lines {
+  display: none;
+}

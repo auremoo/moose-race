@@ -82,10 +82,10 @@ if (worst > 0.6) process.exitCode = 1;
 import { coinsFor, FIRST_WIN_BONUS, firstWinKey } from '../src/meta/economy';
 import { buildEntrants } from '../src/sim/roster';
 import { upgradeCost } from '../src/meta/collection';
-import { openChest, startUnlock } from '../src/meta/chests';
+import { openChest } from '../src/meta/chests';
 import { recordRace } from '../src/meta/rewards';
 import { defaultSave } from '../src/meta/settings';
-// Coffres comptés au pire : le joueur les ouvre tous (minuteries ignorées).
+// Coffres : le joueur les ouvre tous (ils s'ouvrent sans attente).
 let chestCoins = 0;
 let raceCoins = 0;
 const careers: number[] = [];
@@ -123,8 +123,7 @@ for (let p = 0; p < players; p++) {
     raceCoins += earned;
     recordRace(meta, rank, 11, false);
     for (const ch of [...meta.chests]) {
-      startUnlock(meta, ch.id, 0);
-      const got = openChest(meta, ch.id, Infinity);
+      const got = openChest(meta, ch.id);
       if (got) {
         coins += got.coins;
         chestCoins += got.coins;

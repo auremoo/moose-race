@@ -25,7 +25,7 @@ describe('eau du décor', () => {
             const x = w.x + Math.cos(a) * w.r;
             const y = w.y + Math.sin(a) * w.r;
             const p = projectOnTrack(track, x, y);
-            const edge = track.samples[p.index].hw + track.def.verge;
+            const edge = track.samples[p.index].hw + track.samples[p.index].verge;
             expect(Math.abs(p.d), `${track.def.id} : lac de ${w.r.toFixed(0)} m`).toBeGreaterThan(edge + LAKE_CLEARANCE - 0.5);
           }
         }

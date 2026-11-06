@@ -44,6 +44,11 @@ export interface TrackDef {
   elevation?: [number, number][];
   /** Bifurcation risquée : branche plus courte mais lente (voir fork.ts). */
   fork?: ForkDef;
+  /**
+   * Bas-côté rétréci sur des portions (fractions du tour), par exemple dans les chicanes pour
+   * qu'on ne puisse pas les couper par l'herbe. Exemple : { from: 0.3, to: 0.34, verge: 1.5 }.
+   */
+  vergeZones?: { from: number; to: number; verge: number }[];
 }
 
 export interface TrackSample {
@@ -64,6 +69,8 @@ export interface TrackSample {
   /** Hauteur du sentier (m) et pente le long de la piste (dz/ds, positive en montée). */
   z: number;
   slope: number;
+  /** Largeur du bas-côté à cet endroit (m), au-delà : barrière. */
+  verge: number;
   /** Abscisse curviligne (m). */
   s: number;
 }
@@ -190,6 +197,18 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
     kRaw.push(dh / (2 * step));
   }
   const smoothR = Math.max(1, Math.round(3 / step));
+  // Bas-côté par échantillon : rétréci dans les vergeZones, transitions adoucies sur ±4 m.
+  const inZone = (f: number, z: { from: number; to: number }) => (z.from <= z.to ? f >= z.from && f < z.to : f >= z.from || f < z.to);
+  const vergeRaw = Array.from({ length: count }, (_, i) => {
+    const z = def.vergeZones?.find((zz) => inZone(i / count, zz));
+    return z ? Math.min(def.verge, z.verge) : def.verge;
+  });
+  const vr = Math.max(1, Math.round(4 / step));
+  const vergeAt = (i: number) => {
+    let m = Infinity;
+    for (let j = -vr; j <= vr; j++) m = Math.min(m, vergeRaw[(i + j + count) % count]);
+    return m;
+  };
   for (let i = 0; i < count; i++) {
     let k = 0;
     for (let j = -smoothR; j <= smoothR; j++) k += kRaw[(i + j + count) % count];
@@ -208,6 +227,7 @@ export function buildTrack(def: TrackDef, spacing = 1): Track {
       ny: tx,
       k,
       hw: widSmooth[i] / 2,
+      verge: vergeAt(i),
       s: i * step,
       surface: zone?.surface ?? def.surface,
       z: elevationAt(def, f),
@@ -261,7 +281,7 @@ export function terrainHeight(track: Track, x: number, y: number, hint = -1): nu
   const p = projectOnTrack(track, x, y, hint);
   const s = track.samples[p.index];
   if (s.z === 0) return 0;
-  const edge = s.hw + track.def.verge;
+  const edge = s.hw + s.verge;
   const off = Math.abs(p.d) - edge;
   if (off <= 0) return s.z;
   const t = Math.min(1, off / 70);

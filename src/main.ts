@@ -365,7 +365,7 @@ function restart(trackChanged = false): void {
   resultsShown = false;
   hud.showPodiumTitle(false);
   hud.hideResults();
-  hud.resetHint();
+  hud.resetHint(save.raceCount < 3);
   paused = false;
   hud.showPause(false);
   input.reset();

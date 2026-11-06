@@ -51,8 +51,8 @@ export interface SaveData {
   /** Accessoires possédés (tuques, foulards…) et accessoire porté par chaque orignal. */
   accessories: string[];
   equipped: Record<string, string>;
-  /** Coffres en attente (4 emplacements au plus) ; fin de déverrouillage en ms, null s'il n'a pas commencé. */
-  chests: { id: number; type: 'bois' | 'erable' | 'or' | 'aurore'; unlockEndsAt: number | null }[];
+  /** Coffres gagnés pas encore ouverts (4 emplacements au plus). */
+  chests: { id: number; type: 'bois' | 'erable' | 'or' | 'aurore' }[];
   /** Compteur de coffres gagnés (identifiants et graine du contenu). */
   chestSeq: number;
   /** Compteurs des objectifs. */
@@ -78,7 +78,8 @@ const DEFAULTS: SaveData = {
   activeMoose: 'bucheron',
   owned: ['bucheron'],
   levels: { bucheron: 1 },
-  difficulty: 'moyen',
+  // Nouveaux joueurs en Facile : les premières courses doivent donner envie de revenir.
+  difficulty: 'facile',
   botCount: 10,
   mode: 'classique',
   firstWins: [],

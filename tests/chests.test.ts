@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { accessoryCatalog, chestCatalog } from '../src/data';
 import { objectiveProgress } from '../src/meta/accessories';
-import { awardChest, chestForRank, chestState, openChest, skipCost, startUnlock } from '../src/meta/chests';
+import { awardChest, chestForRank, openChest } from '../src/meta/chests';
 import { recordRace } from '../src/meta/rewards';
 import { defaultSave, migrate, SCHEMA } from '../src/meta/settings';
-
-const MIN = 60_000;
 
 describe('coffres', () => {
   it("seuls les trois premiers d'une course à plusieurs en gagnent un", () => {
@@ -32,33 +30,14 @@ describe('coffres', () => {
     expect(s.chests).toHaveLength(chestCatalog.slots);
   });
 
-  it('un seul déverrouillage à la fois, prêt après la durée du coffre', () => {
+  it("un coffre s'ouvre tout de suite, gratuitement", () => {
     const s = defaultSave();
-    awardChest(s, 'bois');
-    awardChest(s, 'erable');
-    const [a, b] = s.chests;
-    expect(startUnlock(s, a.id, 0)).toBe(true);
-    expect(startUnlock(s, b.id, 0)).toBe(false);
-    expect(chestState(s.chests[0], 14 * MIN)).toBe('unlocking');
-    expect(openChest(s, a.id, 14 * MIN)).toBeNull();
-    expect(chestState(s.chests[0], 15 * MIN)).toBe('ready');
-    // Le coffre prêt n'empêche plus d'en lancer un autre.
-    expect(startUnlock(s, b.id, 15 * MIN)).toBe(true);
-  });
-
-  it('ouvrir tout de suite coûte des pièces selon le temps restant', () => {
-    const s = defaultSave();
-    awardChest(s, 'erable');
-    const c = s.chests[0];
-    expect(skipCost(c, 0)).toBe(60 * chestCatalog.skipCoinsPerMinute);
-    startUnlock(s, c.id, 0);
-    expect(skipCost(s.chests[0], 50 * MIN)).toBe(10);
-    s.coins = 3;
-    expect(openChest(s, c.id, 50 * MIN, true)).toBeNull();
-    s.coins = 100;
-    const res = openChest(s, c.id, 50 * MIN, true)!;
+    awardChest(s, 'aurore');
+    const res = openChest(s, s.chests[0].id);
     expect(res).not.toBeNull();
     expect(s.chests).toHaveLength(0);
+    expect(s.coins).toBe(res!.coins);
+    expect(openChest(s, 999)).toBeNull();
   });
 
   it('contenu dans les fourchettes, crédité, sans accessoire en double', () => {
@@ -69,8 +48,7 @@ describe('coffres', () => {
         s.chestSeq = k * 7;
         awardChest(s, type);
         const before = new Set(s.accessories);
-        startUnlock(s, s.chests[0].id, 0);
-        const res = openChest(s, s.chests[0].id, Infinity)!;
+        const res = openChest(s, s.chests[0].id)!;
         expect(res.coins).toBeGreaterThanOrEqual(def.coins[0]);
         expect(res.coins).toBeLessThanOrEqual(def.coins[1] + chestCatalog.duplicateAccessoryCoins);
         expect(res.fragments).toBeGreaterThanOrEqual(def.fragments[0]);
@@ -87,8 +65,7 @@ describe('coffres', () => {
     const open = () => {
       const s = defaultSave();
       awardChest(s, 'or');
-      startUnlock(s, s.chests[0].id, 0);
-      return openChest(s, s.chests[0].id, Infinity);
+      return openChest(s, s.chests[0].id);
     };
     expect(open()).toEqual(open());
   });

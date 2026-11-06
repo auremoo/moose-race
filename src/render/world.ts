@@ -207,9 +207,9 @@ export function buildWorld(
   }
 
   const S = track.samples;
-  const verge = track.def.verge;
+  const fullVerge = track.def.verge;
   const hwAt = (i: number) => S[i].hw;
-  const limitAt = (i: number) => S[i].hw + verge;
+  const limitAt = (i: number) => S[i].hw + S[i].verge;
   const off =
     (f: (i: number) => number, k: number, c = 0) =>
     (i: number) =>
@@ -382,6 +382,35 @@ export function buildWorld(
   }
   posts.count = pi;
   group.add(posts);
+
+  // Bas-côté rétréci (chicanes) : rangée de balles de foin à la limite, de chaque côté, pour que la
+  // barrière se voie. On ne peut pas couper la chicane par l'herbe.
+  const narrow: number[] = [];
+  for (let i = 0; i < S.length; i += Math.max(1, Math.round(2.6 / track.spacing))) if (S[i].verge < fullVerge - 0.5) narrow.push(i);
+  if (narrow.length) {
+    const baleGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.1, 10);
+    baleGeo.rotateZ(Math.PI / 2);
+    const bales = new THREE.InstancedMesh(
+      baleGeo,
+      new THREE.MeshLambertMaterial({ color: 0xe2c05a, flatShading: true }),
+      narrow.length * 2,
+    );
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    const one = new THREE.Vector3(1, 1, 1);
+    let bi = 0;
+    for (const i of narrow) {
+      const s = S[i];
+      q.setFromAxisAngle(up, Math.atan2(s.ty, s.tx));
+      for (const side of [-1, 1]) {
+        const d = side * (s.hw + s.verge + 0.4);
+        m4.compose(new THREE.Vector3(simToWorldX(s.x + s.nx * d), 0.55 + s.z, simToWorldZ(s.y + s.ny * d)), q, one);
+        bales.setMatrixAt(bi++, m4);
+      }
+    }
+    bales.count = bi;
+    group.add(bales);
+  }
 
   // Décor du biome et repères de pilotage, graine fixe par circuit.
   const rng = createRng(1234 + track.def.id.length * 97);

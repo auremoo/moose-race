@@ -206,7 +206,7 @@ function freeSpots(track: Track, rng: Rng, count: number, margin: number, reach:
     const x = rng.range(minX, maxX);
     const y = rng.range(minY, maxY);
     const pr = projectOnTrack(track, x, y);
-    if (Math.abs(pr.d) < S[pr.index].hw + track.def.verge + margin) continue;
+    if (Math.abs(pr.d) < S[pr.index].hw + S[pr.index].verge + margin) continue;
     if (fork) {
       const fp = projectOnFork(fork, x, y);
       if (Math.abs(fp.d) < fork.hw + fork.verge + margin && fp.s > 0 && fp.s < fork.length) continue;
@@ -507,7 +507,7 @@ export function trackSigns(group: THREE.Group, track: Track, line: RacingLine, r
     g.add(b, p);
     g.position.set(simToWorldX(x), s.z, simToWorldZ(y));
     // Face aux orignaux qui arrivent : le panneau regarde vers l'arrière de la piste.
-    g.rotation.y = Math.atan2(s.ty, s.tx) + Math.PI / 2;
+    g.rotation.y = Math.atan2(s.ty, s.tx) - Math.PI / 2;
     group.add(g);
   };
   for (const ap of line.apexes) {

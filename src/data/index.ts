@@ -417,7 +417,6 @@ export function accessoryById(id: string | undefined): AccessoryDef {
 export type ChestType = 'bois' | 'erable' | 'or' | 'aurore';
 
 export interface ChestTypeDef {
-  unlockMinutes: number;
   coins: [number, number];
   fragments: [number, number];
   accessoryChance: number;
@@ -427,8 +426,6 @@ export interface ChestTypeDef {
 
 export interface ChestCatalog {
   slots: number;
-  skipCoinsPerMinute: number;
-  skipMin: number;
   /** Pièces données à la place d'un accessoire quand on les a tous. */
   duplicateAccessoryCoins: number;
   types: Record<ChestType, ChestTypeDef>;

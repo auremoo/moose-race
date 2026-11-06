@@ -1,8 +1,9 @@
 /**
- * Coffres sur l'accueil : quatre emplacements, minuterie de déverrouillage, ouverture avec révélation.
+ * Coffres sur l'accueil : quatre emplacements ; un toucher ouvre le coffre, tout de suite, avec la
+ * révélation de son contenu.
  */
 import { accessoryById, chestCatalog, type ChestType } from '../data';
-import { chestState, openChest, remainingMs, skipCost, startUnlock, type ChestReward, type SavedChest } from '../meta/chests';
+import { openChest, type ChestReward } from '../meta/chests';
 import { writeSave, type SaveData } from '../meta/settings';
 import { accessorySwatch } from './collectionScreens';
 import { getLang, t, type TextKey } from './i18n';
@@ -24,37 +25,16 @@ export function chestSvg(type: ChestType, open = false): string {
   </svg>`;
 }
 
-/** Durée lisible : « 15 min », « 2 h 05 », « 0:42 ». */
-export function formatDuration(ms: number): string {
-  const s = Math.ceil(ms / 1000);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (h > 0) return `${h} h ${String(m).padStart(2, '0')}`;
-  if (m >= 1) return `${m} min`;
-  return `0:${String(s % 60).padStart(2, '0')}`;
-}
-
 export class ChestUI {
-  private sheetId = -1;
+  /** Emplacements créés une fois et mis à jour sur place (un appui n'est jamais perdu). */
+  private slots: { el: HTMLButtonElement; key: string }[] = [];
 
   constructor(
     private save: SaveData,
     private onChange: () => void,
-    private now: () => number = () => Date.now(),
   ) {
-    $('chest-close').addEventListener('click', () => this.closeSheet());
-    $('chest-main').addEventListener('click', () => this.sheetAction('main'));
-    $('chest-second').addEventListener('click', () => this.sheetAction('second'));
     $('chest-ok').addEventListener('click', () => ($('chest-reveal').hidden = true));
-    // Minuteries : une mise à jour par seconde suffit.
-    setInterval(() => {
-      if (!$('screen-home').hidden) this.render();
-      if (!$('chest-sheet').hidden) this.renderSheet();
-    }, 1000);
   }
-
-  /** Emplacements créés une fois ; chaque seconde, on ne change que ce qui a bougé (un appui n'est jamais perdu). */
-  private slots: { el: HTMLButtonElement; key: string }[] = [];
 
   render(): void {
     const row = $('chest-row');
@@ -65,114 +45,32 @@ export class ChestUI {
         const el = document.createElement('button');
         el.className = 'chest-slot';
         el.innerHTML = `<span class="ic"></span><small></small>`;
-        el.addEventListener('click', () => this.tap(i));
+        el.addEventListener('click', () => this.open(i));
         row.appendChild(el);
         this.slots.push({ el, key: '' });
       }
     }
-    const now = this.now();
     this.slots.forEach((slot, i) => {
       const c = this.save.chests[i];
-      const st = c ? chestState(c, now) : null;
-      const key = c ? `${c.id}|${st}` : 'empty';
+      const key = c ? String(c.id) : 'empty';
+      if (key === slot.key) return;
+      slot.key = key;
       const el = slot.el;
-      if (key !== slot.key) {
-        slot.key = key;
-        el.className = `chest-slot ${c ? `is-${st}` : 'empty'}`;
-        el.disabled = !c;
-        (el.querySelector('.ic') as HTMLElement).innerHTML = c ? chestSvg(c.type, st === 'ready') : '';
-        if (c) el.setAttribute('aria-label', chestCatalog.types[c.type].name[getLang()]);
-        else el.removeAttribute('aria-label');
-      }
-      (el.querySelector('small') as HTMLElement).textContent = !c
-        ? t('chestEmpty')
-        : st === 'ready'
-          ? t('chestOpen')
-          : formatDuration(remainingMs(c, now));
+      el.className = `chest-slot ${c ? 'is-ready' : 'empty'}`;
+      el.disabled = !c;
+      (el.querySelector('.ic') as HTMLElement).innerHTML = c ? chestSvg(c.type) : '';
+      (el.querySelector('small') as HTMLElement).textContent = c ? t('chestOpen') : t('chestEmpty');
+      if (c) el.setAttribute('aria-label', `${t('chestOpen')} ${chestCatalog.types[c.type].name[getLang()]}`);
+      else el.removeAttribute('aria-label');
     });
   }
 
-  private tap(i: number): void {
+  private open(i: number): void {
     const c = this.save.chests[i];
     if (!c) return;
-    if (chestState(c, this.now()) === 'ready') this.open(c.id, false);
-    else this.openSheet(c.id);
-  }
-
-  private chest(): SavedChest | undefined {
-    return this.save.chests.find((x) => x.id === this.sheetId);
-  }
-
-  private openSheet(id: number): void {
-    this.sheetId = id;
-    this.renderSheet();
-    $('chest-sheet').hidden = false;
-  }
-
-  private closeSheet(): void {
-    $('chest-sheet').hidden = true;
-    this.sheetId = -1;
-  }
-
-  private renderSheet(): void {
-    const c = this.chest();
-    if (!c) return this.closeSheet();
-    const now = this.now();
-    const def = chestCatalog.types[c.type];
-    const st = chestState(c, now);
-    $('chest-icon').innerHTML = chestSvg(c.type, st === 'ready');
-    $('chest-title').textContent = def.name[getLang()];
-    const busy = st === 'locked' && this.save.chests.some((x) => chestState(x, now) === 'unlocking');
-    const info = fmt('chestContains', {
-      c1: def.coins[0],
-      c2: def.coins[1],
-      f1: def.fragments[0],
-      f2: def.fragments[1],
-      p: Math.round(def.accessoryChance * 100),
-    });
-    $('chest-desc').textContent = busy ? `${info}. ${t('chestBusy')}` : info;
-    const main = $<HTMLButtonElement>('chest-main');
-    const second = $<HTMLButtonElement>('chest-second');
-    const cost = skipCost(c, now);
-    if (st === 'locked' && !busy) {
-      main.textContent = fmt('chestUnlock', { t: formatDuration(remainingMs(c, now)) });
-      second.hidden = false;
-      second.textContent = fmt('chestOpenNow', { n: cost });
-      second.classList.toggle('poor', this.save.coins < cost);
-    } else {
-      main.textContent = st === 'ready' ? t('chestOpen') : fmt('chestOpenNow', { n: cost });
-      main.classList.toggle('poor', st !== 'ready' && this.save.coins < cost);
-      second.hidden = true;
-    }
-    $('chest-close').textContent = t('close');
-  }
-
-  private sheetAction(which: 'main' | 'second'): void {
-    const c = this.chest();
-    if (!c) return;
-    const now = this.now();
-    const st = chestState(c, now);
-    const busy = st === 'locked' && this.save.chests.some((x) => chestState(x, now) === 'unlocking');
-    if (which === 'main' && st === 'locked' && !busy) {
-      startUnlock(this.save, c.id, now);
-      writeSave(this.save);
-      this.closeSheet();
-      this.render();
-      return;
-    }
-    this.open(c.id, st !== 'ready');
-  }
-
-  private open(id: number, pay: boolean): void {
-    const res = openChest(this.save, id, this.now(), pay);
-    if (!res) {
-      $('chest-main').classList.remove('shake');
-      void $('chest-main').offsetWidth;
-      $('chest-main').classList.add('shake');
-      return;
-    }
+    const res = openChest(this.save, c.id);
+    if (!res) return;
     writeSave(this.save);
-    this.closeSheet();
     this.reveal(res);
     this.render();
     this.onChange();
