@@ -8,7 +8,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <title>Panache</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
-    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="manifest" href="./manifest.webmanifest" id="manifest" />
+    <meta name="apple-mobile-web-app-title" content="Panache" id="apple-title" />
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
   </head>
   <body>
@@ -122,7 +123,7 @@
           <button class="btn-icon" id="btn-settings" data-t-aria="settings"><svg viewBox="0 0 24 24" width="24" height="24"><use href="#i-gear"/></svg></button>
         </header>
         <div class="home-title">
-          <h1 class="logo">Panache</h1>
+          <h1 class="logo" data-t="title">Panache</h1>
           <p class="tagline" data-t="tagline"></p>
         </div>
         <div class="home-bottom">

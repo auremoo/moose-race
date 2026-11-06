@@ -1,0 +1,30 @@
+{
+  "name": "Moose Race — 3D moose racing",
+  "short_name": "Moose Race",
+  "description": "3D moose racing on 20 tracks across Canada: brake before hairpins, hit the apex, gallop at the right moment.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#D80621",
+  "theme_color": "#D80621",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 const CACHE = `panache-${new URL(self.location.href).searchParams.get('v') || 'dev'}`;
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest'])));
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './manifest-en.webmanifest'])));
   self.skipWaiting();
 });
 

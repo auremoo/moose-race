@@ -16,6 +16,11 @@ export function detectLang(): Lang {
 export function setLang(l: Lang): void {
   current = l;
   document.documentElement.lang = l;
+  // Nom du jeu selon la langue : « Panache » en français, « Moose Race » en anglais
+  // (titre de l'onglet, nom proposé à l'installation). Les clés de sauvegarde ne changent pas.
+  document.title = t('title');
+  document.getElementById('apple-title')?.setAttribute('content', t('title'));
+  document.getElementById('manifest')?.setAttribute('href', l === 'en' ? './manifest-en.webmanifest' : './manifest.webmanifest');
 }
 
 export function getLang(): Lang {

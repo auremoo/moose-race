@@ -1,4 +1,4 @@
-# Panache — course d'orignaux
+# Panache — course d'orignaux (Moose Race en anglais)
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 

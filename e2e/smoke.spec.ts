@@ -75,6 +75,10 @@ test('la langue passe en anglais', async ({ page }) => {
   await page.click('.seg[data-lang="en"]');
   await page.click('#btn-settings-back');
   await expect(page.locator('#btn-play')).toHaveText('Play');
+  // En anglais, le jeu s'appelle Moose Race (logo, onglet, installation).
+  await expect(page.locator('.logo')).toHaveText('Moose Race');
+  await expect(page).toHaveTitle('Moose Race');
+  expect(await page.getAttribute('#manifest', 'href')).toContain('manifest-en');
 });
 
 test('le mode Ours et castors démarre avec des ours', async ({ page }) => {
