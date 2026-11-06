@@ -72,6 +72,9 @@ export class Hud {
   private rankEl = $('hud-rank');
   private progress = $('hud-progress-track');
   private dots: HTMLElement[] = [];
+  private mapTrack: unknown = null;
+  private mapDots: SVGCircleElement[] = [];
+  private mapScale = { x0: 0, y0: 0, k: 1 };
   private lastCordeTick = -1;
   private lastBoost = 0;
   private eventMsg = '';
@@ -206,6 +209,45 @@ export class Hud {
     $('settings').hidden = !on;
   }
 
+  /** Mini-carte : tracé du circuit et un point par orignal (le joueur en rouge, au-dessus). */
+  private updateMinimap(race: Race): void {
+    const S = race.track.samples;
+    if (this.mapTrack !== race.track || this.mapDots.length !== race.racers.length) {
+      this.mapTrack = race.track;
+      const xs = S.map((p) => p.x);
+      const ys = S.map((p) => p.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const k = 88 / Math.max(maxX - minX, maxY - minY);
+      this.mapScale = { x0: 50 - ((minX + maxX) / 2) * k, y0: 50 + ((minY + maxY) / 2) * k, k };
+      const d = S.filter((_, i) => i % 4 === 0)
+        .map((p, i) => `${i ? 'L' : 'M'}${(this.mapScale.x0 + p.x * k).toFixed(1)},${(this.mapScale.y0 - p.y * k).toFixed(1)}`)
+        .join(' ');
+      document.getElementById('minimap-path')!.setAttribute('d', `${d}Z`);
+      const g = document.getElementById('minimap-dots')!;
+      g.replaceChildren();
+      this.mapDots = race.racers
+        .map((x, i) => {
+          const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          c.setAttribute('r', i === 0 ? '4.5' : '3');
+          c.setAttribute('fill', i === 0 ? '#D80621' : x.coat);
+          c.setAttribute('stroke', '#fff');
+          c.setAttribute('stroke-width', '1.2');
+          return c;
+        })
+        .reverse();
+      this.mapDots.forEach((c) => g.appendChild(c));
+      this.mapDots.reverse();
+    }
+    const { x0, y0, k } = this.mapScale;
+    race.racers.forEach((x, i) => {
+      this.mapDots[i].setAttribute('cx', (x0 + x.moose.x * k).toFixed(1));
+      this.mapDots[i].setAttribute('cy', (y0 - x.moose.y * k).toFixed(1));
+    });
+  }
+
   private showEvent(text: string, cls: string): void {
     this.eventMsg = text;
     this.eventClass = cls;
@@ -288,6 +330,7 @@ export class Hud {
       const f = Math.max(0, Math.min(1, x.distance / total));
       this.dots[i].style.left = `${(f * 100).toFixed(2)}%`;
     });
+    this.updateMinimap(race);
     const lapNow = Math.min(race.laps, r.lapsDone + 1);
     this.lap.textContent = `${t('lap')} ${lapNow}/${race.laps}`;
     this.time.textContent = formatTime(r.finished ? r.finishTime : raceTime(race));

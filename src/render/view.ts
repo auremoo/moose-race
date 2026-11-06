@@ -30,11 +30,38 @@ const C = {
   lineFar: new THREE.Color(0xffffff),
 };
 
+/** Étiquette « nom · cote » toujours face à la caméra. */
+function nameTag(name: string, rating: number, coat: string): THREE.Sprite {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 64;
+  const g = c.getContext('2d')!;
+  g.fillStyle = 'rgba(255,255,255,0.92)';
+  g.beginPath();
+  if (g.roundRect) g.roundRect(4, 8, 248, 48, 20);
+  else g.rect(4, 8, 248, 48);
+  g.fill();
+  g.fillStyle = coat;
+  g.beginPath();
+  g.arc(32, 32, 12, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = '#5B3A29';
+  g.font = 'bold 26px Nunito, system-ui, sans-serif';
+  g.textBaseline = 'middle';
+  g.fillText(`${name} · ${rating}`, 52, 33);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+  s.scale.set(4, 1, 1);
+  return s;
+}
+
 export class GameView {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
   readonly chase: ChaseCamera;
   private moose: MooseView[] = [];
+  private tags: (THREE.Sprite | null)[] = [];
   private debugLine!: THREE.Line;
   private world!: THREE.Group;
   private ideal!: IdealLine;
@@ -87,10 +114,15 @@ export class GameView {
   }
 
   private addMoose(race: Race): void {
+    this.tags = [];
     for (const r of race.racers) {
       const mv = createMooseView({ coat: r.coat, size: r.size, accessory: r.accessory });
       this.moose.push(mv);
       this.scene.add(mv.root);
+      // Étiquette de nom et de cote au-dessus des bots.
+      const tag = r.id === 0 ? null : nameTag(r.name, r.rating, r.coat);
+      if (tag) this.scene.add(tag);
+      this.tags.push(tag);
     }
   }
 
@@ -118,6 +150,12 @@ export class GameView {
     for (const mv of this.moose) {
       this.scene.remove(mv.root);
       this.disposeObject(mv.root);
+    }
+    for (const tg of this.tags) {
+      if (!tg) continue;
+      this.scene.remove(tg);
+      tg.material.map?.dispose();
+      tg.material.dispose();
     }
     this.moose = [];
     this.addMoose(race);
@@ -274,6 +312,14 @@ export class GameView {
       const view = this.moose[i];
       // Vitrine de l'accueil : seul l'orignal du joueur est montré.
       view.root.visible = i === 0 || !this.showcaseOn;
+      const tag = this.tags[i];
+      if (tag) {
+        const cam = this.chase.camera.position;
+        const dist = Math.hypot(cam.x - simToWorldX(x), cam.z - simToWorldZ(y));
+        tag.visible = !this.showcaseOn && dist < 70;
+        tag.position.set(simToWorldX(x), 4.6 * race.racers[i].size, simToWorldZ(y));
+        tag.material.opacity = Math.max(0, Math.min(1, (70 - dist) / 20));
+      }
       view.root.position.set(simToWorldX(x), 0, simToWorldZ(y));
       view.root.rotation.y = heading;
       let pose: 'race' | 'idle' | 'victory' | 'defeat' = 'race';
@@ -322,8 +368,11 @@ export class GameView {
         const dist = di * race.track.spacing;
         const vLine = race.line.speed[i];
         const reachable = Math.sqrt(vLine * vLine + 2 * decel * Math.max(0, dist - 2));
-        c = v > reachable + 0.4 ? C.lineHot : C.lineOk;
+        const hot = v > reachable + 0.4;
+        c = hot ? C.lineHot : C.lineOk;
         fade = 1 - (di / ahead) * 0.6;
+        // Tirets quand il faut freiner : lisible aussi sans distinguer le rouge du vert.
+        if (hot && Math.floor(i / 3) % 2 === 1) fade *= 0.15;
       }
       for (let side = 0; side < 2; side++) {
         const o = (j * 2 + side) * 3;

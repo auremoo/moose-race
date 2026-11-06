@@ -1254,3 +1254,24 @@ body {
     padding: 20px;
   }
 }
+
+/* Mini-carte du circuit */
+.hud-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+#minimap {
+  width: 92px;
+  height: 92px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+}
+#minimap-path {
+  fill: none;
+  stroke: #5b3a29;
+  stroke-width: 3.2;
+  stroke-linejoin: round;
+  opacity: 0.75;
+}
