@@ -230,6 +230,25 @@ bindCheck('chk-ghost', () => save.ghostOn, (v) => {
   save.ghostOn = v;
   applyGhost();
 });
+bindCheck('chk-contrast', () => save.highContrast, (v) => {
+  save.highContrast = v;
+  document.documentElement.classList.toggle('high-contrast', v);
+});
+// Taille du texte : l'interface (HUD, menus) est agrandie, la scène 3D ne change pas.
+function applyScale(): void {
+  document.documentElement.style.setProperty('--ui-scale', String(save.uiScale));
+  document.documentElement.style.setProperty('--hud-scale', String(Math.min(save.uiScale, 1.12)));
+  document.querySelectorAll<HTMLElement>('[data-scale]').forEach((b) => b.classList.toggle('on', Number(b.dataset.scale) === save.uiScale));
+}
+document.querySelectorAll<HTMLButtonElement>('[data-scale]').forEach((b) =>
+  b.addEventListener('click', () => {
+    save.uiScale = Number(b.dataset.scale);
+    writeSave(save);
+    applyScale();
+  }),
+);
+applyScale();
+document.documentElement.classList.toggle('high-contrast', save.highContrast);
 bindCheck('chk-motion', () => save.reduceMotion, (v) => {
   save.reduceMotion = v;
   document.documentElement.classList.toggle('reduce-motion', v);

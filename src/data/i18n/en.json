@@ -156,5 +156,7 @@
   "dailyDone": "Done today",
   "dailyBonus": "Daily challenge: +{n}",
   "item_bief": "Water shortcut",
-  "biefOpen": "Shortcut open: aim for the channel!"
+  "biefOpen": "Shortcut open: aim for the channel!",
+  "textSize": "Text size",
+  "highContrast": "High contrast"
 }

@@ -156,5 +156,7 @@
   "dailyDone": "Réussi aujourd'hui",
   "dailyBonus": "Défi du jour : +{n}",
   "item_bief": "Bief",
-  "biefOpen": "Bief ouvert : vise le canal !"
+  "biefOpen": "Bief ouvert : vise le canal !",
+  "textSize": "Taille du texte",
+  "highContrast": "Contraste renforcé"
 }

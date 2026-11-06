@@ -23,6 +23,9 @@ export interface SaveData {
   ghostOn: boolean;
   /** Jours où le défi du jour a été terminé (clés AAAA-MM-JJ, les 30 derniers). */
   dailyDone: string[];
+  /** Échelle de l'interface (texte et boutons) : 1, 1,15 ou 1,3. */
+  uiScale: number;
+  highContrast: boolean;
   /** Langue choisie ; absente = langue du téléphone. */
   lang?: 'fr' | 'en';
   /** Solde de pièces à feuille d'érable (l'économie arrive au jalon 7). */
@@ -60,6 +63,8 @@ const DEFAULTS: SaveData = {
   tutorialDone: false,
   ghostOn: true,
   dailyDone: [],
+  uiScale: 1,
+  highContrast: false,
   coins: 0,
   activeMoose: 'bucheron',
   owned: ['bucheron'],

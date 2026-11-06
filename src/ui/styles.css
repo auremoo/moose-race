@@ -1375,3 +1375,65 @@ body {
 #app.on-podium #steer-zone {
   visibility: hidden;
 }
+
+/* Taille du texte réglable : HUD et menus agrandis (la scène 3D garde sa taille). */
+:root {
+  --ui-scale: 1;
+}
+/* Le HUD de course est moins agrandi pour garder sa ligne du haut sur l'écran. */
+#hud {
+  zoom: var(--hud-scale, 1);
+}
+.screen,
+.overlay > .card,
+#tutorial,
+#toast {
+  zoom: var(--ui-scale);
+}
+.seg-md {
+  font-size: 19px;
+}
+.seg-lg {
+  font-size: 23px;
+}
+/* Contraste renforcé : textes plus sombres, fonds opaques, contours marqués. */
+.high-contrast {
+  --brun: #1e120b;
+  --gris-levre: #7a6a5e;
+}
+.high-contrast .pill,
+.high-contrast .gauge,
+.high-contrast .card,
+.high-contrast .prep-card,
+.high-contrast .course-card,
+.high-contrast .moose-card,
+.high-contrast .tile {
+  outline: 2px solid #1e120b;
+}
+.high-contrast #minimap {
+  background: #fff;
+}
+.high-contrast .muted,
+.high-contrast .prep-desc,
+.high-contrast .course-info small {
+  opacity: 1;
+}
+
+/* Ligne du haut du HUD compressible sur les petits écrans (320 px). */
+.hud-row:first-child {
+  gap: 6px;
+}
+.hud-row:first-child .pill {
+  min-width: 0;
+  flex-shrink: 1;
+  font-size: clamp(14px, 5.2vw, 20px);
+  padding: 6px clamp(6px, 2.5vw, 12px);
+}
+.hud-row:first-child .pill-time {
+  flex: 1 1 auto;
+}
+.hud-row:first-child .btn-icon {
+  flex-shrink: 0;
+  width: clamp(40px, 12vw, 48px);
+  height: clamp(40px, 12vw, 48px);
+}
