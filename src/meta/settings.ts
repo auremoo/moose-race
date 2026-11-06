@@ -21,6 +21,8 @@ export interface SaveData {
   tutorialDone: boolean;
   /** Fantôme du meilleur temps affiché en course. */
   ghostOn: boolean;
+  /** Jours où le défi du jour a été terminé (clés AAAA-MM-JJ, les 30 derniers). */
+  dailyDone: string[];
   /** Langue choisie ; absente = langue du téléphone. */
   lang?: 'fr' | 'en';
   /** Solde de pièces à feuille d'érable (l'économie arrive au jalon 7). */
@@ -57,6 +59,7 @@ const DEFAULTS: SaveData = {
   reduceMotion: false,
   tutorialDone: false,
   ghostOn: true,
+  dailyDone: [],
   coins: 0,
   activeMoose: 'bucheron',
   owned: ['bucheron'],

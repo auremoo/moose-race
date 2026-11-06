@@ -151,5 +151,8 @@
   "tutoDone": "Tutorial complete!",
   "updateReady": "New version ready: tap to reload",
   "wind": "Wind",
-  "ghost": "Best-time ghost"
+  "ghost": "Best-time ghost",
+  "dailyTitle": "Daily challenge",
+  "dailyDone": "Done today",
+  "dailyBonus": "Daily challenge: +{n}"
 }

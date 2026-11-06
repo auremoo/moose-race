@@ -12,6 +12,7 @@ import { InputManager } from './input/input';
 import { coinsFor, FIRST_WIN_BONUS, firstWinKey } from './meta/economy';
 import { exportSave, importSave, loadSave, writeSave } from './meta/settings';
 import { ghostPose, GhostRecorder, loadGhost, saveGhost } from './meta/ghost';
+import { DAILY_BONUS, dailyChallenge, type DailyChallenge } from './meta/daily';
 import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
 import { createRace, estimatedFinishTime, raceTime, standings, stepRace, type Race } from './sim/race';
@@ -44,8 +45,11 @@ let difficulty: DifficultyId = save.difficulty;
 let botCount = save.botCount;
 let mode: 'classique' | 'special' = save.mode;
 
+/** Défi du jour en cours (null pour une course normale). */
+let daily: DailyChallenge | null = null;
+
 function newRace(): Race {
-  const seed = 1 + save.raceCount * 7919;
+  const seed = daily ? daily.seed : 1 + save.raceCount * 7919;
   const entrants = buildEntrants({
     playerName: t('you'),
     playerMooseId: save.activeMoose,
@@ -135,6 +139,7 @@ const menus = new Menus(save, {
     const def = trackById(c.trackId ?? '');
     if (!def) return;
     const changed = def.id !== trackDef.id;
+    daily = null;
     course = c;
     trackDef = def;
     difficulty = setup.difficulty;
@@ -147,6 +152,20 @@ const menus = new Menus(save, {
     restart(changed);
   },
   onTutorial: () => startTutorial(),
+  onDaily: () => {
+    const d = dailyChallenge();
+    const def = trackById(d.course.trackId ?? '');
+    if (!def) return;
+    const changed = def.id !== trackDef.id;
+    daily = d;
+    course = d.course;
+    trackDef = def;
+    difficulty = d.difficulty;
+    botCount = d.botCount;
+    mode = d.mode;
+    menus.show(null);
+    restart(changed);
+  },
   onCollectionChange: () => {
     // Nouvel orignal actif ou nouveau niveau : la vitrine et la prochaine course en tiennent compte.
     race = newRace();
@@ -178,6 +197,7 @@ function startTutorial(): void {
   const c = courses.find((x) => x.id === 'prairie-tranquille') ?? courses[0];
   const def = trackById(c.trackId ?? '')!;
   const changed = def.id !== trackDef.id;
+  daily = null;
   course = { ...c, laps: 1 };
   trackDef = def;
   difficulty = 'facile';
@@ -295,6 +315,12 @@ function onFinish(): void {
   if (rank === 1 && N > 1 && !save.firstWins.includes(key)) {
     bonus = FIRST_WIN_BONUS;
     save.firstWins.push(key);
+  }
+  // Défi du jour : bonus à la première arrivée du jour.
+  if (daily && !save.dailyDone.includes(daily.key)) {
+    bonus += DAILY_BONUS;
+    save.dailyDone = [...save.dailyDone.slice(-29), daily.key];
+    menus.toast(t('dailyBonus').replace('{n}', String(DAILY_BONUS)));
   }
   coins += bonus;
   save.coins += coins;

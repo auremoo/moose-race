@@ -15,6 +15,7 @@ import {
 } from '../data';
 import type { SaveData } from '../meta/settings';
 import { formatTime } from './hud';
+import { DAILY_BONUS, dailyChallenge } from '../meta/daily';
 import { CollectionScreens } from './collectionScreens';
 import { getLang, t, type TextKey } from './i18n';
 
@@ -32,6 +33,7 @@ export interface MenuCallbacks {
   /** La collection a changé (orignal actif, niveau…). */
   onCollectionChange(): void;
   onTutorial(): void;
+  onDaily(): void;
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -86,6 +88,7 @@ export class Menus {
       (m) => this.toast(m),
     );
     $('btn-play').addEventListener('click', () => this.show('map'));
+    $('btn-daily').addEventListener('click', () => this.cb.onDaily());
     document.querySelector('.tile[data-feature="enclos"]')?.addEventListener('click', () => this.show('enclos'));
     document.querySelector('.tile[data-feature="comptoir"]')?.addEventListener('click', () => this.show('comptoir'));
     document.querySelector('.tile[data-feature="didacticiel"]')?.addEventListener('click', () => this.cb.onTutorial());
@@ -176,6 +179,11 @@ export class Menus {
   }
 
   renderHome(): void {
+    const daily = dailyChallenge();
+    $('daily-name').textContent = daily.course.name;
+    const done = this.save.dailyDone.includes(daily.key);
+    $('daily-info').textContent = `${'★'.repeat(daily.course.stars)} · ${daily.mode === 'special' ? t('modeSpecial') : t('modeClassic')} · ${tk(daily.difficulty === 'difficile' ? 'hard' : daily.difficulty === 'facile' ? 'easy' : 'medium')} · ${done ? t('dailyDone') : `+${DAILY_BONUS}`}`;
+    $('btn-daily').classList.toggle('done', done);
     // Première visite : le didacticiel est mis en avant.
     document.querySelector('.tile[data-feature="didacticiel"]')?.classList.toggle('highlight', !this.save.tutorialDone);
     const m = this.activeMoose();

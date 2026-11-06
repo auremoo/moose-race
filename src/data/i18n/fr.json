@@ -151,5 +151,8 @@
   "tutoDone": "Didacticiel terminé !",
   "updateReady": "Nouvelle version prête : touche pour recharger",
   "wind": "Vent",
-  "ghost": "Fantôme du meilleur temps"
+  "ghost": "Fantôme du meilleur temps",
+  "dailyTitle": "Défi du jour",
+  "dailyDone": "Réussi aujourd'hui",
+  "dailyBonus": "Défi du jour : +{n}"
 }

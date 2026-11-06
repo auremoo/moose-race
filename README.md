@@ -104,6 +104,11 @@ plus offensive que tu es loin au classement ; réapparition après 5 s. Bouton C
 Les bots suivent les mêmes règles. Pièces +25 %. Tout est tiré avec la graine de la course (même comportement
 en multijoueur). Non fait : le Bief (raccourci d'eau), voir les issues.
 
+## Défi du jour
+
+Carte sur l'accueil : circuit, mode, difficulté et graine tirés de la date, identiques pour tous les joueurs
+le même jour (10 bots). Bonus de 100 pièces à la première arrivée du jour.
+
 ## Fantôme
 
 À chaque record sur un circuit, la trajectoire est enregistrée (10 poses par seconde, stockée à part :

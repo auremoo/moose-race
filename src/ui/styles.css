@@ -1306,3 +1306,45 @@ body {
 .wind.gust {
   color: var(--rouge);
 }
+
+/* Défi du jour */
+.daily-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 0;
+  border-radius: 16px;
+  padding: 10px 14px;
+  background: var(--blanc);
+  border-left: 8px solid var(--or);
+  box-shadow: 0 5px 0 var(--gris-levre);
+  color: var(--brun);
+  font-family: var(--font-texte);
+  text-align: left;
+  cursor: pointer;
+}
+.daily-card:active {
+  transform: translateY(5px);
+  box-shadow: none;
+}
+.daily-card.done {
+  border-left-color: var(--vert);
+}
+.daily-badge {
+  font-weight: 900;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #b8620a;
+}
+.daily-card strong {
+  font-family: var(--font-titre);
+  font-weight: 400;
+  font-size: 19px;
+}
+.daily-card small {
+  font-weight: 800;
+  font-size: 12px;
+  opacity: 0.75;
+}
