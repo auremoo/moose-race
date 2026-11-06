@@ -26,6 +26,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      # Tests de bout en bout sur un téléphone émulé, contre le build de production.
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

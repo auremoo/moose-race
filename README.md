@@ -28,6 +28,7 @@ Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le c
 npm install
 npm run dev        # serveur local, accessible depuis le téléphone sur le même Wi-Fi
 npm test           # tests de la simulation, sans navigateur
+npm run e2e        # tests de bout en bout (Playwright, téléphone émulé), après npm run build
 npm run build      # vérification des types + build dans dist/
 npm run track:report -- src/data/tracks/boucle-grise.json piste.svg   # rapport d'une piste
 npm run balance -- 1000     # critères d'équilibrage du cahier (duels simulés sans rendu)
