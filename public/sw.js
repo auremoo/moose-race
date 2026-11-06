@@ -1,6 +1,7 @@
 // Service worker de Panache : le jeu reste jouable hors ligne après une première visite.
 // Stratégie : réseau d'abord pour la page (mise à jour rapide), cache d'abord pour les fichiers versionnés.
-const CACHE = 'panache-v1';
+// Le nom du cache dépend du build (paramètre ?v= à l'enregistrement).
+const CACHE = `panache-${new URL(self.location.href).searchParams.get('v') || 'dev'}`;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest'])));
@@ -18,8 +19,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
-  const isFont = url.host.endsWith('fonts.googleapis.com') || url.host.endsWith('fonts.gstatic.com');
-  if (!sameOrigin && !isFont) return;
+  if (!sameOrigin) return;
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)

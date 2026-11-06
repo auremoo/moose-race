@@ -148,5 +148,6 @@
   "tuto6": "Dans un virage, freine en braquant fort pour glisser. Relâche : élan !",
   "tuto7": "Bravo, tu sais tout ! Termine le tour.",
   "tutoSkip": "Passer",
-  "tutoDone": "Didacticiel terminé !"
+  "tutoDone": "Didacticiel terminé !",
+  "updateReady": "Nouvelle version prête : touche pour recharger"
 }

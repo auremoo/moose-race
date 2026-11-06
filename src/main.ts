@@ -1,6 +1,11 @@
 /**
  * Point d'entrée : relie entrées → simulation (pas fixe 60 Hz) → rendu interpolé → interface.
  */
+// Polices hébergées avec le jeu (licence OFL) : pas d'appel à Google, jeu complet hors ligne.
+import '@fontsource/lilita-one/latin-400.css';
+import '@fontsource/nunito/latin-600.css';
+import '@fontsource/nunito/latin-800.css';
+import '@fontsource/nunito/latin-900.css';
 import './ui/styles.css';
 import { balance, courses, trackById, tracks, type CourseDef, type DifficultyId } from './data';
 import { InputManager } from './input/input';
@@ -442,8 +447,30 @@ function soundEvents(): void {
 }
 
 // Application installable (PWA) : service worker en production seulement.
+// Le cache est lié au build : une nouvelle version publiée remplace l'ancienne.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => void navigator.serviceWorker.register('./sw.js').catch(() => undefined));
+  window.addEventListener('load', () => {
+    // Première visite : pas de bandeau, il n'y a pas d'ancienne version à remplacer.
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker
+      .register(`./sw.js?v=${__BUILD_ID__}`)
+      .then((reg) => {
+        reg.addEventListener('updatefound', () => {
+          const w = reg.installing;
+          w?.addEventListener('statechange', () => {
+            if (w.state === 'activated' && hadController) showUpdateBanner();
+          });
+        });
+      })
+      .catch(() => undefined);
+  });
+}
+function showUpdateBanner(): void {
+  const b = document.getElementById('update-banner');
+  if (!b) return;
+  b.textContent = t('updateReady');
+  b.hidden = false;
+  b.addEventListener('click', () => location.reload(), { once: true });
 }
 
 // Modèles GLB éventuels : chargés une fois, puis appliqués dès la course suivante.

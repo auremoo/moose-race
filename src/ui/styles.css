@@ -1275,3 +1275,21 @@ body {
   stroke-linejoin: round;
   opacity: 0.75;
 }
+
+#update-banner {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  transform: translateX(-50%);
+  z-index: 20;
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: var(--vert);
+  color: var(--blanc);
+  font-weight: 900;
+  box-shadow: 0 4px 0 #1f6b40;
+}
+#update-banner[hidden] {
+  display: none;
+}

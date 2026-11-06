@@ -148,5 +148,6 @@
   "tuto6": "In a corner, brake while steering hard to drift. Let go: boost!",
   "tuto7": "Well done, you know it all! Finish the lap.",
   "tutoSkip": "Skip",
-  "tutoDone": "Tutorial complete!"
+  "tutoDone": "Tutorial complete!",
+  "updateReady": "New version ready: tap to reload"
 }
