@@ -281,7 +281,8 @@ export class CollectionScreens {
     if (owned) {
       const acc = accessoryOf(this.save, def.id);
       accessorySwatch($('acc-swatch'), acc);
-      $('acc-name').textContent = `${t('accessoryLbl')} : ${acc.name[getLang()]}`;
+      $('acc-name').textContent = acc.name[getLang()];
+      $('detail-acc').setAttribute('aria-label', `${t('accessoryLbl')} : ${acc.name[getLang()]}`);
     }
     $('detail-close').textContent = t('close');
   }

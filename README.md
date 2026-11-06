@@ -74,22 +74,22 @@ Chaque push sur `main` lance ensuite les tests, le build et le déploiement.
 
 Les bots suivent la ligne de course avec une erreur propre à leur talent (bruit de trajectoire, virages
 ratés), dépassent du côté libre, évitent les contacts et galopent dans les lignes droites. Ils obéissent à la
-même physique que le joueur. Leur cote est calée sur la tienne : Facile −6, Moyen ±0, Difficile +4 (en dessous
-de la cote des communs, leurs stats sont abaissées). Rattrapage léger (≤ 3 %) en Facile et Moyen, aucun en
+même physique que le joueur. Leur puissance est calée sur la tienne : Facile −6, Moyen ±0, Difficile +4 (en dessous
+de la puissance des communs, leurs stats sont abaissées). Rattrapage léger (≤ 3 %) en Facile et Moyen, aucun en
 Difficile. Facile ajoute une petite aide à la direction ; Difficile masque la ligne idéale.
 
 Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000 duels simulés sans rendu) :
 
 | Critère | Mesuré | Cible |
 | --- | --- | --- |
-| Expert contre moyen à cote égale | 93,7 % | ≥ 85 % |
-| +10 de cote, pilotage identique | 71,2 % | ≤ 80 % |
-| Meilleur orignal à cote égale (Ti-Gus) | 54 % | ≤ 60 % |
-| Courses pour améliorer un Commun au niveau 10 | 33,8 en moyenne (30 à 39) | 25 à 40 |
+| Expert contre moyen à puissance égale | 93,4 % | ≥ 85 % |
+| +10 de puissance, pilotage identique | 71,9 % | ≤ 80 % |
+| Meilleur orignal à puissance égale (Tempête) | 55,3 % | ≤ 60 % |
+| Courses pour améliorer un Commun au niveau 10 | 30,9 en moyenne (coffres compris) | 25 à 40 |
 
 ## Collection et économie
 
-- **Enclos** : les 20 orignaux, stats, niveau, cote ; Améliorer (+2 aux 5 stats par niveau, jusqu'au niveau 10), Choisir.
+- **Enclos** : les 20 orignaux, stats, niveau, puissance (moyenne des 5 stats) ; Améliorer (+2 aux 5 stats par niveau, jusqu'au niveau 10), Choisir.
 - **Comptoir** : ravitaillement à 300 pièces (chances affichées : Commun 60 %, Peu commun 27 %, Rare 10 %,
   Épique 2,5 %, Légendaire 0,5 % ; Rare ou mieux garanti tous les 10), achat direct (sauf les communs),
   fragments de panache donnés par les doublons, échangeables contre l'orignal de son choix.

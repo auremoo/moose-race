@@ -1641,3 +1641,53 @@ img.shot {
   height: 180px;
   margin: 0 auto;
 }
+
+/* « Puissance 40 » est plus long que l'ancien « Cote 40 » : rien ne doit déborder sur 320 px. */
+.active-moose {
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 2px;
+}
+.active-moose .cote,
+#detail-cote {
+  white-space: nowrap;
+}
+.detail-level {
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+.portrait,
+.acc-swatch {
+  flex-shrink: 0;
+}
+.detail-head > div {
+  min-width: 0;
+}
+.detail-head h2 {
+  overflow-wrap: break-word;
+  font-size: clamp(20px, 6.5vw, 34px);
+}
+.acc-row {
+  display: grid;
+  grid-template-columns: 40px auto 1fr 40px;
+  gap: 8px;
+}
+.acc-row #acc-name {
+  min-width: 0;
+}
+.acc-row .btn-icon {
+  width: 40px;
+  height: 40px;
+}
+.acc-row .acc-swatch {
+  width: 30px;
+  height: 30px;
+  border-width: 2px;
+}
+@media (max-width: 380px) {
+  .portrait.big {
+    width: 70px;
+    height: 70px;
+  }
+}
