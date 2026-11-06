@@ -84,6 +84,7 @@ export class Hud {
   private mapDots: SVGCircleElement[] = [];
   private mapScale = { x0: 0, y0: 0, k: 1 };
   private lastCordeTick = -1;
+  private perfectShown = false;
   private lastBoost = 0;
   private eventMsg = '';
   private eventClass = '';
@@ -418,6 +419,7 @@ export class Hud {
     // Annonce de la météo au début du compte à rebours.
     if (race !== this.weatherRace) {
       this.weatherRace = race;
+      this.perfectShown = false;
       if (race.weather !== 'clair') this.showEvent(t(race.weather === 'pluie' ? 'weatherRain' : 'weatherFog'), '');
     }
 
@@ -444,7 +446,10 @@ export class Hud {
       if (r.lastCordeTick >= 0) this.showEvent(t('corde'), 'good');
       this.lastCordeTick = r.lastCordeTick;
     }
-    if (r.moose.boostTime > this.lastBoost + 0.2) this.showEvent(t('boost'), 'gold');
+    if (r.perfectStart && !this.perfectShown) {
+      this.perfectShown = true;
+      this.showEvent(t('perfectStart'), 'gold');
+    } else if (r.moose.boostTime > this.lastBoost + 0.2) this.showEvent(t('boost'), 'gold');
     this.lastBoost = r.moose.boostTime;
     this.eventTimer = Math.max(0, this.eventTimer - dt);
 

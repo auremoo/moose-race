@@ -82,10 +82,10 @@ Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000
 
 | Critère | Mesuré | Cible |
 | --- | --- | --- |
-| Expert contre moyen à puissance égale | 90,2 % | ≥ 85 % |
-| +10 de puissance, pilotage identique | 66,9 % | ≤ 80 % |
-| Meilleur orignal à puissance égale (Tempête) | 58,0 % | ≤ 60 % |
-| Courses pour améliorer un Commun au niveau 10 | 35,9 en moyenne (coffres compris) | 25 à 40 |
+| Expert contre moyen à puissance égale | 87,5 % | ≥ 85 % |
+| +10 de puissance, pilotage identique | 67,9 % | ≤ 80 % |
+| Meilleur orignal à puissance égale (Tempête) | 58,7 % | ≤ 60 % |
+| Courses pour améliorer un Commun au niveau 10 | 36,2 en moyenne (coffres compris) | 25 à 40 |
 
 ## Collection et économie
 
@@ -116,8 +116,8 @@ qu'il contient : 12, 30, 70 ou 150). Un toucher ouvre un coffre, tout de suite, 
 possédé (toujours dans l'aurore boréale). Plus la place est bonne, meilleur est le coffre en moyenne.
 Réglages : `src/data/chests.json`.
 
-L'équilibrage compte tous les coffres ouverts : ils font 7,1 % des pièces et un Commun se monte au
-niveau 10 en 35,9 courses (critère du cahier : 25 à 40). Sauvegarde en schéma 4 (migration automatique).
+L'équilibrage compte tous les coffres ouverts : ils font 6,7 % des pièces et un Commun se monte au
+niveau 10 en 36,2 courses (critère du cahier : 25 à 40). Sauvegarde en schéma 4 (migration automatique).
 
 ## Mode Ours et castors
 
@@ -166,6 +166,18 @@ Rocheuses : 15 % / 20 % ; jamais de pluie sur la neige). Même graine, même mé
 - **Brouillard** : rendu seulement (on voit moins loin), aucune incidence sur la physique.
 - Annonce au départ (« Pluie : sentier glissant »). Pour tester : `?meteo=pluie`, `?meteo=brouillard` ou `?meteo=clair`.
 
+## Pilotage
+
+- **Ligne idéale** : trajectoire de courbure minimale à 0,7 m du bord, vitesse visée calculée sur une
+  courbure lissée sur ±10 m. Elle rougit (en tirets) seulement là où il faut ralentir, d'après l'orignal du
+  joueur : plus de rouge au galop en ligne droite.
+- **Herbe** : le bas-côté freine (l'orignal s'y enfonce, pleine résistance à 2 m du bord). Couper un virage par
+  l'herbe ne paie plus (test sur 5 circuits ; avant, jusqu'à 5 s gagnées par tour). Les épingles serrées
+  (rayon ≤ 16 m) ont un bas-côté de 2,5 m bordé de foin.
+- **Départ parfait** : appuyer sur Fonce dans la dernière demi-seconde du compte à rebours donne 1 s d'élan ;
+  trop tôt, rien. Les bots le réussissent selon leur talent.
+- **Direction** : braquage complet en 0,14 s. Lignes de vitesse sur les bords à haute vitesse et au galop.
+
 ## Chicanes
 
 Deux virages serrés (≈ 64°, rayon ≈ 13 m) reliés par de courts bouts droits : la piste se décale d'environ
@@ -175,7 +187,7 @@ ont). Le générateur (`tools/track-gen.ts`) produit ces zones (`vergeZones`) au
 
 ## Bifurcation (Automne en Mauricie)
 
-Avant le virage du bas, à gauche de la carte, une branche étroite (7 m, racines sur 70 % de sa longueur) coupe
+Avant le virage du bas, à gauche de la carte, une branche étroite (7 m, racines sur 40 % de sa longueur) coupe
 le coin intérieur : 149 m au lieu de 185 m. Pour la prendre, on sort sur le bas-côté du côté du panneau jaune
 avant l'embranchement ; la ligne de course n'y passe jamais, on ne s'y retrouve donc pas par hasard. Gain
 d'environ 0,4 s par tour en passage propre ; une touche de barrière ou une sortie dans l'herbe le fait perdre.

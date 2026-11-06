@@ -72,6 +72,9 @@ export interface Racer {
   /** Engagé sur la bifurcation, et position sur la branche. */
   onFork: boolean;
   forkProj: ForkProjection;
+  /** Pas où l'accélérateur a été enfoncé pendant le compte à rebours (-1 sinon), et départ parfait obtenu. */
+  throttleTick: number;
+  perfectStart: boolean;
   /** Bief ouvert pour ce participant (s restantes). */
   biefOpen: number;
   /** Distance nagée dans le canal (m), −1 hors du bief. */
@@ -195,6 +198,8 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
       swim: -1,
       onFork: false,
       forkProj: { index: 0, s: 0, d: 0 },
+      throttleTick: -1,
+      perfectStart: false,
     };
   });
   const race: Race = {
@@ -272,6 +277,32 @@ export function surfaceUnder(r: Race, racer: Racer): SurfaceId {
   return r.track.samples[racer.proj.index].surface;
 }
 
+/**
+ * Bas-côté : l'herbe freine (l'orignal s'y enfonce), d'autant plus qu'on va vite et qu'on s'éloigne du
+ * bord (pleine résistance à 2 m : mordre le bord coûte peu, couper franchement coûte cher). Sans ça, couper un virage par l'herbe intérieure était plus rapide que
+ * la ligne de course : l'herbe ne bornait que la vitesse de pointe, bien au-dessus de la vitesse en virage.
+ */
+function vergeDrag(r: Race, m: MooseState, depth: number): void {
+  if (depth <= 0 || m.speed <= 5) return;
+  const f = Math.min(1, depth / 2);
+  m.speed = Math.max(5, m.speed * (1 - r.balance.barrier.vergeDragPerSecond * f * r.dt));
+}
+
+/** Voie d'accès de la bifurcation : 30 m avant l'embranchement et après la jonction, côté branche (pas de résistance). */
+function inForkMouth(r: Race, racer: Racer): boolean {
+  const f = r.fork;
+  if (!f || racer.proj.d * f.side <= 0) return false;
+  const L = r.track.length;
+  const s = racer.proj.s;
+  const toEntry = (r.track.samples[f.from].s - s + L) % L;
+  const fromExit = (s - r.track.samples[f.to].s + L) % L;
+  return toEntry < 30 || fromExit < 30;
+}
+
+/** Départ parfait : fenêtre (s) avant le « Partez ! » et durée de l'élan (s). */
+export const PERFECT_START_WINDOW = 0.5;
+export const PERFECT_START_BOOST = 1.0;
+
 /** Vent de travers : il pousse l'orignal sur le côté, d'autant plus qu'il court vite et à découvert. */
 function applyWind(r: Race, m: MooseState): void {
   if (!r.track.def.wind || r.phase === 'countdown' || m.speed <= 2) return;
@@ -300,6 +331,7 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   const smp = track.samples[racer.proj.index];
   const slope = smp.slope * (Math.cos(m.heading) * smp.tx + Math.sin(m.heading) * smp.ty);
   stepMoose(m, cmd, r.surfaces[surfaceId], racer.params, r.dt, slope);
+  if (!inForkMouth(r, racer)) vergeDrag(r, m, absD - track.samples[racer.proj.index].hw);
   applyWind(r, m);
 
   let proj = projectOnTrack(track, m.x, m.y, racer.proj.index);
@@ -356,6 +388,7 @@ function stepFork(r: Race, racer: Racer, cmd: Commands): void {
   const slope =
     ((f.samples[f.samples.length - 1].z - f.samples[0].z) / f.length) * (Math.cos(m.heading) * fs.tx + Math.sin(m.heading) * fs.ty);
   stepMoose(m, cmd, r.surfaces[surfaceId], racer.params, r.dt, slope);
+  vergeDrag(r, m, Math.abs(racer.forkProj.d) - f.hw);
   applyWind(r, m);
   let p = projectOnFork(f, m.x, m.y, racer.forkProj.index);
   const limit = f.hw + f.verge;
@@ -537,7 +570,27 @@ function resolveContacts(r: Race): void {
 export function stepRace(r: Race, commands: Commands[]): void {
   r.tick++;
   if (r.phase === 'countdown') {
-    if (r.tick >= r.countdownTicks) r.phase = 'running';
+    // Départ parfait : accélérateur enfoncé dans la dernière demi-seconde (pas avant) → élan au départ.
+    for (let i = 0; i < r.racers.length; i++) {
+      const racer = r.racers[i];
+      if (racer.bot) continue;
+      if ((commands[i]?.throttle ?? 0) > 0) {
+        if (racer.throttleTick < 0) racer.throttleTick = r.tick;
+      } else racer.throttleTick = -1;
+    }
+    if (r.tick >= r.countdownTicks) {
+      r.phase = 'running';
+      const window = PERFECT_START_WINDOW * r.balance.sim.hz;
+      for (const racer of r.racers) {
+        const perfect = racer.bot
+          ? r.rng.next() < 0.1 + 0.4 * racer.bot.talent
+          : racer.throttleTick >= 0 && r.countdownTicks - racer.throttleTick <= window;
+        if (perfect) {
+          racer.perfectStart = true;
+          racer.moose.boostTime = Math.max(racer.moose.boostTime, PERFECT_START_BOOST);
+        }
+      }
+    }
     return;
   }
   updateDrafting(r);

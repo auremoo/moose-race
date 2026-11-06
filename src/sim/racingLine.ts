@@ -29,7 +29,7 @@ export interface RacingLine {
 }
 
 /** Demi-largeur de l'orignal plus une petite marge : la ligne ne frôle pas le bord. */
-const EDGE_MARGIN = 1.6;
+const EDGE_MARGIN = 0.7;
 
 const cache = new WeakMap<Track, RacingLine>();
 
@@ -88,7 +88,9 @@ export function computeRacingLine(track: Track, p: MooseParams, surfaces: Record
     y[i] = py(i);
   }
 
-  // Courbure de la ligne : variation de cap sur ±2 échantillons, lissée sur ±3.
+  // Courbure de la ligne : variation de cap sur ±2 échantillons, lissée sur ±10 m. Un lissage court (±3)
+  // gardait des pics là où la ligne s'enroule sur le bord intérieur : le profil freinait pour rien et la
+  // ligne était battue de 3 % en moyenne par un pilote qui visait la courbure de l'axe.
   const heading = new Float64Array(n);
   for (let i = 0; i < n; i++) {
     const a = (i - 1 + n) % n;
@@ -108,8 +110,8 @@ export function computeRacingLine(track: Track, p: MooseParams, surfaces: Record
   const kLine = new Float64Array(n);
   for (let i = 0; i < n; i++) {
     let acc = 0;
-    for (let j = -3; j <= 3; j++) acc += kRaw[(i + j + n) % n];
-    kLine[i] = acc / 7;
+    for (let j = -10; j <= 10; j++) acc += kRaw[(i + j + n) % n];
+    kLine[i] = acc / 21;
   }
 
   const speed = speedProfile(track, x, y, kLine, p, surfaces);

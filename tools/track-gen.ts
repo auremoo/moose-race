@@ -265,8 +265,8 @@ interface Pt {
 }
 
 interface Traced {
-  /** Portions en chicane : distances (m) depuis le départ du tracé brut. */
-  chicanes: [number, number][];
+  /** Portions à bas-côté étroit (chicanes, épingles) : distances (m) depuis le départ du tracé brut, largeur. */
+  chicanes: [number, number, number][];
   pts: Pt[];
   turn: number;
   end: [number, number];
@@ -315,7 +315,7 @@ function traceRaw(tokens: string[]): Traced {
   let base = 16;
   let turn = 0;
   let dist = 0;
-  const chicanes: [number, number][] = [];
+  const chicanes: [number, number, number][] = [];
   const push = (w: number) => pts.push({ x, y, w });
   tokens.forEach((tok, ti) => {
     const kind = tok[0];
@@ -328,8 +328,12 @@ function traceRaw(tokens: string[]): Traced {
           : 0;
     if (chicaneTokens.has(ti)) {
       const last = chicanes[chicanes.length - 1];
-      if (last && Math.abs(last[1] - start) < 1e-6) last[1] = dist;
-      else chicanes.push([start, dist]);
+      if (last && Math.abs(last[1] - start) < 1e-6 && last[2] === 1.5) last[1] = dist;
+      else chicanes.push([start, dist, 1.5]);
+    } else if (kind === 'R' || kind === 'L') {
+      // Épingle serrée (rayon ≤ 16 m, au moins 90°) : bas-côté de 2,5 m, sinon on la coupe par l'herbe.
+      const [a, r] = tok.slice(1).split('@').map(Number);
+      if (r <= 16 && a >= 90) chicanes.push([start, dist, 2.5]);
     }
     if (kind === 'W') {
       base = Number(tok.slice(1));
@@ -379,7 +383,7 @@ function traceRaw(tokens: string[]): Traced {
  * Ferme la boucle exactement en allongeant ou raccourcissant deux lignes droites
  * de directions différentes (la paire qui demande la plus petite retouche).
  */
-function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number, number]; chicanes: [number, number][] } {
+function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number, number]; chicanes: [number, number, number][] } {
   const tokens = expand(spec.route);
   const first = traceRaw(tokens);
   const gx = -first.end[0];
@@ -514,12 +518,12 @@ for (const spec of all) {
       ...(chicanes.length ? { vergeZones: [] } : {}),
       points: pts.map((p) => [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10, p.w] as [number, number, number]),
     };
-    // Chicanes : bas-côté de 1,5 m (avec 8 m de marge avant et après), en fractions du tour mesurées
+    // Chicanes (1,5 m) et épingles serrées (2,5 m) : bas-côté étroit, 8 m de marge avant et après, en fractions du tour mesurées
     // depuis la ligne de départ (décalée de startOffset sur le tracé).
     if (chicanes.length) {
       const L = buildTrack(def, 1).length;
       const frac = (d: number) => Math.round((((((d - def.startOffset) / L) % 1) + 1) % 1) * 10000) / 10000;
-      def.vergeZones = chicanes.map(([a, b]) => ({ from: frac(a - 8), to: frac(b + 8), verge: 1.5 }));
+      def.vergeZones = chicanes.map(([a, b, v]) => ({ from: frac(a - 8), to: frac(b + 8), verge: v }));
     }
     info = `retouche ${gap.toFixed(0)} m, écart brut (${raw[0]}, ${raw[1]})`;
     writeFileSync(

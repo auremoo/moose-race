@@ -487,6 +487,11 @@ export class GameView {
       const view = this.moose[i];
       // Vitrine de l'accueil : seul l'orignal du joueur est montré.
       view.root.visible = i === 0 || !this.showcaseOn;
+      // Un orignal collé à la caméra (grille de départ, peloton) bouchait la vue : on le masque.
+      if (i > 0 && view.root.visible) {
+        const cp = this.chase.camera.position;
+        view.root.visible = Math.hypot(cp.x - simToWorldX(x), cp.z - simToWorldZ(y)) > 4.5;
+      }
       const tag = this.tags[i];
       if (tag) {
         const cam = this.chase.camera.position;

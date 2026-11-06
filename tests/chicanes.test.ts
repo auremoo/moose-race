@@ -8,7 +8,7 @@ describe('chicanes', () => {
     for (const c of courses.filter((x) => x.trackId)) {
       const t = buildTrack(trackById(c.trackId!)!);
       const n = t.samples.length;
-      for (const z of t.def.vergeZones ?? []) {
+      for (const z of (t.def.vergeZones ?? []).filter((v) => v.verge <= 1.5)) {
         chicanes++;
         const a = Math.round(z.from * n);
         const b = Math.round(z.to * n);

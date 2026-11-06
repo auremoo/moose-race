@@ -60,7 +60,7 @@ export interface Balance {
   sim: { hz: number; laps: number; countdownSeconds: number };
   moose: MooseParams;
   surfaces: Record<SurfaceId, SurfaceParams>;
-  barrier: { speedLossPerSecond: number; headingAlignRate: number };
+  barrier: { speedLossPerSecond: number; headingAlignRate: number; vergeDragPerSecond: number };
   difficulties: Record<DifficultyId, DifficultyDef>;
   bots: {
     noiseAmplitude: number;
@@ -165,7 +165,7 @@ export function validateBalance(b: unknown): Balance {
     'mass',
   ]);
   for (const s of SURFACES) checkNumbers(o.surfaces?.[s], `balance.surfaces.${s}`, ['grip', 'vmax']);
-  checkNumbers(o.barrier, 'balance.barrier', ['speedLossPerSecond', 'headingAlignRate']);
+  checkNumbers(o.barrier, 'balance.barrier', ['speedLossPerSecond', 'headingAlignRate', 'vergeDragPerSecond']);
   checkNumbers(o.corde, 'balance.corde', ['zoneHalfLength', 'lateralTolerance']);
   for (const id of ['facile', 'moyen', 'difficile'] as DifficultyId[])
     checkNumbers(o.difficulties?.[id], `balance.difficulties.${id}`, ['ratingOffset', 'catchUp', 'coinMul', 'assist']);

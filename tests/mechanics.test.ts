@@ -201,3 +201,37 @@ describe('dénivelé', () => {
     expect(Math.max(...zs) - Math.min(...zs)).toBeGreaterThan(25);
   });
 });
+
+describe('départ parfait', () => {
+  const go = async (pressAt: number | null) => {
+    const { balance: b, trackById: byId } = await import('../src/data');
+    const { buildEntrants } = await import('../src/sim/roster');
+    const { createRace: create, stepRace: step } = await import('../src/sim/race');
+    const entrants = buildEntrants({
+      playerName: 'J',
+      playerMooseId: 'bucheron',
+      playerLevel: 1,
+      difficulty: 'moyen',
+      botCount: 0,
+      seed: 1,
+      balance: b,
+    });
+    const r = create(byId('boucle-grise')!, b, { laps: 1, entrants, difficulty: 'moyen', seed: 1 });
+    const gas = { steer: 0, throttle: 1, brake: 0, gallop: false, slide: false, castor: false };
+    const none = { ...gas, throttle: 0 };
+    while (r.phase === 'countdown') {
+      const left = (r.countdownTicks - r.tick) / b.sim.hz;
+      step(r, [pressAt !== null && left <= pressAt ? gas : none]);
+    }
+    return r.racers[0];
+  };
+  it('accélérateur dans la dernière demi-seconde : élan au départ', async () => {
+    const p = await go(0.3);
+    expect(p.perfectStart).toBe(true);
+    expect(p.moose.boostTime).toBeGreaterThan(0.5);
+  });
+  it("trop tôt ou jamais : pas d'élan", async () => {
+    expect((await go(1.5)).perfectStart).toBe(false);
+    expect((await go(null)).perfectStart).toBe(false);
+  });
+});

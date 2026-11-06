@@ -483,7 +483,9 @@ function frame(now: number): void {
     acc += real;
     let steps = 0;
     while (acc >= dt && steps < 8) {
-      let cmd = race.phase === 'countdown' ? NO_COMMANDS : input.read(dt);
+      // Compte à rebours : seul l'accélérateur compte (départ parfait), l'orignal ne bouge pas encore.
+      const raw = input.read(dt);
+      let cmd = race.phase === 'countdown' ? { ...NO_COMMANDS, throttle: raw.throttle } : raw;
       if (tutorial.active && tutorial.update(race, cmd, dt)) {
         save.tutorialDone = true;
         writeSave(save);

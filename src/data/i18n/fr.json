@@ -16,7 +16,7 @@
   "bestLap": "Meilleur tour",
   "record": "Nouveau record !",
   "replay": "Rejouer",
-  "steerHint": "Pouce gauche : diriger\nPouce droit : foncer, freiner, galoper\nFreine en braquant fort : glissade",
+  "steerHint": "Pouce gauche : diriger\nPouce droit : foncer, freiner, galoper\nFreine en braquant fort : glissade\nFonce juste avant « Partez ! » : départ parfait",
   "offTrack": "Bas-côté !",
   "sliding": "Trop vite !",
   "portraitOnly": "Tourne ton téléphone en portrait",
@@ -183,5 +183,6 @@
   "objective_podiums": "{a}/{b} podiums",
   "objective_dailies": "{a}/{b} défis du jour",
   "objective_chests": "{a}/{b} coffres ouverts",
-  "objective_circuits": "{a}/{b} circuits gagnés"
+  "objective_circuits": "{a}/{b} circuits gagnés",
+  "perfectStart": "Départ parfait !"
 }

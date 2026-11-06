@@ -118,7 +118,7 @@ export function botCommand(r: Race, racer: Racer): Commands {
     const sPos = s.s;
     const noise = (Math.sin(brain.phaseA + sPos * 0.013) + 0.5 * Math.sin(brain.phaseB + sPos * 0.031)) / 1.5;
     const o = line.offset[i] + noise * amp + brain.lane;
-    const lim = Math.max(0, s.hw - 1.6);
+    const lim = Math.max(0, s.hw - 0.9);
     return Math.max(-lim, Math.min(lim, o));
   };
   // Vers l'embouchure de la branche si le bot a choisi de la prendre (hors des limites de la piste).
