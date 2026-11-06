@@ -43,7 +43,7 @@ export interface SpecialDef {
     minSpacing: number;
   };
   beaver: { perTrack: number; radius: number; respawnSeconds: number; lineOffset: number };
-  items: { coupSeconds: number; barrageSeconds: number; barrageHalfWidth: number; barrageSpeedKeep: number; hutteSeconds: number };
+  items: { coupSeconds: number; barrageSeconds: number; barrageHalfWidth: number; barrageSpeedKeep: number; hutteSeconds: number; biefOpenSeconds: number };
 }
 
 export interface Balance {
@@ -127,7 +127,7 @@ export function validateBalance(b: unknown): Balance {
   checkNumbers(o.special, 'balance.special', ['coinMul']);
   checkNumbers(o.special.bear, 'balance.special.bear', ['warnSeconds', 'crossSpeed', 'chargeSpeed', 'guardSway', 'periodMin', 'periodMax', 'radius', 'hitSpeedKeep', 'minSpacing']);
   checkNumbers(o.special.beaver, 'balance.special.beaver', ['perTrack', 'radius', 'respawnSeconds', 'lineOffset']);
-  checkNumbers(o.special.items, 'balance.special.items', ['coupSeconds', 'barrageSeconds', 'barrageHalfWidth', 'barrageSpeedKeep', 'hutteSeconds']);
+  checkNumbers(o.special.items, 'balance.special.items', ['coupSeconds', 'barrageSeconds', 'barrageHalfWidth', 'barrageSpeedKeep', 'hutteSeconds', 'biefOpenSeconds']);
   checkNumbers(o.contact, 'balance.contact', ['halfLength', 'halfWidth', 'speedTransfer', 'stunClosingSpeed', 'stunFraction', 'minSpeedKeep', 'stunCooldown']);
   checkNumbers(o.hud, 'balance.hud', ['realTopKmh', 'gaugeMaxKmh', 'slideMessageSlip', 'slideMessageDelay']);
   if (!Array.isArray(o.hud.gaits) || o.hud.gaits.some((g) => typeof g[0] !== 'number' || typeof g[1] !== 'string'))

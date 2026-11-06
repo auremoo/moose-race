@@ -95,11 +95,11 @@ export function createShieldView(): THREE.Mesh {
 }
 
 /** Point d'exclamation rouge, toujours face à la caméra : signal 2 s avant le passage d'un ours. */
-export function createWarningSprite(): THREE.Sprite {
+export function createWarningSprite(symbol = '!', color = '#D80621'): THREE.Sprite {
   const c = document.createElement('canvas');
   c.width = c.height = 64;
   const g = c.getContext('2d')!;
-  g.fillStyle = '#D80621';
+  g.fillStyle = color;
   g.beginPath();
   g.arc(32, 32, 30, 0, Math.PI * 2);
   g.fill();
@@ -107,7 +107,7 @@ export function createWarningSprite(): THREE.Sprite {
   g.font = 'bold 46px sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText('!', 32, 34);
+  g.fillText(symbol, 32, 34);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));

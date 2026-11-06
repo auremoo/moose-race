@@ -25,6 +25,7 @@ const C = {
   blue: new THREE.Color(0x4fb3ff),
   gold: new THREE.Color(0xffc21a),
   breath: new THREE.Color(0xf4f8ff),
+  water: new THREE.Color(0x9fd3ff),
   lineOk: new THREE.Color(0x2ee37a),
   lineHot: new THREE.Color(0xff2a3d),
   lineFar: new THREE.Color(0xffffff),
@@ -198,6 +199,31 @@ export class GameView {
       b.visible = false;
       this.hazardGroup.add(b);
       this.barragePool.push(b);
+    }
+    // Bief : canal d'eau signalé entre l'embouchure et la sortie.
+    if (h.bief) {
+      const b = h.bief;
+      const g = new THREE.Group();
+      const water = new THREE.Mesh(
+        new THREE.PlaneGeometry(b.length + 6, 7),
+        new THREE.MeshLambertMaterial({ color: 0x3c8fd0, transparent: true, opacity: 0.85 }),
+      );
+      water.rotation.x = -Math.PI / 2;
+      water.position.y = 0.05;
+      g.add(water);
+      for (const side of [-1, 1]) {
+        const bank = new THREE.Mesh(new THREE.BoxGeometry(b.length + 6, 0.4, 0.6), new THREE.MeshLambertMaterial({ color: 0x8a5a36 }));
+        bank.position.set(0, 0.2, side * 3.8);
+        g.add(bank);
+      }
+      g.position.set(simToWorldX((b.ax + b.bx) / 2), 0, simToWorldZ((b.ay + b.by) / 2));
+      g.rotation.y = Math.atan2(b.by - b.ay, b.bx - b.ax);
+      this.hazardGroup.add(g);
+      for (const [x, y] of [[b.ax, b.ay], [b.bx, b.by]]) {
+        const sign = createWarningSprite('~', '#2C7BB6');
+        sign.position.set(simToWorldX(x), 4, simToWorldZ(y));
+        this.hazardGroup.add(sign);
+      }
     }
     for (let i = 0; i < race.racers.length; i++) {
       const sh = createShieldView();
@@ -410,7 +436,9 @@ export class GameView {
         tag.position.set(simToWorldX(x), 4.6 * race.racers[i].size, simToWorldZ(y));
         tag.material.opacity = Math.max(0, Math.min(1, (70 - dist) / 20));
       }
-      view.root.position.set(simToWorldX(x), 0, simToWorldZ(y));
+      // À la nage dans le bief : l'orignal est à moitié immergé.
+      const swimming = race.racers[i].swim >= 0;
+      view.root.position.set(simToWorldX(x), swimming ? -1.3 : 0, simToWorldZ(y));
       view.root.rotation.y = heading;
       let pose: 'race' | 'idle' | 'victory' | 'defeat' = 'race';
       if (this.showcaseOn) pose = 'idle';
@@ -497,8 +525,9 @@ export class GameView {
 
     // Poussière (ou neige, ou boue) : dérapage, glissade, bas-côté.
     const surface = r.onVerge ? race.track.def.vergeSurface : race.track.samples[r.proj.index].surface;
-    const dustColor = surface === 'neige' || surface === 'glace' ? C.snow : surface === 'boue' ? C.mud : C.dust;
-    const dustRate = m.drifting ? 50 : m.sliding ? 60 * Math.max(0.3, m.slip) : r.onVerge && m.speed > 5 ? 25 : 0;
+    const swimming = r.swim >= 0;
+    const dustColor = swimming ? C.water : surface === 'neige' || surface === 'glace' ? C.snow : surface === 'boue' ? C.mud : C.dust;
+    const dustRate = swimming ? 45 : m.drifting ? 50 : m.sliding ? 60 * Math.max(0.3, m.slip) : r.onVerge && m.speed > 5 ? 25 : 0;
     for (let k = this.dust.due(dustRate, dt); k > 0; k--) {
       const [px, py, pz] = at(-1.5 + rnd(0.6), rnd(1.6), 0.3);
       this.dust.emit(px, py, pz, rnd(2), 1 + Math.random() * 1.5, rnd(2), 0.7, dustColor);

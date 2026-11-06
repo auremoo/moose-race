@@ -154,5 +154,7 @@
   "ghost": "Fantôme du meilleur temps",
   "dailyTitle": "Défi du jour",
   "dailyDone": "Réussi aujourd'hui",
-  "dailyBonus": "Défi du jour : +{n}"
+  "dailyBonus": "Défi du jour : +{n}",
+  "item_bief": "Bief",
+  "biefOpen": "Bief ouvert : vise le canal !"
 }

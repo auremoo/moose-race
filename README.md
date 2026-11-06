@@ -103,7 +103,11 @@ chaque passage (traversée, charge depuis le bas-côté) ; certains gardent une 
 rapides. Castors hors de la ligne idéale : en toucher un donne une aide (Coup de queue, Barrage, Hutte), d'autant
 plus offensive que tu es loin au classement ; réapparition après 5 s. Bouton Castor (ou E) pour l'utiliser.
 Les bots suivent les mêmes règles. Pièces +25 %. Tout est tiré avec la graine de la course (même comportement
-en multijoueur). Non fait : le Bief (raccourci d'eau), voir les issues.
+en multijoueur).
+
+**Bief** : sur 9 circuits (détectés automatiquement là où deux portions de piste passent à 20–50 m l'une de
+l'autre), un canal d'eau signalé sert de raccourci. L'aide Bief l'ouvre 10 s : passer à son embouchure lance la
+traversée à la nage (9 m/s, gain de piste plafonné à 130 m, environ 3 s), sans contact ni ours.
 
 ## Défi du jour
 

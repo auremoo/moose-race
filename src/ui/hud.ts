@@ -81,6 +81,7 @@ export class Hud {
   private eventClass = '';
   private eventTimer = 0;
   private lastItemTick = -1;
+  private biefShown = false;
   private needleKmh = 0;
 
   constructor(
@@ -418,6 +419,10 @@ export class Hud {
       castorBtn.classList.toggle('empty', !item);
       $('castor-label').textContent = item ? tk(`item_${item}`) : t('castorBtn');
       $('castor-icon').className = `castor-icon ${item ?? ''}`;
+      if (r.biefOpen > 0 && !this.biefShown) {
+        this.showEvent(t('biefOpen'), 'gold');
+        this.biefShown = true;
+      } else if (r.biefOpen <= 0) this.biefShown = false;
       if (r.lastItemTick !== this.lastItemTick) {
         if (item) this.showEvent(t('gotItem').replace('{n}', tk(`item_${item}`)), 'gold');
         this.lastItemTick = r.lastItemTick;

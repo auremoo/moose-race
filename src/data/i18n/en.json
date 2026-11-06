@@ -154,5 +154,7 @@
   "ghost": "Best-time ghost",
   "dailyTitle": "Daily challenge",
   "dailyDone": "Done today",
-  "dailyBonus": "Daily challenge: +{n}"
+  "dailyBonus": "Daily challenge: +{n}",
+  "item_bief": "Water shortcut",
+  "biefOpen": "Shortcut open: aim for the channel!"
 }

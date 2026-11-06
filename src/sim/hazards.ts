@@ -2,11 +2,12 @@
  * Mode spécial : ours noirs (pièges) et castors (aides). Absent du mode classique.
  * Tout est tiré avec la graine de la course : même comportement pour tous les joueurs (multijoueur).
  */
+import { BIEF_SWIM_SPEED, findBief, type Bief } from './bief';
 import type { Race, Racer } from './race';
 import type { Rng } from './rng';
 
 export type BearKind = 'traverse' | 'garde' | 'charge';
-export type ItemId = 'coup' | 'barrage' | 'hutte';
+export type ItemId = 'coup' | 'barrage' | 'hutte' | 'bief';
 
 export interface Bear {
   kind: BearKind;
@@ -50,6 +51,8 @@ export interface Hazards {
   bears: Bear[];
   beavers: Beaver[];
   barrages: Barrage[];
+  /** Raccourci d'eau du circuit, s'il en a un. */
+  bief: Bief | null;
 }
 
 function place(r: Race, index: number, d: number): { x: number; y: number } {
@@ -103,17 +106,46 @@ export function createHazards(r: Race, rng: Rng): Hazards {
     const p = place(r, index, offset);
     beavers.push({ index, offset, x: p.x, y: p.y, respawn: 0 });
   }
-  return { bears, beavers, barrages: [] };
+  return { bears, beavers, barrages: [], bief: findBief(r.track) };
 }
 
 /** Choix de l'aide selon le rang : les dernières places reçoivent plus d'aides offensives. */
-export function pickItem(rank: number, participants: number, r01: number): ItemId {
+export function pickItem(rank: number, participants: number, r01: number, hasBief = false): ItemId {
   const f = participants > 1 ? (rank - 1) / (participants - 1) : 0.5;
-  const coup = 0.25 + 0.35 * f;
-  const barrage = 0.45 - 0.35 * f;
-  if (r01 < coup) return 'coup';
-  if (r01 < coup + barrage) return 'barrage';
+  // Poids : les dernières places reçoivent plus de coups de queue et de biefs, les premières plus de barrages.
+  const w = { coup: 0.25 + 0.35 * f, barrage: 0.45 - 0.35 * f, hutte: 0.3, bief: hasBief ? 0.08 + 0.2 * f : 0 };
+  const total = w.coup + w.barrage + w.hutte + w.bief;
+  let acc = 0;
+  for (const k of ['coup', 'barrage', 'hutte', 'bief'] as ItemId[]) {
+    acc += w[k] / total;
+    if (r01 < acc) return k;
+  }
   return 'hutte';
+}
+
+/** Écart (en échantillons) entre l'indice du participant et un indice de piste, vers l'avant. */
+function ahead(r: Race, from: number, to: number): number {
+  const n = r.track.samples.length;
+  let d = to - from;
+  if (d < 0) d += n;
+  return d;
+}
+
+/** Bief : entrée dans le canal si l'aide est active et qu'on passe à son embouchure. */
+function updateBief(r: Race, h: Hazards, racer: Racer): void {
+  const b = h.bief;
+  if (!b) return;
+  if (racer.biefOpen > 0) racer.biefOpen = Math.max(0, racer.biefOpen - r.dt);
+  if (racer.swim >= 0 || racer.biefOpen <= 0) return;
+  const d = ahead(r, racer.proj.index, b.from);
+  if (d <= Math.round(4 / r.track.spacing) || d >= r.track.samples.length - Math.round(3 / r.track.spacing)) {
+    racer.swim = 0;
+    racer.biefOpen = 0;
+    racer.moose.x = b.ax;
+    racer.moose.y = b.ay;
+    racer.moose.heading = Math.atan2(b.by - b.ay, b.bx - b.ax);
+    racer.moose.speed = BIEF_SWIM_SPEED;
+  }
 }
 
 /** Met à jour les ours (positions, signal, activité) au temps t de la course. */
@@ -164,6 +196,8 @@ export function stepHazards(r: Race, h: Hazards): void {
     const m = racer.moose;
     if (m.shieldTime > 0) m.shieldTime = Math.max(0, m.shieldTime - r.dt);
     if (m.tailTime > 0) m.tailTime = Math.max(0, m.tailTime - r.dt);
+    updateBief(r, h, racer);
+    if (racer.swim >= 0) continue;
     // Ours : contact = étourdissement selon la Robustesse, aucune élimination.
     for (const b of h.bears) {
       if (!b.active) continue;
@@ -180,7 +214,7 @@ export function stepHazards(r: Race, h: Hazards): void {
       if (Math.hypot(m.x - bv.x, m.y - bv.y) > cfg.beaver.radius + 0.9) continue;
       bv.respawn = cfg.beaver.respawnSeconds;
       const rank = r.racers.filter((o) => o.distance > racer.distance).length + 1;
-      racer.item = pickItem(rank, r.racers.length, r.rng.next());
+      racer.item = pickItem(rank, r.racers.length, r.rng.next(), !!h.bief);
       racer.lastItemTick = r.tick;
     }
     // Barrages posés par les autres : ralentissent, puis disparaissent.
@@ -214,6 +248,7 @@ export function useItem(r: Race, h: Hazards, racer: Racer): void {
   racer.lastItemUseTick = r.tick;
   if (item === 'coup') m.tailTime = cfg.coupSeconds;
   else if (item === 'hutte') m.shieldTime = cfg.hutteSeconds;
+  else if (item === 'bief') racer.biefOpen = cfg.biefOpenSeconds;
   else {
     h.barrages.push({
       x: m.x - Math.cos(m.heading) * 3,
@@ -234,6 +269,11 @@ export function botWantsItem(r: Race, h: Hazards, racer: Racer): boolean {
     // En sortie de virage : profil qui remonte devant.
     const ahead = racer.profile[(racer.proj.index + Math.round(40 / r.track.spacing)) % n];
     return racer.moose.speed < ahead - 2;
+  }
+  if (item === 'bief') {
+    // Bief : on l'ouvre quand l'embouchure approche (moins de 150 m devant).
+    if (!h.bief) return true;
+    return ahead(r, racer.proj.index, h.bief.from) * r.track.spacing < 150;
   }
   if (item === 'barrage') return r.racers.some((o) => o !== racer && racer.distance - o.distance > 3 && racer.distance - o.distance < 18);
   // Hutte : un ours actif ou annoncé droit devant.

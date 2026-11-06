@@ -94,3 +94,42 @@ describe('jeu complet : tous les circuits, 2 modes, 3 difficultés, 1 à 10 bots
     expect(r.racers.every((x) => x.finished)).toBe(true);
   });
 });
+
+describe('bief', () => {
+  it('un orignal qui prend le bief gagne de la distance, sans en sauter trop', async () => {
+    const { findBief, BIEF_MAX_GAIN } = await import('../src/sim/bief');
+    const { useItem } = await import('../src/sim/hazards');
+    const r = race('serpent-temiscamingue', 'special', 'facile', 0);
+    const b = r.hazards!.bief!;
+    expect(b).toBeTruthy();
+    expect(findBief(r.track)!.gain).toBeLessThanOrEqual(BIEF_MAX_GAIN);
+    const me = r.racers[0];
+    // On place l'orignal juste avant l'embouchure, avec l'aide Bief.
+    const n = r.track.samples.length;
+    const i = (b.from - 15 + n) % n;
+    const s = r.track.samples[i];
+    me.moose.x = s.x;
+    me.moose.y = s.y;
+    me.moose.heading = Math.atan2(s.ty, s.tx);
+    me.moose.speed = 15;
+    me.proj = projectOnTrack(r.track, s.x, s.y);
+    const d0 = me.distance;
+    r.phase = 'running';
+    r.tick = r.countdownTicks + 1;
+    me.item = 'bief';
+    useItem(r, r.hazards!, me);
+    let swam = false;
+    for (let k = 0; k < 60 * 12; k++) {
+      stepRace(r, [autopilot(r.track, me, me.params, S, { line: { offset: r.line.offset, speed: me.profile } })]);
+      if (me.swim >= 0) swam = true;
+    }
+    expect(swam).toBe(true);
+    expect(me.swim).toBe(-1);
+    // Distance de piste comptée : le canal fait sauter la portion évitée.
+    expect(me.distance - d0).toBeGreaterThan(60);
+  });
+
+  it('aucun bief en mode classique', () => {
+    expect(race('serpent-temiscamingue', 'classique', 'moyen', 0).hazards).toBeNull();
+  });
+});

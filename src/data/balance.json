@@ -251,7 +251,8 @@
       "barrageSeconds": 15,
       "barrageHalfWidth": 1.8,
       "barrageSpeedKeep": 0.55,
-      "hutteSeconds": 10
+      "hutteSeconds": 10,
+      "biefOpenSeconds": 10
     }
   }
 }

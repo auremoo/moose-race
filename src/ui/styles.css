@@ -1181,6 +1181,10 @@ body {
   background: repeating-linear-gradient(180deg, #c48a52 0 7px, #6b4426 7px 9px);
   border-radius: 6px;
 }
+.castor-icon.bief {
+  background: repeating-linear-gradient(180deg, #8fd1ff 0 5px, #2c7bb6 5px 8px);
+  border-radius: 50%;
+}
 .castor-icon.hutte {
   background: #8fd1ff;
   border-radius: 26px 26px 4px 4px;

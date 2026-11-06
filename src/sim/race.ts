@@ -5,6 +5,7 @@
  */
 import type { Balance, DifficultyId } from '../data';
 import { botCommand, createBotBrain, type BotBrain } from './bots';
+import { BIEF_SWIM_SPEED } from './bief';
 import { botWantsItem, createHazards, stepHazards, useItem, type Hazards, type ItemId } from './hazards';
 import { createMooseState, NO_COMMANDS, stepMoose, type Commands, type MooseParams, type MooseState } from './moose';
 import { getRacingLine, speedProfile, type RacingLine } from './racingLine';
@@ -66,6 +67,10 @@ export interface Racer {
   lastItemUseTick: number;
   /** Bouton Castor tenu au pas précédent (déclenchement au front). */
   castorHeld: boolean;
+  /** Bief ouvert pour ce participant (s restantes). */
+  biefOpen: number;
+  /** Distance nagée dans le canal (m), −1 hors du bief. */
+  swim: number;
 }
 
 export interface Race {
@@ -169,6 +174,8 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
       lastItemTick: -1,
       lastItemUseTick: -1,
       castorHeld: false,
+      biefOpen: 0,
+      swim: -1,
     };
   });
   const race: Race = {
@@ -216,9 +223,33 @@ export function windAt(r: Race): { x: number; y: number; gust: number } {
   return { x: Math.cos(dir) * w.strength * gust, y: Math.sin(dir) * w.strength * gust, gust };
 }
 
+/** Traversée du bief à la nage, en ligne droite de l'embouchure à la sortie. */
+function stepSwim(r: Race, racer: Racer): void {
+  const b = r.hazards!.bief!;
+  const m = racer.moose;
+  racer.swim += BIEF_SWIM_SPEED * r.dt;
+  const u = Math.min(1, racer.swim / b.length);
+  m.x = b.ax + (b.bx - b.ax) * u;
+  m.y = b.ay + (b.by - b.ay) * u;
+  m.speed = BIEF_SWIM_SPEED;
+  m.sliding = false;
+  m.drifting = false;
+  if (u >= 1) {
+    racer.swim = -1;
+    // Sortie : on retrouve la piste à l'embouchure aval, la progression saute la portion évitée.
+    const exit = r.track.samples[b.to];
+    m.heading = Math.atan2(exit.ty, exit.tx);
+    updateProgress(r, racer, projectOnTrack(r.track, m.x, m.y, b.to, 20));
+  }
+}
+
 function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   const { track, balance } = r;
   const m = racer.moose;
+  if (racer.swim >= 0 && r.hazards?.bief) {
+    stepSwim(r, racer);
+    return;
+  }
   const absD = Math.abs(racer.proj.d);
   racer.onVerge = absD > track.samples[racer.proj.index].hw;
   const surfaceId = racer.onVerge ? track.def.vergeSurface : track.samples[racer.proj.index].surface;
@@ -336,6 +367,7 @@ function resolveContacts(r: Race): void {
     for (let j = i + 1; j < racers.length; j++) {
       const A = racers[i];
       const B = racers[j];
+      if (A.swim >= 0 || B.swim >= 0) continue;
       const a = A.moose;
       const b = B.moose;
       // Gabarit elliptique (long et étroit) dans le repère du cap moyen des deux orignaux.
