@@ -118,6 +118,28 @@ export class SoundEngine {
     o.stop(t + 0.1);
   }
 
+  private rainGain: GainNode | null = null;
+
+  /** Pluie : bruit continu filtré, doux. */
+  rain(on: boolean): void {
+    if (!this.ctx) return;
+    if (!this.rainGain) {
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'highpass';
+      f.frequency.value = 1500;
+      this.rainGain = this.ctx.createGain();
+      this.rainGain.gain.value = 0;
+      f.connect(this.rainGain);
+      this.rainGain.connect(this.sfx);
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.noise;
+      src.loop = true;
+      src.connect(f);
+      src.start();
+    }
+    this.rainGain.gain.setTargetAtTime(on ? 0.08 : 0, this.ctx.currentTime, 0.4);
+  }
+
   /** Glissade : souffle filtré continu, d'autant plus aigu que l'élan est chargé. */
   drift(on: boolean, charge: number): void {
     if (!this.ctx) return;

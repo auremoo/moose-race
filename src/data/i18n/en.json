@@ -158,5 +158,7 @@
   "item_bief": "Water shortcut",
   "biefOpen": "Shortcut open: aim for the channel!",
   "textSize": "Text size",
-  "highContrast": "High contrast"
+  "highContrast": "High contrast",
+  "weatherRain": "Rain: slippery trail",
+  "weatherFog": "Fog: limited visibility"
 }

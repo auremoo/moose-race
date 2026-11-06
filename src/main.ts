@@ -48,6 +48,11 @@ let mode: 'classique' | 'special' = save.mode;
 /** Défi du jour en cours (null pour une course normale). */
 let daily: DailyChallenge | null = null;
 
+/** Outil de test : ?meteo=pluie|brouillard|clair force la météo. */
+const forcedWeather = ((w) => (w === 'pluie' || w === 'brouillard' || w === 'clair' ? w : undefined))(
+  new URLSearchParams(location.search).get('meteo'),
+);
+
 function newRace(): Race {
   const seed = daily ? daily.seed : 1 + save.raceCount * 7919;
   const entrants = buildEntrants({
@@ -59,7 +64,7 @@ function newRace(): Race {
     seed,
     balance,
   });
-  return createRace(trackDef, balance, { seed, laps: course.laps, entrants, difficulty, mode, biome: course.biome });
+  return createRace(trackDef, balance, { seed, laps: course.laps, entrants, difficulty, mode, biome: course.biome, weather: forcedWeather });
 }
 
 let race: Race = newRace();
@@ -491,8 +496,10 @@ function soundEvents(): void {
   const m = me.moose;
   if (onHome || paused) {
     sound.drift(false, 0);
+    sound.rain(false);
     return;
   }
+  sound.rain(race.weather === 'pluie');
   // Compte à rebours : un bip par seconde, un bip aigu au départ.
   const remain = Math.ceil(Math.max(0, race.countdownTicks - race.tick) * race.dt);
   if (remain !== lastCount) {

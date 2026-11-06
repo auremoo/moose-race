@@ -126,6 +126,16 @@ l'orignal ralentit, en descente il prend de l'élan (gravité atténuée). Le te
 caméra suivent le relief. Fort dénivelé aux Lacs de Banff (30 m), montées à la Promenade des Glaciers et au Col
 du Kicking Horse.
 
+## Météo
+
+Tirée de la graine de la course selon le biome (forêt : 30 % de pluie, 10 % de brouillard ; plaine : 20 % / 5 % ;
+Rocheuses : 15 % / 20 % ; jamais de pluie sur la neige). Même graine, même météo pour tous.
+
+- **Pluie** : sentier, herbe et racines perdent 15 % d'adhérence, la boue devient plus lourde ; ciel gris,
+  traînées de pluie penchées par le vent, éclaboussures, bruit de pluie. Un tour est quelques pour cent plus lent.
+- **Brouillard** : rendu seulement (on voit moins loin), aucune incidence sur la physique.
+- Annonce au départ (« Pluie : sentier glissant »). Pour tester : `?meteo=pluie`, `?meteo=brouillard` ou `?meteo=clair`.
+
 ## Vent et racines
 
 - **Vent de travers** (Crépuscule du Manitoba, et plus léger sur le Blé de Saskatchewan) : rafales régulières qui

@@ -10,6 +10,7 @@ import { botWantsItem, createHazards, stepHazards, useItem, type Hazards, type I
 import { createMooseState, NO_COMMANDS, stepMoose, type Commands, type MooseParams, type MooseState } from './moose';
 import { getRacingLine, speedProfile, type RacingLine } from './racingLine';
 import { createRng, type Rng } from './rng';
+import { pickWeather, wetSurfaces, type Weather } from './weather';
 import { buildTrack, projectOnTrack, type Track, type TrackDef, type TrackProjection } from './track';
 
 export type RacePhase = 'countdown' | 'running' | 'finished';
@@ -86,8 +87,11 @@ export interface Race {
   racers: Racer[];
   difficulty: DifficultyId;
   mode: RaceMode;
-  /** Biome du parcours (rendu uniquement). */
+  /** Biome du parcours. */
   biome?: string;
+  weather: Weather;
+  /** Surfaces en vigueur (mouillées sous la pluie). */
+  surfaces: Balance['surfaces'];
   /** Ours, castors et barrages : seulement en mode spécial. */
   hazards: Hazards | null;
   /** Ligne de course du circuit (ligne idéale, points de corde, profil de vitesse). */
@@ -106,6 +110,8 @@ export interface RaceOptions {
   difficulty?: DifficultyId;
   mode?: RaceMode;
   biome?: string;
+  /** Météo imposée ; par défaut tirée de la graine selon le biome. */
+  weather?: Weather;
 }
 
 export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = {}): Race {
@@ -113,6 +119,10 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
   const line = getRacingLine(track, balance.moose, balance.surfaces);
   const seed = opts.seed ?? 1;
   const rng = createRng(seed);
+  const weather = opts.weather ?? pickWeather(createRng(seed ^ 0x6a09e667), opts.biome, def.surface === 'neige');
+  const surfaces = weather === 'pluie' ? wetSurfaces(balance.surfaces) : balance.surfaces;
+  // Sous la pluie, la vitesse cible de la ligne de course baisse (même trajectoire).
+  const lineUsed = surfaces === balance.surfaces ? line : { ...line, speed: speedProfile(track, line.x, line.y, line.k, balance.moose, surfaces) };
   const entrants: Entrant[] =
     opts.entrants ?? Array.from({ length: opts.racerCount ?? 1 }, (_, i) => ({ name: i === 0 ? 'Joueur' : `Bot ${i}` }));
   const count = entrants.length;
@@ -142,7 +152,7 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
     const key = `${params.topSpeed.toFixed(3)}|${params.accel.toFixed(3)}|${params.aLat.toFixed(3)}`;
     let profile = profiles.get(key);
     if (!profile) {
-      profile = params === balance.moose ? line.speed : speedProfile(track, line.x, line.y, line.k, params, balance.surfaces);
+      profile = params === balance.moose ? lineUsed.speed : speedProfile(track, line.x, line.y, line.k, params, surfaces);
       profiles.set(key, profile);
     }
     return {
@@ -192,8 +202,10 @@ export function createRace(def: TrackDef, balance: Balance, opts: RaceOptions = 
     difficulty: opts.difficulty ?? 'moyen',
     mode: opts.mode ?? 'classique',
     biome: opts.biome,
+    weather,
+    surfaces,
     hazards: null,
-    line,
+    line: lineUsed,
   };
   if (race.mode === 'special') race.hazards = createHazards(race, createRng(seed ^ 0x2545f491));
   return race;
@@ -256,7 +268,7 @@ function stepRacer(r: Race, racer: Racer, cmd: Commands): void {
   // Pente vue par l'orignal : celle de la piste, projetée sur son cap.
   const smp = track.samples[racer.proj.index];
   const slope = smp.slope * (Math.cos(m.heading) * smp.tx + Math.sin(m.heading) * smp.ty);
-  stepMoose(m, cmd, balance.surfaces[surfaceId], racer.params, r.dt, slope);
+  stepMoose(m, cmd, r.surfaces[surfaceId], racer.params, r.dt, slope);
   // Vent de travers : il pousse l'orignal sur le côté, d'autant plus qu'il court vite et à découvert.
   if (track.def.wind && r.phase !== 'countdown' && m.speed > 2) {
     const w = windAt(r);

@@ -3,13 +3,13 @@
  */
 import * as THREE from 'three';
 import type { Balance } from '../data';
-import { raceTime, rankOf, type Race } from '../sim/race';
+import { raceTime, rankOf, windAt, type Race } from '../sim/race';
 import { terrainHeight } from '../sim/track';
 import { ChaseCamera } from './camera';
 import { simToWorldX, simToWorldZ } from './coords';
 import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
 import { createMooseView, type MooseView } from './moose';
-import { Particles } from './particles';
+import { Particles, RainStreaks } from './particles';
 import type { Biome } from './biomes';
 import { buildWorld, type IdealLine } from './world';
 
@@ -27,6 +27,7 @@ const C = {
   gold: new THREE.Color(0xffc21a),
   breath: new THREE.Color(0xf4f8ff),
   water: new THREE.Color(0x9fd3ff),
+  rain: new THREE.Color(0xcfe6ff),
   lineOk: new THREE.Color(0x2ee37a),
   lineHot: new THREE.Color(0xff2a3d),
   lineFar: new THREE.Color(0xffffff),
@@ -75,6 +76,8 @@ export class GameView {
   private dust = new Particles(120, 0.7, false, -0.5);
   private sparks = new Particles(160, 0.4, true, 6);
   private breath = new Particles(40, 0.9, false, -0.3);
+  private rain = new RainStreaks();
+  private raining = false;
   private hazardGroup = new THREE.Group();
   private bearViews: { root: THREE.Group; warn: THREE.Sprite; lastD: number }[] = [];
   private beaverViews: THREE.Group[] = [];
@@ -106,7 +109,7 @@ export class GameView {
     this.chase = new ChaseCamera(balance.camera);
     this.buildTrackWorld(race);
     this.addMoose(race);
-    this.scene.add(this.dust.points, this.sparks.points, this.breath.points, this.hazardGroup);
+    this.scene.add(this.dust.points, this.sparks.points, this.breath.points, this.rain.lines, this.hazardGroup);
     this.buildHazards(race);
     this.resize();
     // La taille réelle du canvas peut changer sans événement « resize » (barre d'adresse iOS,
@@ -115,7 +118,8 @@ export class GameView {
   }
 
   private buildTrackWorld(race: Race): void {
-    const w = buildWorld(this.scene, race.track, race.line, (race.biome ?? 'test') as Biome, this.density);
+    const w = buildWorld(this.scene, race.track, race.line, (race.biome ?? 'test') as Biome, this.density, race.weather);
+    this.raining = race.weather === 'pluie';
     this.world = w.group;
     this.debugLine = w.debugLine;
     this.ideal = w.ideal;
@@ -484,6 +488,13 @@ export class GameView {
     }
     if (this.idealOn && !this.showcaseOn) this.colorIdealLine(race);
     this.renderHazards(race, dt);
+    this.rain.lines.visible = this.raining && !this.showcaseOn;
+    if (this.rain.lines.visible) {
+      // Pluie : traînées autour de la caméra, penchées par le vent du circuit (exagéré pour se voir).
+      const cam = this.chase.camera.position;
+      const w = windAt(race);
+      this.rain.update(dt, cam.x, cam.y, cam.z, 2 + w.x * 3, -w.y * 3);
+    }
     this.dust.update(dt);
     this.sparks.update(dt);
     this.breath.update(dt);
@@ -543,6 +554,13 @@ export class GameView {
     // Poussière (ou neige, ou boue) : dérapage, glissade, bas-côté.
     const surface = r.onVerge ? race.track.def.vergeSurface : race.track.samples[r.proj.index].surface;
     const swimming = r.swim >= 0;
+    // Sous la pluie, on soulève des éclaboussures plutôt que de la poussière.
+    if (race.weather === 'pluie' && m.speed > 6 && !swimming) {
+      for (let k = this.dust.due(14, dt); k > 0; k--) {
+        const [px, py, pz] = at(-1.2 + rnd(0.6), rnd(1.4), 0.2);
+        this.dust.emit(px, py, pz, rnd(1.5), 1.2, rnd(1.5), 0.4, C.water);
+      }
+    }
     const dustColor = swimming ? C.water : surface === 'neige' || surface === 'glace' ? C.snow : surface === 'boue' ? C.mud : C.dust;
     const dustRate = swimming ? 45 : m.drifting ? 50 : m.sliding ? 60 * Math.max(0.3, m.slip) : r.onVerge && m.speed > 5 ? 25 : 0;
     for (let k = this.dust.due(dustRate, dt); k > 0; k--) {

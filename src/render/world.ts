@@ -89,12 +89,22 @@ function ribbon(
   return g;
 }
 
-export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, biome: Biome = 'test', density = 1): World {
+export function buildWorld(scene: THREE.Scene, track: Track, line: RacingLine, biome: Biome = 'test', density = 1, weather = 'clair'): World {
   const snowy = track.def.surface === 'neige';
   const dusk = track.def.id === 'crepuscule-manitoba';
   const pal = paletteFor(biome, snowy, dusk);
+  // Météo : ciel gris sous la pluie, brouillard rapproché.
+  if (weather === 'pluie') {
+    pal.skyTop = 0x6d7a86;
+    pal.skyBottom = 0xaab4bd;
+    pal.fog = 0xa3adb5;
+    pal.sunIntensity *= 0.55;
+  } else if (weather === 'brouillard') {
+    pal.skyTop = pal.skyBottom = pal.fog = 0xd9dee2;
+    pal.sunIntensity *= 0.7;
+  }
   scene.background = new THREE.Color(pal.fog);
-  scene.fog = new THREE.Fog(pal.fog, 110, 620);
+  scene.fog = new THREE.Fog(pal.fog, weather === 'brouillard' ? 25 : 110, weather === 'brouillard' ? 170 : weather === 'pluie' ? 420 : 620);
   const group = new THREE.Group();
   scene.add(group);
   group.add(skyDome(pal));

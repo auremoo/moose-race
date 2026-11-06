@@ -82,6 +82,7 @@ export class Hud {
   private eventTimer = 0;
   private lastItemTick = -1;
   private biefShown = false;
+  private weatherRace: Race | null = null;
   private needleKmh = 0;
 
   constructor(
@@ -370,6 +371,12 @@ export class Hud {
       this.gait.classList.toggle('super', gaitKey === 'gaitSuper');
     }
 
+    // Annonce de la météo au début du compte à rebours.
+    if (race !== this.weatherRace) {
+      this.weatherRace = race;
+      if (race.weather !== 'clair') this.showEvent(t(race.weather === 'pluie' ? 'weatherRain' : 'weatherFog'), '');
+    }
+
     // Compte à rebours 3, 2, 1, Partez !
     let c = '';
     if (race.phase === 'countdown') c = String(Math.ceil(countdownRemaining(race)));
@@ -409,7 +416,7 @@ export class Hud {
       this.flash.classList.toggle('good', cls === 'good');
       this.flash.classList.toggle('gold', cls === 'gold');
     }
-    this.flash.classList.toggle('on', !!msg && race.phase === 'running');
+    this.flash.classList.toggle('on', !!msg && (race.phase === 'running' || this.eventTimer > 0));
 
     // Mode spécial : bouton Castor, aide détenue, alerte ours.
     const castorBtn = $('btn-castor');

@@ -158,5 +158,7 @@
   "item_bief": "Bief",
   "biefOpen": "Bief ouvert : vise le canal !",
   "textSize": "Taille du texte",
-  "highContrast": "Contraste renforcé"
+  "highContrast": "Contraste renforcé",
+  "weatherRain": "Pluie : sentier glissant",
+  "weatherFog": "Brouillard : on voit moins loin"
 }
