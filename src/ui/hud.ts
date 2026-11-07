@@ -358,6 +358,13 @@ export class Hud {
   }
 
   /** Aide des commandes : seulement pour les premières courses, et elle s'efface d'elle-même. */
+  /** Bandeau du ralenti de l'arrivée (toucher pour passer). */
+  showReplay(on: boolean): void {
+    $('replay-banner').hidden = !on;
+    // Pendant le ralenti, les commandes de pilotage n'ont rien à faire à l'écran.
+    document.documentElement.classList.toggle('replaying', on);
+  }
+
   resetHint(show = true): void {
     this.hintShown = show;
     this.hint.classList.toggle('hide', !show);

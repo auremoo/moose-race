@@ -138,6 +138,12 @@ traversée à la nage (9 m/s, gain de piste plafonné à 130 m, environ 3 s), sa
 Carte sur l'accueil : circuit, mode, difficulté et graine tirés de la date, identiques pour tous les joueurs
 le même jour (10 bots). Bonus de 100 pièces à la première arrivée du jour.
 
+## Ralenti de l'arrivée
+
+Après une victoire ou un podium (course à plusieurs), les 2,5 dernières secondes sont rejouées à 40 % de la
+vitesse, filmées depuis le bord de la ligne ; un toucher le passe. Ensuite viennent le podium et les résultats.
+Désactivé avec « Animations réduites ».
+
 ## Photo-finish
 
 Si le joueur franchit la ligne à moins de 0,3 s d'un rival, une caméra posée sur la ligne prend un cliché

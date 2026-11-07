@@ -47,6 +47,12 @@ test('une course se lance, se met en pause et se termine avec des pièces', asyn
     const r = (window as unknown as PanacheWindow).panache.race;
     r.racers[0].distance = r.laps * r.track.length - 2;
   });
+  // Victoire ou podium : ralenti de l'arrivée, qu'un toucher fait passer.
+  const replay = page.locator('#replay-banner');
+  await replay.waitFor({ state: 'visible', timeout: 5_000 }).then(
+    () => replay.click(),
+    () => undefined,
+  );
   await expect(page.locator('#results')).toBeVisible({ timeout: 10_000 });
   const coins = await page.evaluate(() => JSON.parse(localStorage.getItem('panache.v1')!).coins);
   expect(coins).toBeGreaterThan(0);

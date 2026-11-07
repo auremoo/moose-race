@@ -15,6 +15,9 @@ import type { Biome, Decor } from './biomes';
 import { createHomeScene, type HomeScene } from './home';
 import { buildWorld, type IdealLine } from './world';
 
+/** Vitesse du ralenti de l'arrivée. */
+export const REPLAY_SPEED = 0.4;
+
 /** Écart maximal (s) avec un rival pour déclencher le photo-finish. */
 export const PHOTO_GAP = 0.3;
 
@@ -175,6 +178,7 @@ export class GameView {
   /** Nouvelle course : participants recréés ; décor reconstruit seulement si le circuit change. */
   setRace(race: Race, trackChanged = true): void {
     this.hidePodium();
+    this.replay = null;
     this.photo = null;
     this.photoChecked = false;
     if (trackChanged) {
@@ -455,6 +459,10 @@ export class GameView {
   render(race: Race, prev: Pose[], alpha: number, dt: number): void {
     if (this.canvas.clientWidth !== this.lastW || this.canvas.clientHeight !== this.lastH) this.resize();
     this.adaptQuality(dt);
+    if (this.replay) {
+      this.renderReplay(race, dt);
+      return;
+    }
     if (this.podium) {
       const pd = this.podium;
       pd.t += dt;
@@ -609,6 +617,88 @@ export class GameView {
     } catch {
       return '';
     }
+  }
+
+  private replay: {
+    frames: Float32Array[];
+    t: number;
+    cam: THREE.PerspectiveCamera;
+    look: THREE.Vector3;
+    done: () => void;
+  } | null = null;
+
+  /**
+   * Ralenti de l'arrivée : rejoue les dernières images enregistrées (x, y, cap, vitesse, galop par
+   * orignal) à REPLAY_SPEED, filmées par une caméra posée au bord de la ligne. Se termine seul ou par skipReplay().
+   */
+  startReplay(race: Race, frames: Float32Array[], done: () => void): void {
+    if (frames.length < 10) {
+      done();
+      return;
+    }
+    const s0 = race.track.samples[0];
+    const cam = new THREE.PerspectiveCamera(38, this.chase.camera.aspect, 0.1, 900);
+    // Bord de la ligne, côté gauche, un peu en retrait vers l'arrivée des orignaux.
+    const d = s0.hw + 7;
+    cam.position.set(simToWorldX(s0.x + s0.nx * d + s0.tx * 4), s0.z + 2.2, simToWorldZ(s0.y + s0.ny * d + s0.ty * 4));
+    const f0 = frames[0];
+    const look = new THREE.Vector3(simToWorldX(f0[0]), s0.z + 1.8, simToWorldZ(f0[1]));
+    this.tags.forEach((t) => t && (t.visible = false));
+    // L'arche de départ masquerait l'image depuis le bord de la ligne.
+    const arch = this.world.getObjectByName('finish-arch');
+    if (arch) arch.visible = false;
+    this.replay = { frames, t: 0, cam, look, done };
+  }
+
+  skipReplay(): void {
+    if (!this.replay) return;
+    const done = this.replay.done;
+    this.replay = null;
+    const arch = this.world.getObjectByName('finish-arch');
+    if (arch) arch.visible = true;
+    done();
+  }
+
+  get replaying(): boolean {
+    return this.replay !== null;
+  }
+
+  private renderReplay(race: Race, dt: number): void {
+    const rp = this.replay!;
+    rp.t += dt * REPLAY_SPEED;
+    const f = rp.t * race.balance.sim.hz;
+    const last = rp.frames.length - 1;
+    if (f >= last) {
+      this.skipReplay();
+      return;
+    }
+    const i0 = Math.floor(f);
+    const a = f - i0;
+    const A = rp.frames[i0];
+    const B = rp.frames[i0 + 1];
+    for (let k = 0; k < this.moose.length; k++) {
+      const o = k * 5;
+      const x = A[o] + (B[o] - A[o]) * a;
+      const y = A[o + 1] + (B[o + 1] - A[o + 1]) * a;
+      let dh = B[o + 2] - A[o + 2];
+      if (dh > Math.PI) dh -= 2 * Math.PI;
+      else if (dh < -Math.PI) dh += 2 * Math.PI;
+      const v = this.moose[k];
+      v.root.visible = true;
+      v.root.position.set(simToWorldX(x), terrainHeight(race.track, x, y), simToWorldZ(y));
+      v.root.rotation.y = A[o + 2] + dh * a;
+      v.update(
+        { speed: A[o + 3], lateralAccel: 0, slip: 0, stunTime: 0, drifting: false, galloping: A[o + 4] > 0, curvature: 0 } as never,
+        dt * REPLAY_SPEED,
+      );
+    }
+    // La caméra reste au bord de la ligne et suit le joueur.
+    const me = this.moose[0].root.position;
+    rp.look.lerp(new THREE.Vector3(me.x, me.y + 1.8, me.z), Math.min(1, dt * 6));
+    rp.cam.aspect = this.chase.camera.aspect;
+    rp.cam.updateProjectionMatrix();
+    rp.cam.lookAt(rp.look);
+    this.draw(this.scene, rp.cam);
   }
 
   /** Photo-finish de la dernière course (null si l'arrivée n'était pas serrée). */

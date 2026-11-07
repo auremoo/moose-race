@@ -1711,3 +1711,32 @@ img.shot {
 .reduce-motion #speed-lines {
   display: none;
 }
+
+/* Ralenti de l'arrivée : bandeau en haut, tout l'écran passe le ralenti au toucher. */
+#replay-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 48px);
+  border: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0.35), transparent 30%, transparent 75%, rgba(0, 0, 0, 0.35));
+  color: #fff;
+  font-family: var(--font-titre);
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+.replaying #pedals,
+.replaying #steer-hint,
+.replaying #speed-lines {
+  display: none;
+}
+#replay-banner[hidden] {
+  display: none;
+}

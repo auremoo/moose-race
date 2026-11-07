@@ -185,5 +185,6 @@
   "objective_chests": "{a}/{b} coffres ouverts",
   "objective_circuits": "{a}/{b} circuits gagnés",
   "perfectStart": "Départ parfait !",
-  "recordsReset": "Circuits retouchés : {n} record(s) remis à zéro"
+  "recordsReset": "Circuits retouchés : {n} record(s) remis à zéro",
+  "replaySkip": "Ralenti · touchez pour passer"
 }

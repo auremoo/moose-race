@@ -88,6 +88,9 @@ function newRace(): Race {
 
 let race: Race = newRace();
 const ghostRec = new GhostRecorder();
+/** Dernières images de la course (2,5 s) pour le ralenti de l'arrivée : x, y, cap, vitesse, galop par orignal. */
+const REPLAY_FRAMES = 150;
+let replayBuf: Float32Array[] = [];
 /** Affiche le fantôme du record de ce circuit, s'il existe et si le réglage est actif. */
 function applyGhost(): void {
   const g = save.ghostOn ? loadGhost(trackDef.id, race.laps, trackSignature(trackDef)) : null;
@@ -369,6 +372,7 @@ function restart(trackChanged = false): void {
   view.setRace(race, trackChanged);
   view.setIdealLine(lineVisible());
   ghostRec.reset();
+  replayBuf = [];
   applyGhost();
   resultsShown = false;
   hud.showPodiumTitle(false);
@@ -430,14 +434,12 @@ function onFinish(): void {
   // Podium 3D des trois premiers, puis l'écran des résultats.
   const finishedRace = race;
   const podiumMs = N > 1 && !save.reduceMotion ? 2600 : 0;
-  setTimeout(() => {
-    if (race !== finishedRace) return;
-    if (podiumMs) {
-      view.showPodium(order.slice(0, 3).map((i) => race.racers[i]));
-      hud.showPodiumTitle(true);
-    }
-  }, 900);
-  setTimeout(() => {
+  // Ralenti de l'arrivée (victoire ou podium), puis podium 3D, puis résultats. Le ralenti démarre une
+  // image plus tard : le cliché du photo-finish se prend sur l'image du franchissement.
+  const wantReplay = N > 1 && rank <= 3 && !save.reduceMotion;
+  const frames = replayBuf;
+  replayBuf = [];
+  const showResultsNow = () => {
     if (race !== finishedRace) return;
     hud.showPodiumTitle(false);
     hud.showResults(race, record, {
@@ -451,7 +453,25 @@ function onFinish(): void {
       rewards,
     });
     menus.refreshCoins();
-  }, 900 + podiumMs);
+  };
+  const podiumThenResults = () => {
+    if (race !== finishedRace) return;
+    if (podiumMs) {
+      view.showPodium(order.slice(0, 3).map((i) => race.racers[i]));
+      hud.showPodiumTitle(true);
+    }
+    setTimeout(showResultsNow, podiumMs);
+  };
+  if (wantReplay) {
+    setTimeout(() => {
+      if (race !== finishedRace) return;
+      hud.showReplay(true);
+      view.startReplay(race, frames, () => {
+        hud.showReplay(false);
+        setTimeout(podiumThenResults, 300);
+      });
+    }, 60);
+  } else setTimeout(podiumThenResults, 900);
 }
 
 // Pause automatique si la page passe en arrière-plan.
@@ -514,6 +534,14 @@ function frame(now: number): void {
       if (race.phase === 'running') {
         const me = race.racers[0].moose;
         ghostRec.sample(raceTime(race), me.x, me.y, me.heading);
+        if (!race.racers[0].finished) {
+          const fr = new Float32Array(race.racers.length * 5);
+          race.racers.forEach((rc, k) =>
+            fr.set([rc.moose.x, rc.moose.y, rc.moose.heading, rc.moose.speed, rc.moose.galloping ? 1 : 0], k * 5),
+          );
+          replayBuf.push(fr);
+          if (replayBuf.length > REPLAY_FRAMES) replayBuf.shift();
+        }
       }
       if (!wasFinished && race.phase === 'finished') onFinish();
       acc -= dt;
@@ -632,6 +660,9 @@ function showUpdateBanner(): void {
 
 // Modèles GLB éventuels : chargés une fois, puis appliqués dès la course suivante.
 void preloadModels().then(() => view.setRace(race, false));
+
+// Ralenti de l'arrivée : un toucher le passe.
+document.getElementById('replay-banner')?.addEventListener('click', () => view.skipReplay());
 
 if (staleRecords.length) menus.toast(t('recordsReset').replace('{n}', String(staleRecords.length)));
 
