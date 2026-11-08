@@ -16,7 +16,7 @@
   "bestLap": "Meilleur tour",
   "record": "Nouveau record !",
   "replay": "Rejouer",
-  "steerHint": "Pouce gauche : diriger\nPouce droit : foncer, freiner, galoper\nFreine en braquant fort : glissade\nFonce juste avant « Partez ! » : départ parfait",
+  "steerHint": "Pouce gauche : diriger\nPouce droit : foncer, freiner, galoper\nFonce juste avant « Partez ! » : départ parfait",
   "offTrack": "Bas-côté !",
   "sliding": "Trop vite !",
   "portraitOnly": "Tourne ton téléphone en portrait",
@@ -186,5 +186,9 @@
   "objective_circuits": "{a}/{b} circuits gagnés",
   "perfectStart": "Départ parfait !",
   "recordsReset": "Circuits retouchés : {n} record(s) remis à zéro",
-  "replaySkip": "Ralenti · touchez pour passer"
+  "replaySkip": "Ralenti · touchez pour passer",
+  "skidding": "Ça glisse !",
+  "courseUnlocked": "Nouveau circuit : {name}",
+  "podiumNeeded": "Podium requis",
+  "unlockHint": "Termine sur le podium de « {name} » pour débloquer ce circuit"
 }

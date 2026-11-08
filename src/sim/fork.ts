@@ -212,7 +212,7 @@ export function forkPursuit(f: Fork, racer: Racer, p: MooseParams, surfaces: Rec
     throttle = 0;
     brake = Math.min(1, (m.speed - vt) / 3);
   } else if (m.speed > vt - 1) throttle = 0.4;
-  return { steer, throttle, brake, gallop: false, slide: false, castor: false };
+  return { steer, throttle, brake, gallop: false, castor: false };
 }
 
 /** Décalage latéral (m) qui mène à l'embouchure de la branche, ou null si elle est loin devant. */

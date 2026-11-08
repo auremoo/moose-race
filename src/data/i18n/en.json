@@ -16,7 +16,7 @@
   "bestLap": "Best lap",
   "record": "New record!",
   "replay": "Race again",
-  "steerHint": "Left thumb: steer\nRight thumb: go, brake, gallop\nBrake while steering hard: drift\nPress Go right before the start: perfect start",
+  "steerHint": "Left thumb: steer\nRight thumb: go, brake, gallop\nPress Go right before the start: perfect start",
   "offTrack": "Off the trail!",
   "sliding": "Too fast!",
   "portraitOnly": "Turn your phone to portrait",
@@ -186,5 +186,9 @@
   "objective_circuits": "{a}/{b} circuits won",
   "perfectStart": "Perfect start!",
   "recordsReset": "Tracks updated: {n} record(s) reset",
-  "replaySkip": "Slow motion · tap to skip"
+  "replaySkip": "Slow motion · tap to skip",
+  "skidding": "Slipping!",
+  "courseUnlocked": "New track: {name}",
+  "podiumNeeded": "Podium needed",
+  "unlockHint": "Finish on the podium at “{name}” to unlock this track"
 }

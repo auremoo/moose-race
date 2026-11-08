@@ -18,6 +18,7 @@ import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
 import { accessoryOf } from './meta/accessories';
 import { recordRace } from './meta/rewards';
+import { recordPodium } from './meta/progress';
 import { pruneStaleRecords } from './meta/records';
 import { createRace, estimatedFinishTime, raceTime, standings, stepRace, surfaceUnder, type Race } from './sim/race';
 import { buildEntrants } from './sim/roster';
@@ -97,11 +98,7 @@ function applyGhost(): void {
   view.setGhost(g ? (time) => ghostPose(g, time) : null);
 }
 const view = new GameView(canvas, race, balance);
-const input = new InputManager(
-  zone,
-  { ...balance.input, sensitivity: save.sensitivity, driftSteerMin: balance.moose.driftSteerMin },
-  document.getElementById('pedals'),
-);
+const input = new InputManager(zone, { ...balance.input, sensitivity: save.sensitivity }, document.getElementById('pedals'));
 let debug = save.debug || new URLSearchParams(location.search).has('debug');
 view.setDebug(debug);
 
@@ -409,6 +406,9 @@ function onFinish(): void {
   coins += bonus;
   // Coffre au podium, compteurs d'objectifs, accessoires débloqués.
   const rewards = recordRace(save, rank, N, dailyFirst);
+  // Podium : débloque le circuit suivant (seulement si celui-ci était déjà ouvert).
+  const newCourse = N > 1 && rank <= 3 ? recordPodium(save, course.id) : null;
+  if (newCourse) menus.toast(t('courseUnlocked').replace('{name}', newCourse.name));
   for (const id of rewards.unlocked) menus.toast(t('newAcc').replace('{name}', accessoryById(id).name[getLang()]));
   save.coins += coins;
   const results = order.map((i) => ({
@@ -573,7 +573,7 @@ function frame(now: number): void {
       `R piste  ${Math.abs(k) > 1e-4 ? (1 / Math.abs(k)).toFixed(0) + ' m' : '∞'}`,
       `ligne    ${race.line.speed[p.index].toFixed(1)} m/s`,
       `endur.   ${(m.endurance * 100).toFixed(0)} %${m.galloping ? ' GALOP' : ''}`,
-      `glisse   ${m.drifting ? `OUI ${m.driftTime.toFixed(1)} s` : 'non'}  élan ${m.boostTime.toFixed(1)} s`,
+      `glisse   ${m.skidding ? 'OUI (pluie)' : 'non'}  élan ${m.boostTime.toFixed(1)} s`,
       `cordes   ${race.racers[0].cordeCount}/${race.line.apexes.length}`,
     ].join('\n');
   }
@@ -613,7 +613,8 @@ function soundEvents(): void {
     sound.hoof(surface, m.speed / 30);
   }
   lastStride = stride;
-  sound.drift(m.drifting, m.boostCharge);
+  // Dérapage sous la pluie : même bruit de frottement qu'avant la glissade volontaire.
+  sound.drift(m.skidding, 0);
   if (me.lastCordeTick !== lastCorde) {
     if (me.lastCordeTick >= 0) sound.corde();
     lastCorde = me.lastCordeTick;

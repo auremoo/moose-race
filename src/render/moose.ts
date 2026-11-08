@@ -400,8 +400,8 @@ export function createMooseView(look: MooseLook = {}): MooseView {
       antlerLag += (leanAngle - antlerLag) * Math.min(1, 5 * dt);
       panache.rotation.x = (antlerLag - leanAngle) * 1.5;
 
-      // En survitesse, l'arrière chasse légèrement vers l'extérieur.
-      const slipYaw = Math.sign(s.curvature) * s.slip * (s.drifting ? 0.85 : 0.35);
+      // Dérapage sous la pluie : l'arrière chasse vers l'extérieur (slip reste nul par temps sec).
+      const slipYaw = Math.sign(s.curvature) * s.slip * 0.6;
       yawSlip.rotation.y += (slipYaw - yawSlip.rotation.y) * Math.min(1, 8 * dt);
     },
   };

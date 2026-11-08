@@ -39,18 +39,7 @@ export interface MooseParams {
   enduranceRecoverSeconds: number;
   /** Une fois l'endurance vidée, part minimale à recharger avant de pouvoir regaloper. */
   gallopRestartMin: number;
-  /** Glissade : vitesse et braquage minimaux, gain d'adhérence latérale, ralentissement. */
-  driftMinSpeed: number;
-  driftSteerMin: number;
-  driftGripMul: number;
-  driftDecel: number;
-  /** Durée de glissade qui charge l'élan au maximum (s). */
-  driftChargeSeconds: number;
-  /** Durée minimale de glissade pour obtenir un élan (s). */
-  driftMinCharge: number;
-  /** Élan libéré : durée de 0,5 à 1,5 s selon la charge, gain de vitesse et d'accélération. */
-  boostMinSeconds: number;
-  boostMaxSeconds: number;
+  /** Élan (départ parfait, aides) : gain de vitesse et d'accélération. */
   boostSpeedMul: number;
   boostAccel: number;
   /** Corde parfaite : gain de vitesse et durée. */
@@ -68,6 +57,8 @@ export interface MooseParams {
 export interface SurfaceParams {
   grip: number;
   vmax: number;
+  /** Sol glissant (pluie) : part de l'adhérence gardée en survitesse, à la place de slideGrip de l'orignal. */
+  slideGrip?: number;
 }
 
 /** Commandes abstraites, produites par input/ (joueur) ou par un pilote automatique. */
@@ -79,11 +70,10 @@ export interface Commands {
   /** Frein 0..1. */
   brake: number;
   gallop: boolean;
-  slide: boolean;
   castor: boolean;
 }
 
-export const NO_COMMANDS: Commands = { steer: 0, throttle: 0, brake: 0, gallop: false, slide: false, castor: false };
+export const NO_COMMANDS: Commands = { steer: 0, throttle: 0, brake: 0, gallop: false, castor: false };
 
 export interface MooseState {
   x: number;
@@ -102,6 +92,8 @@ export interface MooseState {
   lateralAccel: number;
   /** Vrai si l'adhérence est dépassée (survitesse en virage). */
   sliding: boolean;
+  /** Vrai si l'orignal dérape vraiment (survitesse sur sol glissant, sous la pluie). */
+  skidding: boolean;
   /** Intensité de glissement 0..1, pour le rendu (poussière, dérapage). */
   slip: number;
   /** Vrai pendant un freinage. */
@@ -111,15 +103,8 @@ export interface MooseState {
   galloping: boolean;
   /** Vrai après avoir vidé l'endurance, jusqu'à recharge minimale. */
   exhausted: boolean;
-  drifting: boolean;
-  /** Sens de la glissade : +1 gauche, -1 droite. */
-  driftDir: number;
-  /** Durée de la glissade en cours (s). */
-  driftTime: number;
   /** Temps d'élan restant (s). */
   boostTime: number;
-  /** Charge de l'élan en cours, 0..1 (pour l'affichage). */
-  boostCharge: number;
   /** Temps de bonus de corde restant (s). */
   cordeTime: number;
   /** Vrai dans le sillage d'un autre orignal (renseigné par la course). */
@@ -145,16 +130,13 @@ export function createMooseState(x: number, y: number, heading: number, speed = 
     commandedCurvature: 0,
     lateralAccel: 0,
     sliding: false,
+    skidding: false,
     slip: 0,
     braking: false,
     endurance: 1,
     galloping: false,
     exhausted: false,
-    drifting: false,
-    driftDir: 0,
-    driftTime: 0,
     boostTime: 0,
-    boostCharge: 0,
     cordeTime: 0,
     drafting: false,
     stunTime: 0,
@@ -176,12 +158,6 @@ export function steerCurvatureRange(speed: number, surface: SurfaceParams, p: Mo
   return Math.min(p.maxSteerCurvature, (p.steerGripMargin * p.aLat * surface.grip) / v2);
 }
 
-/** Charge 0..1 de l'élan pour une durée de glissade donnée. */
-export function driftCharge(driftTime: number, p: MooseParams): number {
-  if (driftTime < p.driftMinCharge) return 0;
-  return clamp(driftTime / p.driftChargeSeconds, 0, 1);
-}
-
 /** Avance l'état d'un pas `dt`. Mutation en place pour éviter les allocations à 60 Hz. */
 export function stepMoose(
   s: MooseState,
@@ -195,7 +171,7 @@ export function stepMoose(
   // Étourdi : l'orignal ne pousse plus et se dirige mal, le temps de reprendre ses esprits.
   if (s.stunTime > 0) {
     s.stunTime = Math.max(0, s.stunTime - dt);
-    cmd = { ...cmd, steer: cmd.steer * 0.3, throttle: 0, brake: 0, gallop: false, slide: false };
+    cmd = { ...cmd, steer: cmd.steer * 0.3, throttle: 0, brake: 0, gallop: false };
   }
   // Direction lissée : pas de changement instantané de braquage.
   const target = clamp(cmd.steer, -1, 1);
@@ -206,29 +182,9 @@ export function stepMoose(
   const throttleIn = clamp(cmd.throttle, 0, 1);
   const brakeIn = clamp(cmd.brake, 0, 1);
 
-  // ---- Glissade : commande maintenue en braquant fort, à bonne vitesse. ----
-  const wantsDrift = cmd.slide && Math.abs(target) >= p.driftSteerMin && v >= p.driftMinSpeed;
-  if (!s.drifting && wantsDrift) {
-    s.drifting = true;
-    s.driftDir = Math.sign(target);
-    s.driftTime = 0;
-  } else if (s.drifting) {
-    const keep = cmd.slide && target * s.driftDir > 0.2 && v > p.driftMinSpeed * 0.6;
-    if (keep) {
-      s.driftTime += dt;
-    } else {
-      // Relâchée : l'élan chargé est libéré.
-      const charge = driftCharge(s.driftTime, p);
-      if (charge > 0) s.boostTime = p.boostMinSeconds + (p.boostMaxSeconds - p.boostMinSeconds) * charge;
-      s.drifting = false;
-      s.driftTime = 0;
-    }
-  }
-  s.boostCharge = s.drifting ? driftCharge(s.driftTime, p) : 0;
-
   // ---- Galop : vide l'endurance, qui se recharge hors galop. ----
   if (s.exhausted && s.endurance >= p.gallopRestartMin) s.exhausted = false;
-  s.galloping = cmd.gallop && !s.exhausted && s.endurance > 0 && !s.drifting;
+  s.galloping = cmd.gallop && !s.exhausted && s.endurance > 0;
   if (s.galloping) {
     s.endurance -= dt / p.enduranceSeconds;
     if (s.endurance <= 0) {
@@ -241,7 +197,7 @@ export function stepMoose(
   }
   // Galoper, c'est aussi accélérer.
   const throttle = s.galloping ? 1 : throttleIn;
-  const brake = s.drifting || s.galloping ? 0 : brakeIn;
+  const brake = s.galloping ? 0 : brakeIn;
 
   // ---- Effets temporaires ----
   if (s.boostTime > 0) s.boostTime = Math.max(0, s.boostTime - dt);
@@ -266,13 +222,11 @@ export function stepMoose(
   if (s.drafting) speedMul *= p.draftSpeedMul;
   speedMul *= s.extraSpeedMul;
 
-  const aMax = p.aLat * surface.grip * (s.drifting ? p.driftGripMul : 1);
+  const aMax = p.aLat * surface.grip;
   const vTop = p.topSpeed * surface.vmax * speedMul;
 
-  const range = steerCurvatureRange(v, surface, p) * (s.drifting ? p.driftGripMul : 1);
-  // En glissade, l'orignal garde un braquage minimal dans le sens de la glissade (il « pivote »).
-  const steerEff = s.drifting ? s.driftDir * Math.max(0.55, Math.abs(s.steer)) : s.steer;
-  const kCmd = steerEff * range;
+  const range = steerCurvatureRange(v, surface, p);
+  const kCmd = s.steer * range;
   s.commandedCurvature = kCmd;
   const aDemand = v * v * Math.abs(kCmd);
 
@@ -280,18 +234,22 @@ export function stepMoose(
   let aUsed = aDemand;
   let excess = 0;
   if (aDemand > aMax && v > 0.1) {
-    // Survitesse : l'adhérence chute (glissement), la courbure suivie est plafonnée, l'orignal élargit.
-    const aSlide = aMax * p.slideGrip;
+    // Survitesse : l'adhérence chute, la courbure suivie est plafonnée, l'orignal élargit. Sur sol
+    // mouillé (surface avec son propre slideGrip), elle chute davantage et l'orignal glisse vraiment.
+    const aSlide = aMax * (surface.slideGrip ?? p.slideGrip);
     k = Math.sign(kCmd) * (aSlide / (v * v));
     aUsed = aMax;
     excess = aDemand - aSlide;
-    s.sliding = !s.drifting;
+    s.sliding = true;
   } else {
     s.sliding = false;
   }
   s.curvature = k;
   s.lateralAccel = v * v * k;
-  const slipTarget = s.drifting ? 0.6 : s.sliding ? clamp(excess / aMax, 0, 1) : 0;
+  // Dérapage visible (arrière qui chasse, poussière, message) seulement sur sol glissant : par temps
+  // sec, la survitesse fait élargir et ralentir, sans glissade.
+  s.skidding = s.sliding && surface.slideGrip !== undefined;
+  const slipTarget = s.skidding ? clamp(excess / aMax, 0, 1) : 0;
   s.slip += (slipTarget - s.slip) * clamp(8 * dt, 0, 1);
 
   // ---- Longitudinal : accélérateur, roue libre et frein, dans la limite du cercle de friction. ----
@@ -310,8 +268,7 @@ export function stepMoose(
   s.braking = brake > 0 && v > 0.5;
   // Gravité le long de la pente (atténuée : jeu d'arcade).
   a -= 9.81 * 0.6 * slope;
-  if (s.drifting) a -= p.driftDecel;
-  else if (s.sliding) a -= p.scrubFactor * Math.min(excess, p.scrubMaxExcess) + p.slideFlatDecel;
+  if (s.sliding) a -= p.scrubFactor * Math.min(excess, p.scrubMaxExcess) + p.slideFlatDecel;
 
   let nv = v + a * dt;
   if (nv < 0) nv = 0;

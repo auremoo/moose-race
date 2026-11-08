@@ -16,6 +16,7 @@ import {
 import type { SaveData } from '../meta/settings';
 import { formatTime } from './hud';
 import { DAILY_BONUS, dailyChallenge } from '../meta/daily';
+import { isCourseUnlocked, unlockRequirement } from '../meta/progress';
 import { CollectionScreens } from './collectionScreens';
 import { ChestUI } from './chests';
 import { getLang, t, type TextKey } from './i18n';
@@ -213,16 +214,23 @@ export class Menus {
       const card = document.createElement('button');
       card.className = 'course-card';
       card.style.setProperty('--biome', BIOME_COLORS[c.biome] ?? '#8E8A85');
-      const open = isAvailable(c.milestone) && !!c.trackId;
-      if (!open) {
+      const built = isAvailable(c.milestone) && !!c.trackId;
+      // Déblocage progressif : podium sur le circuit précédent.
+      const earned = built && isCourseUnlocked(this.save, c.id);
+      const open = built && earned;
+      if (!built) {
         card.classList.add('locked');
         card.dataset.milestone = String(c.milestone);
         card.setAttribute('aria-disabled', 'true');
+      } else if (!earned) {
+        card.classList.add('course-locked');
+        card.setAttribute('aria-disabled', 'true');
       }
+      const need = built && !earned ? unlockRequirement(c.id) : null;
       const best = this.save.bestTimes[c.trackId ?? c.id];
       const right = open
         ? `<span class="course-best"><small>${t('record2')}</small>${best !== undefined ? formatTime(best) : '—'}</span>`
-        : `<span class="course-lock"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#i-lock"/></svg>${soonText(c.milestone, 'soonBadge')}</span>`;
+        : `<span class="course-lock"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#i-lock"/></svg>${need ? t('podiumNeeded') : soonText(c.milestone, 'soonBadge')}</span>`;
       const province = c.province ? `${tk(`prov_${c.province}`)} · ` : '';
       const laps = c.laps === 1 ? t('lap1') : t('lapsN').replace('{n}', String(c.laps));
       card.innerHTML = `
@@ -237,6 +245,7 @@ export class Menus {
           this.selected = c;
           this.show('prep');
         });
+      else if (need) card.addEventListener('click', () => this.toast(t('unlockHint').replace('{name}', need.name)));
       list.appendChild(card);
     }
   }

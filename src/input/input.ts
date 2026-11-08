@@ -8,7 +8,6 @@ export interface Commands {
   throttle: number;
   brake: number;
   gallop: boolean;
-  slide: boolean;
   castor: boolean;
 }
 
@@ -17,8 +16,6 @@ export interface InputConfig {
   touchCurve: number;
   keyboardRampPerSecond: number;
   sensitivity: number;
-  /** Braquage à partir duquel Freine devient une glissade (même valeur que la simulation). */
-  driftSteerMin: number;
 }
 
 export interface SteerTouchVisual {
@@ -155,14 +152,11 @@ export class InputManager {
     const gasKey = this.keys.has('ArrowUp') || this.keys.has('KeyW');
     const brakeKey = this.keys.has('ArrowDown') || this.keys.has('KeyS');
     const brake = pedals.brake || brakeKey;
-    // Freine en braquant fort = glissade (ou Maj au clavier) ; Freine en ligne droite = frein.
-    const slideKey = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
     return {
       steer,
       throttle: pedals.gas || gasKey ? 1 : 0,
       brake: brake ? 1 : 0,
       gallop: this.keys.has('Space') || pedals.gallop,
-      slide: slideKey || (brake && Math.abs(steer) >= this.cfg.driftSteerMin),
       castor: this.keys.has('KeyE') || pedals.castor,
     };
   }

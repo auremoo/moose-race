@@ -260,7 +260,7 @@ function stepSwim(r: Race, racer: Racer): void {
   m.y = b.ay + (b.by - b.ay) * u;
   m.speed = BIEF_SWIM_SPEED;
   m.sliding = false;
-  m.drifting = false;
+  m.skidding = false;
   if (u >= 1) {
     racer.swim = -1;
     // Sortie : on retrouve la piste à l'embouchure aval, la progression saute la portion évitée.

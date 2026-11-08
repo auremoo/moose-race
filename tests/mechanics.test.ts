@@ -35,33 +35,39 @@ describe('galop', () => {
   });
 });
 
-describe('glissade', () => {
-  const drift = (seconds: number) => {
-    const s = createMooseState(0, 0, 0, 25);
-    run(s, { ...GO, steer: 0.8, slide: true }, seconds);
-    const speedDuring = s.speed;
-    stepMoose(s, { ...GO, steer: 0.8 }, S.sentier, P, DT);
-    return { s, speedDuring };
+describe('glissade (sous la pluie seulement)', () => {
+  // Même virage pris trop vite : par temps sec l'orignal élargit sans déraper, sous la pluie il glisse.
+  const corner = (surface: typeof S.sentier) => {
+    const s = createMooseState(0, 0, 0, 28);
+    let skid = false;
+    let maxSlip = 0;
+    for (let i = 0; i < 60; i++) {
+      stepMoose(s, { ...GO, steer: 1 }, surface, P, DT);
+      skid ||= s.skidding;
+      maxSlip = Math.max(maxSlip, s.slip);
+    }
+    return { s, skid, maxSlip };
   };
 
-  it("une glissade courte ne charge pas d'élan et sert de frein", () => {
-    const { s, speedDuring } = drift(0.25);
-    expect(s.boostTime).toBe(0);
-    expect(speedDuring).toBeLessThan(25);
+  it('par temps sec, la survitesse fait élargir sans glissade visible', () => {
+    const dry = corner(S.sentier);
+    expect(dry.s.sliding).toBe(true);
+    expect(dry.skid).toBe(false);
+    expect(dry.maxSlip).toBe(0);
   });
 
-  it("une glissade longue libère jusqu'à 1,5 s de poussée", () => {
-    const { s } = drift(2);
-    expect(s.boostTime).toBeGreaterThan(1.4);
-    expect(s.boostTime).toBeLessThanOrEqual(1.5);
+  it('sous la pluie, la survitesse fait glisser et élargit davantage', async () => {
+    const { wetSurfaces } = await import('../src/sim/weather');
+    const wet = corner(wetSurfaces(S).sentier);
+    const dry = corner(S.sentier);
+    expect(wet.skid).toBe(true);
+    expect(wet.maxSlip).toBeGreaterThan(0.2);
+    // Moins d'adhérence gardée : le cap a moins tourné.
+    expect(Math.abs(wet.s.heading)).toBeLessThan(Math.abs(dry.s.heading));
   });
 
-  it('resserre la trajectoire par rapport à la même direction sans glisser', () => {
-    const a = createMooseState(0, 0, 0, 25);
-    const b = createMooseState(0, 0, 0, 25);
-    run(a, { ...GO, steer: 0.8 }, 0.8);
-    run(b, { ...GO, steer: 0.8, slide: true }, 0.8);
-    expect(Math.abs(b.heading)).toBeGreaterThan(Math.abs(a.heading));
+  it("il n'y a plus de commande de glissade", () => {
+    expect(Object.keys(NO_COMMANDS)).not.toContain('slide');
   });
 });
 

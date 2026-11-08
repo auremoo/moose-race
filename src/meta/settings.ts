@@ -4,7 +4,7 @@
  */
 const KEY = 'panache.v1';
 /** Version actuelle du schéma. Chaque hausse ajoute une étape à MIGRATIONS. */
-export const SCHEMA = 5;
+export const SCHEMA = 6;
 
 export interface SaveData {
   schema: number;
@@ -50,6 +50,8 @@ export interface SaveData {
   bestLaps: Record<string, number>;
   /** Empreinte du tracé au moment de chaque record (voir trackSignature). */
   trackSigs: Record<string, string>;
+  /** Circuits où le joueur a fini sur le podium (déblocage du suivant). */
+  podiumCourses: string[];
   /** Accessoires possédés (tuques, foulards…) et accessoire porté par chaque orignal. */
   accessories: string[];
   equipped: Record<string, string>;
@@ -92,6 +94,7 @@ const DEFAULTS: SaveData = {
   bestTimes: {},
   bestLaps: {},
   trackSigs: {},
+  podiumCourses: [],
   accessories: ['tuque-rouge', 'foulard-rouge', 'clochette-doree', 'aucun'],
   equipped: {},
   chests: [],
@@ -124,6 +127,12 @@ const MIGRATIONS: Record<number, (s: Raw) => Raw> = {
   // 4 → 5 : records liés à l'empreinte du tracé. Les anciens records n'en ont pas : ils seront écartés
   // au chargement (les circuits ont été régénérés pour les nouvelles chicanes).
   4: (s) => ({ ...s, trackSigs: {}, schema: 5 }),
+  // 5 → 6 : déblocage progressif. Les circuits déjà gagnés (firstWins) comptent comme podiums, pour ne
+  // pas reverrouiller ce qu'un joueur a déjà parcouru.
+  5: (s) => {
+    const won = Array.isArray(s.firstWins) ? (s.firstWins as string[]).map((k) => k.split('|')[0]) : [];
+    return { ...s, podiumCourses: [...new Set(won)], schema: 6 };
+  },
 };
 
 /** Applique les migrations et complète les champs manquants. */

@@ -94,5 +94,5 @@ export function autopilot(track: Track, racer: Racer, p: MooseParams, surface: S
       throttle = 0.4;
     }
   }
-  return { steer, throttle, brake, gallop: false, slide: false, castor: false };
+  return { steer, throttle, brake, gallop: false, castor: false };
 }

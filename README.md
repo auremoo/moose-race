@@ -2,7 +2,7 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalons 1 à 8 (V1.0 hors test graphique Meshy)** — didacticiel, PWA, décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, glissade, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
+**État : jalons 1 à 8 (V1.0 hors test graphique Meshy)** — didacticiel, PWA, décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
 
 ## Jouer
 
@@ -10,11 +10,11 @@ Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le c
 - Tactile : pouce gauche sur le bas de l'écran, glisse à gauche ou à droite pour diriger ;
   pouce droit sur **Fonce** (accélérer) et **Freine**. Le pouce peut glisser d'un bouton à l'autre.
 - **Galop** (bouton orange, Espace) : +22 % de vitesse, vide l'endurance (anneau du bouton) en 4 s, recharge en 8 s.
-- **Glissade** : Freine en braquant fort à bonne vitesse (ou Maj). Courte, elle freine ; longue, elle charge un élan
-  (gerbes bleues puis or) libéré au relâchement, de 0,5 à 1,5 s.
+- **Pas de glissade volontaire.** Un virage pris trop vite fait élargir et ralentir ; **sous la pluie seulement**,
+  l'orignal glisse vraiment (il ne garde que 55 % de son adhérence, l'arrière chasse, « Ça glisse »).
 - **Corde** : passer sur le disque vert à l'intérieur du virage sans déraper donne +5 % pendant 1,5 s.
 - **Ligne idéale** au sol : verte si ta vitesse permet encore le prochain virage, rouge s'il faut freiner. Désactivable.
-- Clavier : ← → (ou A / D) pour diriger, ↑ (W) pour accélérer, ↓ (S) pour freiner, Espace galop, Maj glissade,
+- Clavier : ← → (ou A / D) pour diriger, ↑ (W) pour accélérer, ↓ (S) pour freiner, Espace galop,
   Échap ou P pour la pause.
 - Débogage : ajouter `?debug` à l'adresse, ou cocher « Mode débogage » dans la pause.
 - Langue : français ou anglais, selon le téléphone par défaut, modifiable dans Réglages (écran d'accueil).
@@ -183,6 +183,13 @@ Rocheuses : 15 % / 20 % ; jamais de pluie sur la neige). Même graine, même mé
 - **Départ parfait** : appuyer sur Fonce dans la dernière demi-seconde du compte à rebours donne 1 s d'élan ;
   trop tôt, rien. Les bots le réussissent selon leur talent.
 - **Direction** : braquage complet en 0,14 s. Lignes de vitesse sur les bords à haute vitesse et au galop.
+
+## Déblocage des circuits
+
+Les 2 premiers circuits sont ouverts ; chaque suivant se débloque avec un **podium sur le précédent** (n'importe
+quelle difficulté). Le **défi du jour** reste jouable sur n'importe quel circuit, même verrouillé (un podium au
+défi du jour sur un circuit verrouillé ne débloque rien). Les circuits déjà gagnés avant cette règle restent
+ouverts (sauvegarde en schéma 6).
 
 ## Difficulté et records
 

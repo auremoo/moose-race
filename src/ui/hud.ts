@@ -447,7 +447,8 @@ export class Hud {
     const dt = Math.min(0.1, (now - this.lastUpdate) / 1000);
     this.lastUpdate = now;
     const cfg = race.balance.hud;
-    this.slideTimer = r.moose.sliding && r.moose.slip > cfg.slideMessageSlip ? this.slideTimer + dt : 0;
+    // Survitesse en virage : « Trop vite » par temps sec, « Ça glisse » sous la pluie (dérapage).
+    this.slideTimer = r.moose.sliding && (!r.moose.skidding || r.moose.slip > cfg.slideMessageSlip) ? this.slideTimer + dt : 0;
     // Événements brefs : corde parfaite, élan libéré.
     if (r.lastCordeTick !== this.lastCordeTick) {
       if (r.lastCordeTick >= 0) this.showEvent(t('corde'), 'good');
@@ -465,7 +466,7 @@ export class Hud {
     if (this.eventTimer > 0) {
       msg = this.eventMsg;
       cls = this.eventClass;
-    } else if (this.slideTimer > cfg.slideMessageDelay) msg = t('sliding');
+    } else if (this.slideTimer > cfg.slideMessageDelay) msg = t(r.moose.skidding ? 'skidding' : 'sliding');
     else if (r.onVerge) msg = t('offTrack');
     if (msg) {
       this.flash.textContent = msg;

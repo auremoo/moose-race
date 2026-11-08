@@ -852,21 +852,12 @@ export class GameView {
       }
     }
     const dustColor = swimming ? C.water : surface === 'neige' || surface === 'glace' ? C.snow : surface === 'boue' ? C.mud : C.dust;
-    const dustRate = swimming ? 45 : m.drifting ? 50 : m.sliding ? 60 * Math.max(0.3, m.slip) : r.onVerge && m.speed > 5 ? 25 : 0;
+    const dustRate = swimming ? 45 : m.skidding ? 60 * Math.max(0.3, m.slip) : r.onVerge && m.speed > 5 ? 25 : 0;
     for (let k = this.dust.due(dustRate, dt); k > 0; k--) {
       const [px, py, pz] = at(-1.5 + rnd(0.6), rnd(1.6), 0.3);
       this.dust.emit(px, py, pz, rnd(2), 1 + Math.random() * 1.5, rnd(2), 0.7, dustColor);
     }
 
-    // Gerbes de glissade : bleues pendant la charge, or quand l'élan est plein.
-    if (m.drifting) {
-      const col = m.boostCharge >= 1 ? C.gold : m.boostCharge > 0 ? C.blue : C.dust;
-      for (let k = this.sparks.due(m.boostCharge > 0 ? 90 : 20, dt); k > 0; k--) {
-        const side = (Math.random() < 0.5 ? -1 : 1) * 0.5;
-        const [px, py, pz] = at(-1.6, side, 0.15);
-        this.sparks.emit(px, py, pz, rnd(3) - ch * 2, 2 + Math.random() * 2, rnd(3) + sh * 2, 0.45, col);
-      }
-    }
     // Élan libéré ou coup de queue : traînée dorée.
     if (m.boostTime > 0 || m.tailTime > 0) {
       for (let k = this.sparks.due(70, dt); k > 0; k--) {
