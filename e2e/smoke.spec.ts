@@ -88,7 +88,8 @@ test('la langue passe en anglais', async ({ page }) => {
 });
 
 test('le mode Ours et castors démarre avec des ours', async ({ page }) => {
-  const errors = await freshStart(page, { mode: 'special', difficulty: 'difficile', botCount: 5 });
+  // 8e circuit (Boucle grise) : débloqué par un podium sur le 7e.
+  const errors = await freshStart(page, { mode: 'special', difficulty: 'difficile', botCount: 5, podiumCourses: ['crepuscule-manitoba'] });
   await page.click('#btn-play');
   await page.locator('.course-card').nth(7).click();
   await page.click('#btn-go');

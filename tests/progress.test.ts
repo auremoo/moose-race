@@ -43,3 +43,12 @@ describe('déblocage progressif des circuits', () => {
     expect(isCourseUnlocked(s, list[4].id)).toBe(true);
   });
 });
+
+describe('migrations non destructives', () => {
+  it('un champ récent déjà présent dans une vieille sauvegarde est gardé', () => {
+    const s = migrate({ schema: 2, podiumCourses: ['crepuscule-manitoba'], chests: [{ id: 3, type: 'or' }], accessories: ['tuque-bleue'] });
+    expect(s.podiumCourses).toContain('crepuscule-manitoba');
+    expect(s.chests).toEqual([{ id: 3, type: 'or' }]);
+    expect(s.accessories).toEqual(['tuque-bleue']);
+  });
+});

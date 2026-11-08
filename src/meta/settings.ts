@@ -104,7 +104,10 @@ const DEFAULTS: SaveData = {
 
 type Raw = Record<string, unknown> & { schema?: number };
 
-/** Étapes de migration : MIGRATIONS[n] passe du schéma n au schéma n + 1. */
+/**
+ * Étapes de migration : MIGRATIONS[n] passe du schéma n au schéma n + 1. Elles complètent sans jamais
+ * écraser une valeur déjà présente (une sauvegarde importée ou réparée peut déjà contenir un champ récent).
+ */
 const MIGRATIONS: Record<number, (s: Raw) => Raw> = {
   // 1 → 2 : collection (niveaux, fragments, ravitaillement) ; Bûcheron toujours possédé.
   1: (s) => {
@@ -112,26 +115,27 @@ const MIGRATIONS: Record<number, (s: Raw) => Raw> = {
     if (!owned.includes('bucheron')) owned.unshift('bucheron');
     const levels = (s.levels as Record<string, number>) ?? {};
     for (const id of owned) levels[id] ??= 1;
-    return { ...s, owned, levels, fragments: 0, lootCount: 0, pityCounter: 0, schema: 2 };
+    return { fragments: 0, lootCount: 0, pityCounter: 0, ...s, owned, levels, schema: 2 };
   },
   // 2 → 3 : accessoires à collectionner ; chacun garde l'accessoire d'origine de son orignal.
-  2: (s) => ({ ...s, accessories: ['tuque-rouge', 'foulard-rouge', 'clochette-doree', 'aucun'], equipped: {}, schema: 3 }),
+  2: (s) => ({ accessories: ['tuque-rouge', 'foulard-rouge', 'clochette-doree', 'aucun'], equipped: {}, ...s, schema: 3 }),
   // 3 → 4 : coffres et objectifs. Compteurs repris de l'historique connu (victoires : au moins une par
   // couple circuit-difficulté déjà gagné ; les podiums ne sont pas connus, on prend la même valeur).
   3: (s) => {
     const wins = Array.isArray(s.firstWins) ? s.firstWins.length : 0;
     const dailies = Array.isArray(s.dailyDone) ? s.dailyDone.length : 0;
     const races = typeof s.raceCount === 'number' ? s.raceCount : 0;
-    return { ...s, chests: [], chestSeq: 0, stats: { races, wins, podiums: wins, dailies, chests: 0 }, schema: 4 };
+    return { chests: [], chestSeq: 0, stats: { races, wins, podiums: wins, dailies, chests: 0 }, ...s, schema: 4 };
   },
   // 4 → 5 : records liés à l'empreinte du tracé. Les anciens records n'en ont pas : ils seront écartés
   // au chargement (les circuits ont été régénérés pour les nouvelles chicanes).
-  4: (s) => ({ ...s, trackSigs: {}, schema: 5 }),
+  4: (s) => ({ trackSigs: {}, ...s, schema: 5 }),
   // 5 → 6 : déblocage progressif. Les circuits déjà gagnés (firstWins) comptent comme podiums, pour ne
-  // pas reverrouiller ce qu'un joueur a déjà parcouru.
+  // pas reverrouiller ce qu'un joueur a déjà parcouru ; les podiums déjà connus sont gardés.
   5: (s) => {
     const won = Array.isArray(s.firstWins) ? (s.firstWins as string[]).map((k) => k.split('|')[0]) : [];
-    return { ...s, podiumCourses: [...new Set(won)], schema: 6 };
+    const known = Array.isArray(s.podiumCourses) ? (s.podiumCourses as string[]) : [];
+    return { ...s, podiumCourses: [...new Set([...known, ...won])], schema: 6 };
   },
 };
 
