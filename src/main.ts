@@ -95,7 +95,32 @@ let race: Race = newRace();
 const ghostRec = new GhostRecorder();
 /** Dernières images de la course (2,5 s) pour le ralenti de l'arrivée : x, y, cap, vitesse, galop par orignal. */
 const REPLAY_FRAMES = 150;
-let replayBuf: Float32Array[] = [];
+/** Tampon circulaire préalloué à chaque course : aucune allocation pendant la course. */
+const replay = {
+  pool: [] as Float32Array[],
+  head: 0,
+  count: 0,
+  reset(racers: number): void {
+    this.pool = Array.from({ length: REPLAY_FRAMES }, () => new Float32Array(racers * 5));
+    this.head = 0;
+    this.count = 0;
+  },
+  /** Prochaine image à remplir (écrase la plus ancienne une fois plein). */
+  next(): Float32Array {
+    const fr = this.pool[this.head];
+    this.head = (this.head + 1) % REPLAY_FRAMES;
+    this.count = Math.min(REPLAY_FRAMES, this.count + 1);
+    return fr;
+  },
+  /** Images dans l'ordre chronologique ; le tampon est ensuite rendu au ralenti (une nouvelle course en alloue un autre). */
+  frames(): Float32Array[] {
+    const start = (this.head - this.count + REPLAY_FRAMES) % REPLAY_FRAMES;
+    const out = Array.from({ length: this.count }, (_, i) => this.pool[(start + i) % REPLAY_FRAMES]);
+    this.count = 0;
+    return out;
+  },
+};
+replay.reset(race.racers.length);
 /** Affiche le fantôme du record de ce circuit, s'il existe et si le réglage est actif. */
 function applyGhost(): void {
   const g = save.ghostOn ? loadGhost(trackDef.id, race.laps, trackSignature(trackDef)) : null;
@@ -373,7 +398,7 @@ function restart(trackChanged = false): void {
   view.setRace(race, trackChanged);
   view.setIdealLine(lineVisible());
   ghostRec.reset();
-  replayBuf = [];
+  replay.reset(race.racers.length);
   applyGhost();
   resultsShown = false;
   hud.showPodiumTitle(false);
@@ -445,8 +470,7 @@ function onFinish(): void {
   // Ralenti de l'arrivée (victoire ou podium), puis podium 3D, puis résultats. Le ralenti démarre une
   // image plus tard : le cliché du photo-finish se prend sur l'image du franchissement.
   const wantReplay = N > 1 && rank <= 3 && !save.reduceMotion;
-  const frames = replayBuf;
-  replayBuf = [];
+  const frames = replay.frames();
   const showResultsNow = () => {
     if (race !== finishedRace) return;
     hud.showPodiumTitle(false);
@@ -543,12 +567,15 @@ function frame(now: number): void {
         const me = race.racers[0].moose;
         ghostRec.sample(raceTime(race), me.x, me.y, me.heading);
         if (!race.racers[0].finished) {
-          const fr = new Float32Array(race.racers.length * 5);
-          race.racers.forEach((rc, k) =>
-            fr.set([rc.moose.x, rc.moose.y, rc.moose.heading, rc.moose.speed, rc.moose.galloping ? 1 : 0], k * 5),
-          );
-          replayBuf.push(fr);
-          if (replayBuf.length > REPLAY_FRAMES) replayBuf.shift();
+          const fr = replay.next();
+          race.racers.forEach((rc, k) => {
+            const o = k * 5;
+            fr[o] = rc.moose.x;
+            fr[o + 1] = rc.moose.y;
+            fr[o + 2] = rc.moose.heading;
+            fr[o + 3] = rc.moose.speed;
+            fr[o + 4] = rc.moose.galloping ? 1 : 0;
+          });
         }
       }
       if (!wasFinished && race.phase === 'finished') onFinish();
