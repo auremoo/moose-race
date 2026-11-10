@@ -191,7 +191,7 @@ const SPECS: Spec[] = [
     province: 'BC',
     stars: 4,
     verge: 8,
-    route: 'W14 S180 R90@18 S60 L90@18 R90@18 S60 L90@18 S150 R180@16 S180 R90@22 S60 CHL40@20 S60 R90@22',
+    route: 'W14 S180 R90@18 S60 L90@18 R90@18 S60 L90@18 S150 R90@16 F12 R90@16 S180 R90@22 S60 CHL40@20 S60 R90@22',
   },
   {
     id: 'col-kicking-horse',
@@ -451,21 +451,32 @@ function trace(spec: Spec): { pts: Pt[]; turn: number; gap: number; raw: [number
   return { pts, turn: res.turn, gap: cost, raw: [Math.round(-gx), Math.round(-gy)], chicanes: res.chicanes };
 }
 
-function selfClearance(def: TrackDef): { min: number; need: number } {
+/**
+ * Plus petit écart (m) entre les bas-côtés de deux portions éloignées du tracé, avec le bas-côté
+ * propre à chaque échantillon. En dessous de MIN_CLEARANCE, on pourrait couper d'une portion à
+ * l'autre ou voir les décors se chevaucher.
+ */
+const MIN_CLEARANCE = 2;
+
+function selfClearance(def: TrackDef): { min: number; at: [number, number] } {
   const t = buildTrack(def, 1);
   const S = t.samples;
   const n = S.length;
   let min = Infinity;
+  let at: [number, number] = [0, 0];
   for (let a = 0; a < n; a += 2) {
     for (let b = a + 2; b < n; b += 2) {
       const ds = Math.min(b - a, n - (b - a)) * t.spacing;
-      const need = S[a].hw + S[b].hw + 2 * def.verge;
+      const need = S[a].hw + S[b].hw + S[a].verge + S[b].verge;
       if (ds < need * 3) continue;
       const d = Math.hypot(S[a].x - S[b].x, S[a].y - S[b].y) - need;
-      if (d < min) min = d;
+      if (d < min) {
+        min = d;
+        at = [a / n, b / n];
+      }
     }
   }
-  return { min, need: 0 };
+  return { min, at };
 }
 
 function lapTime(def: TrackDef): number {
@@ -540,12 +551,12 @@ for (const spec of all) {
   const laps = Math.max(1, Math.min(4, Math.round(90 / lap)));
   const minR = Math.min(...track.samples.map((s) => (Math.abs(s.k) > 1e-4 ? 1 / Math.abs(s.k) : Infinity)));
   const widths = track.samples.map((s) => s.hw * 2);
-  const ok = clear.min > 0 && Number.isFinite(lap);
+  const ok = clear.min >= MIN_CLEARANCE && Number.isFinite(lap);
   if (!ok) failed = true;
   console.log(
     `${ok ? '✓' : '✗'} ${spec.id.padEnd(26)} ${'★'.repeat(spec.stars).padEnd(5)} ${(track.length / 1000).toFixed(2)} km` +
       `  tour ${lap.toFixed(1)} s × ${laps}  R min ${minR.toFixed(0)} m  largeur ${Math.min(...widths).toFixed(0)}–${Math.max(...widths).toFixed(0)} m` +
-      `  marge ${clear.min.toFixed(1)} m  ${info}`,
+      `  marge ${clear.min.toFixed(1)} m (${clear.at.map((f) => f.toFixed(2)).join('/')})  ${info}`,
   );
   courses.push({
     id: spec.id,
