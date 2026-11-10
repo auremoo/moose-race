@@ -1,6 +1,6 @@
 /**
  * Son entièrement synthétisé avec Web Audio (aucun fichier externe, aucune licence à gérer) :
- * sabots selon la surface, glissade, corde parfaite, élan, bramé de victoire, ours, castor,
+ * sabots selon la surface, dérapage sous la pluie, corde parfaite, élan, bramé de victoire, ours, castor,
  * compte à rebours et petite musique par biome. Retour haptique quand le navigateur le permet.
  */
 
@@ -32,8 +32,8 @@ export class SoundEngine {
   private sfx!: GainNode;
   private music!: GainNode;
   private noise!: AudioBuffer;
-  private driftGain: GainNode | null = null;
-  private driftFilter: BiquadFilterNode | null = null;
+  private skidGain: GainNode | null = null;
+  private skidFilter: BiquadFilterNode | null = null;
   private musicTimer = 0;
   private musicStyle = 'menu';
   private nextNote = 0;
@@ -140,26 +140,26 @@ export class SoundEngine {
     this.rainGain.gain.setTargetAtTime(on ? 0.08 : 0, this.ctx.currentTime, 0.4);
   }
 
-  /** Glissade : souffle filtré continu, d'autant plus aigu que l'élan est chargé. */
-  drift(on: boolean, charge: number): void {
+  /** Dérapage sous la pluie : souffle filtré continu. */
+  skid(on: boolean): void {
     if (!this.ctx) return;
-    if (!this.driftGain) {
-      this.driftFilter = this.ctx.createBiquadFilter();
-      this.driftFilter.type = 'bandpass';
-      this.driftFilter.Q.value = 1.5;
-      this.driftGain = this.ctx.createGain();
-      this.driftGain.gain.value = 0;
-      this.driftFilter.connect(this.driftGain);
-      this.driftGain.connect(this.sfx);
+    if (!this.skidGain) {
+      this.skidFilter = this.ctx.createBiquadFilter();
+      this.skidFilter.type = 'bandpass';
+      this.skidFilter.Q.value = 1.5;
+      this.skidGain = this.ctx.createGain();
+      this.skidGain.gain.value = 0;
+      this.skidFilter.connect(this.skidGain);
+      this.skidGain.connect(this.sfx);
       const src = this.ctx.createBufferSource();
       src.buffer = this.noise;
       src.loop = true;
-      src.connect(this.driftFilter);
+      src.connect(this.skidFilter);
       src.start();
     }
     const t = this.ctx.currentTime;
-    this.driftGain.gain.setTargetAtTime(on ? 0.22 : 0, t, 0.05);
-    this.driftFilter!.frequency.setTargetAtTime(700 + charge * 1800, t, 0.1);
+    this.skidGain.gain.setTargetAtTime(on ? 0.22 : 0, t, 0.05);
+    this.skidFilter!.frequency.setTargetAtTime(900, t, 0.1);
   }
 
   private tone(freq: number, at: number, dur: number, type: OscillatorType, peak: number): void {

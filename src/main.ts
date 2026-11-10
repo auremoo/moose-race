@@ -602,7 +602,7 @@ function soundEvents(): void {
   const me = race.racers[0];
   const m = me.moose;
   if (onHome || paused) {
-    sound.drift(false, 0);
+    sound.skid(false);
     sound.rain(false);
     return;
   }
@@ -622,7 +622,7 @@ function soundEvents(): void {
   }
   lastStride = stride;
   // Dérapage sous la pluie : même bruit de frottement qu'avant la glissade volontaire.
-  sound.drift(m.skidding, 0);
+  sound.skid(m.skidding);
   if (me.lastCordeTick !== lastCorde) {
     if (me.lastCordeTick >= 0) sound.corde();
     lastCorde = me.lastCordeTick;

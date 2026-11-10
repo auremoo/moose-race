@@ -138,3 +138,18 @@ test('le didacticiel (1 tour) ne laisse pas de record sur un circuit à 2 tours'
   expect(await page.evaluate(() => localStorage.getItem('panache.ghost.prairie-tranquille'))).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test('sur un petit téléphone, texte à 130 %, tout l’accueil tient sans défiler', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  const errors = await freshStart(page, { uiScale: 1.3 });
+  await expect(page.locator('#btn-play')).toBeVisible();
+  const fit = await page.evaluate(() => {
+    const home = document.getElementById('screen-home')!;
+    const bottom = (sel: string) => document.querySelector(sel)!.getBoundingClientRect().bottom;
+    return { overflow: home.scrollHeight - home.clientHeight, play: bottom('#btn-play'), tiles: bottom('.tile-grid'), h: innerHeight };
+  });
+  expect(fit.overflow).toBeLessThanOrEqual(1);
+  expect(fit.play).toBeLessThanOrEqual(fit.h);
+  expect(fit.tiles).toBeLessThanOrEqual(fit.h);
+  expect(errors).toEqual([]);
+});

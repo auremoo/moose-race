@@ -87,7 +87,6 @@ function mergeStatic(group: THREE.Object3D, keep: Set<THREE.Object3D>): void {
   for (const r of remove) group.remove(r);
 }
 
-/** États animés du cahier : attente, départ, trot, galop, glissade, choc, étourdi, victoire, défaite. */
 /** Distances (m) de passage à l'orignal simplifié puis à la silhouette. */
 export const MOOSE_LOD = [40, 120] as const;
 
@@ -141,11 +140,17 @@ function mooseProxy(color: THREE.Color, level: 1 | 2, accessory?: string): THREE
 
 export type MoosePose = 'race' | 'idle' | 'victory' | 'defeat';
 
+/** Ce que l'animation lit de l'état de l'orignal. */
+export type MooseAnim = Pick<MooseState, 'speed' | 'curvature' | 'lateralAccel' | 'slip' | 'stunTime' | 'galloping'>;
+
+/** Orignal immobile (accueil, podium, aperçus). */
+export const STILL_MOOSE: MooseAnim = { speed: 0, curvature: 0, lateralAccel: 0, slip: 0, stunTime: 0, galloping: false };
+
 export interface MooseView {
   root: THREE.Group;
   /** Phase de la foulée (pour caler le bruit des sabots). */
   readonly stridePhase: number;
-  update(state: MooseState, dt: number, pose?: MoosePose): void;
+  update(state: MooseAnim, dt: number, pose?: MoosePose): void;
 }
 
 export interface MooseLook {
@@ -351,7 +356,7 @@ export function createMooseView(look: MooseLook = {}): MooseView {
     get stridePhase() {
       return phase;
     },
-    update(s: MooseState, dt: number, pose: MoosePose = 'race') {
+    update(s: MooseAnim, dt: number, pose: MoosePose = 'race') {
       time += dt;
       // Cadence liée à la vitesse : pas de sabots qui patinent.
       // Foulée plus longue au galop (≈ 5 m) qu'au trot (≈ 3 m).

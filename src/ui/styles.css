@@ -1750,3 +1750,70 @@ img.shot {
   font-size: 11px;
   text-align: right;
 }
+
+/* Accueil resserré quand il ne tient pas à l'écran (classes posées par fitHome). */
+.screen-home.fit-1 .home-title {
+  margin-top: 4px;
+}
+.screen-home.fit-1 .logo {
+  font-size: 44px;
+  white-space: nowrap;
+}
+.screen-home.fit-1 .tagline {
+  font-size: 14px;
+}
+.screen-home.fit-1 .home-bottom {
+  gap: 8px;
+}
+.screen-home.fit-1 .active-moose {
+  padding: 5px 12px;
+}
+.screen-home.fit-1 .active-moose strong {
+  font-size: 19px;
+}
+.screen-home.fit-1 .daily-card {
+  padding: 6px 12px;
+}
+.screen-home.fit-1 .daily-card strong {
+  font-size: 17px;
+}
+.screen-home.fit-1 .btn-big {
+  min-height: 54px;
+  font-size: 26px;
+}
+.screen-home.fit-1 .chest-slot {
+  min-height: 48px;
+}
+.screen-home.fit-1 .chest-slot .ic,
+.screen-home.fit-1 .chest-slot svg {
+  width: 28px;
+  height: 28px;
+}
+.screen-home.fit-1 .tile {
+  min-height: 58px;
+  padding: 5px 2px 4px;
+}
+.screen-home.fit-1 .tile svg {
+  width: 22px;
+  height: 22px;
+}
+.screen-home.fit-2 .tagline,
+.screen-home.fit-2 .daily-card small {
+  display: none;
+}
+.screen-home.fit-2 .logo {
+  font-size: 36px;
+}
+.screen-home.fit-2 .tile {
+  min-height: 48px;
+  font-size: 10.5px;
+}
+.screen-home.fit-2 .chest-slot small {
+  display: none;
+}
+.screen-home.fit-2 .chest-slot {
+  min-height: 40px;
+}
+.screen-home.fit-3 .home-title {
+  display: none;
+}

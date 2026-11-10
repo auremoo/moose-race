@@ -2,7 +2,7 @@
 
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
-**État : jalons 1 à 8 (V1.0 hors test graphique Meshy)** — didacticiel, PWA, décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits, jusqu'à 10 bots, classement, contacts, 3 difficultés, pièces ; ligne de course, corde, galop, aspiration, surfaces, ligne idéale. Orignal provisoire.
+**État : jalons 1 à 8 et suites de l'issue #6 (V1.0 hors test graphique Meshy)** — didacticiel, PWA, décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits débloqués au fil des podiums, défi du jour, jusqu'à 10 bots, 3 difficultés, météo, dénivelé, vent, bifurcation, coffres et accessoires, fantôme, photo-finish et ralenti d'arrivée ; ligne de course, corde, galop, aspiration, surfaces, ligne idéale. Orignal provisoire. Tout tourne dans le navigateur, sans serveur.
 
 ## Jouer
 
@@ -51,7 +51,8 @@ Style : `npm run lint` (ESLint) et `npm run format` (Prettier, `format:check` en
 **Circuits** : 20, du plus facile (★) au plus corsé (★★★★★). 19 sont décrits par segments dans
 `tools/track-gen.ts` (`S200` ligne droite, `R90@40` virage à droite de 90° et 40 m de rayon,
 `CHL40@20` chicane, `ESL60@30` S, `W14` largeur). L'outil ferme la boucle, élargit les lignes droites
-(zones de dépassement), refuse tout circuit qui se croise, puis mesure le tour au pilote automatique pour
+(zones de dépassement), refuse tout circuit qui se croise ou dont deux portions éloignées passent à moins de 2 m
+l'une de l'autre, bas-côtés compris (marge affichée pour chaque circuit), puis mesure le tour au pilote automatique pour
 fixer le nombre de tours (course d'environ 90 s). La Boucle grise est dessinée à la main.
 
 Un parcours est une liste de points `[x, y]` ou `[x, y, largeur]` : la largeur du sentier varie le long du tracé
@@ -95,7 +96,7 @@ Critères d'équilibrage du cahier mesurés par `npm run balance -- 1000` (1 000
   fragments de panache donnés par les doublons, échangeables contre l'orignal de son choix.
 - Coût d'un niveau : 60 × n × multiplicateur de rareté (valeur du cahier). Un Commun se monte au niveau 10 en
   28 courses en moyenne (cible 25 à 40), coffres compris.
-- Sauvegarde locale versionnée (schéma 2, migration depuis le schéma 1), export et import dans les Réglages.
+- Sauvegarde locale versionnée (schéma 6, migration automatique et sans perte depuis les schémas précédents), export et import dans les Réglages.
 
 ## Accessoires
 
@@ -117,7 +118,7 @@ possédé (toujours dans l'aurore boréale). Plus la place est bonne, meilleur e
 Réglages : `src/data/chests.json`.
 
 L'équilibrage compte tous les coffres ouverts : ils font 12,3 % des pièces et un Commun se monte au
-niveau 10 en 28,1 courses (critère du cahier : 25 à 40). Sauvegarde en schéma 4 (migration automatique).
+niveau 10 en 28,1 courses (critère du cahier : 25 à 40).
 
 ## Mode Ours et castors
 
@@ -197,7 +198,7 @@ ouverts (sauvegarde en schéma 6).
   course (Prairie tranquille, Facile, 10 bots) : un joueur débutant (0,4) gagne 17 % du temps et monte sur le
   podium 43 % du temps ; un joueur correct (0,6), 60 % de victoires. Les nouveaux joueurs commencent en Facile.
 - Records et fantômes liés à une empreinte du tracé : un circuit régénéré écarte automatiquement ses anciens
-  records et son fantôme (message au démarrage). Sauvegarde en schéma 5.
+  records et son fantôme (message au démarrage).
 
 ## Chicanes
 
@@ -237,7 +238,7 @@ baisse sous 45 FPS et remonte au-dessus de 58 FPS ; le décor s'allège sous 30 
   inclinaison en virage, bois qui oscillent avec retard ; états attente (respiration), étourdi (étoiles),
   victoire (il se cabre), défaite (tête basse) ; gros yeux visibles à l'accueil.
 - Robes, gabarits et accessoires (tuque, foulard, clochette) différents pour les 20 orignaux.
-- Son synthétisé par Web Audio, sans fichier externe : sabots selon la surface, glissade qui monte avec l'élan,
+- Son synthétisé par Web Audio, sans fichier externe : sabots selon la surface, dérapage sous la pluie,
   corde parfaite, élan, castor, ours, chocs, compte à rebours, bramé de victoire, musique légère par biome.
   Vibrations si le navigateur le permet. Réglages : bruitages, musique, vibrations, réduire les animations.
 
@@ -268,7 +269,7 @@ nœuds de pattes `leg_FL`, `leg_FR`, `leg_RL`, `leg_RR` (animés par le code), m
 ## Habillage
 
 - **Didacticiel** : première course guidée (Prairie tranquille, solo, Facile), mise en avant à la première visite,
-  ignorable. Étapes : courir, diriger, freiner selon la ligne idéale, corde, galop, glissade.
+  ignorable. Étapes : courir, diriger, freiner selon la ligne idéale, corde, galop, puis un conseil sur la vitesse en virage et la pluie.
 - **PWA** : installable sur l'écran d'accueil (manifeste, icônes), jouable hors ligne après une première visite
   (service worker : réseau d'abord pour la page, cache pour les fichiers versionnés).
 - Téléphone en paysage : invitation à repasser en portrait. Pause automatique et son coupé en arrière-plan.

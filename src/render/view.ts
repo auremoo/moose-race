@@ -9,7 +9,7 @@ import { biefWaterSpan } from '../sim/bief';
 import { ChaseCamera } from './camera';
 import { simToWorldX, simToWorldZ } from './coords';
 import { createBarrageView, createBearView, createBeaverView, createShieldView, createWarningSprite } from './creatures';
-import { createMooseView, type MooseView } from './moose';
+import { createMooseView, STILL_MOOSE, type MooseView } from './moose';
 import { Particles, RainStreaks } from './particles';
 import type { Biome, Decor } from './biomes';
 import { createHomeScene, type HomeScene } from './home';
@@ -470,8 +470,7 @@ export class GameView {
       pd.camera.updateProjectionMatrix();
       pd.camera.position.x = Math.sin(pd.t * 0.4) * 2;
       pd.camera.lookAt(0, 2.8, 0);
-      const still = { ...race.racers[0].moose, speed: 0, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false, galloping: false };
-      pd.views.forEach((v, i) => v.update(still, dt, i === 0 ? 'victory' : 'idle'));
+      pd.views.forEach((v, i) => v.update(STILL_MOOSE, dt, i === 0 ? 'victory' : 'idle'));
       this.draw(pd.scene, pd.camera);
       return;
     }
@@ -543,7 +542,7 @@ export class GameView {
       if (pose) {
         this.ghostView.root.position.set(simToWorldX(pose.x), terrainHeight(race.track, pose.x, pose.y), simToWorldZ(pose.y));
         this.ghostView.root.rotation.y = pose.heading;
-        this.ghostView.update({ ...race.racers[0].moose, speed: 22, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false } as never, dt);
+        this.ghostView.update({ ...STILL_MOOSE, speed: 22 }, dt);
       }
     }
     if (this.idealOn && !this.showcaseOn) this.colorIdealLine(race);
@@ -596,7 +595,7 @@ export class GameView {
     scene.background = new THREE.Color(0xf6efe4);
     const mv = createMooseView(look);
     mv.root.rotation.y = -0.6;
-    mv.update({ speed: 0, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false, galloping: false, curvature: 0 } as never, 0.016, 'idle');
+    mv.update(STILL_MOOSE, 0.016, 'idle');
     scene.add(mv.root);
     const cam = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
     // Cadre carré au centre : on recule selon l'étroitesse de l'écran.
@@ -687,10 +686,7 @@ export class GameView {
       v.root.visible = true;
       v.root.position.set(simToWorldX(x), terrainHeight(race.track, x, y), simToWorldZ(y));
       v.root.rotation.y = A[o + 2] + dh * a;
-      v.update(
-        { speed: A[o + 3], lateralAccel: 0, slip: 0, stunTime: 0, drifting: false, galloping: A[o + 4] > 0, curvature: 0 } as never,
-        dt * REPLAY_SPEED,
-      );
+      v.update({ ...STILL_MOOSE, speed: A[o + 3], galloping: A[o + 4] > 0 }, dt * REPLAY_SPEED);
     }
     // La caméra reste au bord de la ligne et suit le joueur.
     const me = this.moose[0].root.position;
@@ -841,7 +837,7 @@ export class GameView {
     ];
     const rnd = (a: number) => (Math.random() - 0.5) * a;
 
-    // Poussière (ou neige, ou boue) : dérapage, glissade, bas-côté.
+    // Poussière (ou neige, ou boue) : survitesse, dérapage sous la pluie, bas-côté.
     const surface = surfaceUnder(race, r);
     const swimming = r.swim >= 0;
     // Sous la pluie, on soulève des éclaboussures plutôt que de la poussière.

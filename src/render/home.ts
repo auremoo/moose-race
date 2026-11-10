@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { createRng } from '../sim/rng';
 import { paletteFor, skyDome } from './biomes';
-import { createMooseView, type MooseLook, type MooseView } from './moose';
+import { createMooseView, STILL_MOOSE, type MooseLook, type MooseView } from './moose';
 
 export interface HomeScene {
   scene: THREE.Scene;
@@ -138,7 +138,6 @@ export function createHomeScene(): HomeScene {
   let moose: MooseView | null = null;
   let key = '';
   let time = 0;
-  const still = { speed: 0, lateralAccel: 0, slip: 0, stunTime: 0, drifting: false, galloping: false, curvature: 0 };
 
   return {
     scene,
@@ -165,7 +164,7 @@ export function createHomeScene(): HomeScene {
       const a = Math.PI / 2 + Math.sin(time * 0.2) * 0.5;
       camera.position.set(Math.cos(a) * dist, 2.8, Math.sin(a) * dist);
       camera.lookAt(0.3, aspect < 0.7 ? 0 : 1.2, 0);
-      moose?.update(still as never, dt, 'idle');
+      moose?.update(STILL_MOOSE, dt, 'idle');
     },
     dispose() {
       scene.traverse((o) => {

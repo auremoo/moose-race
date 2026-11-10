@@ -100,6 +100,10 @@ export class Menus {
       this.cb.onCollectionChange();
     });
     $('btn-play').addEventListener('click', () => this.show('map'));
+    // L'accueil se resserre quand il ne tient pas à l'écran (petit téléphone, texte agrandi, langue).
+    const home = $('screen-home');
+    const fit = new ResizeObserver(() => fitHome(home));
+    for (const el of [home, home.querySelector('.home-title'), home.querySelector('.home-bottom')]) if (el) fit.observe(el);
     $('btn-daily').addEventListener('click', () => this.cb.onDaily());
     document.querySelector('.tile[data-feature="enclos"]')?.addEventListener('click', () => this.show('enclos'));
     document.querySelector('.tile[data-feature="comptoir"]')?.addEventListener('click', () => this.show('comptoir'));
@@ -279,5 +283,18 @@ export class Menus {
     el.classList.add('on');
     clearTimeout(this.toastTimer);
     this.toastTimer = window.setTimeout(() => el.classList.remove('on'), 1800);
+  }
+}
+
+/** Niveaux de resserrement de l'accueil, du plus léger au plus fort (cumulatifs). */
+const HOME_FIT = ['fit-1', 'fit-2', 'fit-3'];
+
+/** Applique le plus léger resserrement qui fait tenir l'accueil sans défilement. */
+export function fitHome(home: HTMLElement): void {
+  if (home.hidden) return;
+  home.classList.remove(...HOME_FIT);
+  for (const c of HOME_FIT) {
+    if (home.scrollHeight <= home.clientHeight + 1) return;
+    home.classList.add(c);
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Petit système de particules (poussière, gerbes de glissade, élan, souffle).
+ * Petit système de particules (poussière, gerbes de dérapage, élan, souffle).
  * Purement visuel : utilise Math.random, jamais la simulation.
  */
 import * as THREE from 'three';
