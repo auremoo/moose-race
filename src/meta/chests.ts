@@ -6,6 +6,7 @@
 import { accessoryCatalog, CHEST_ORDER, chestCatalog, type ChestType } from '../data';
 import { createRng } from '../sim/rng';
 import { checkUnlocks, ownsAccessory } from './accessories';
+import { isPodium } from './economy';
 import type { SaveData } from './settings';
 
 export type SavedChest = SaveData['chests'][number];
@@ -20,9 +21,9 @@ export interface ChestReward {
   unlocked: string[];
 }
 
-/** Coffre gagné pour une place (1 à 3, avec au moins un adversaire), d'après un tirage r ∈ [0, 1). */
+/** Coffre gagné pour un podium (1 à 3, avec au moins 3 adversaires), d'après un tirage r ∈ [0, 1). */
 export function chestForRank(rank: number, participants: number, r: number): ChestType | null {
-  if (participants < 2 || rank > 3) return null;
+  if (!isPodium(rank, participants)) return null;
   const odds = chestCatalog.dropByRank[String(rank)];
   let acc = 0;
   for (const t of CHEST_ORDER) {

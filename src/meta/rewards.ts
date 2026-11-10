@@ -5,6 +5,7 @@ import { chestCatalog, type ChestType } from '../data';
 import { createRng } from '../sim/rng';
 import { checkUnlocks } from './accessories';
 import { awardChest, chestForRank } from './chests';
+import { isPodium } from './economy';
 import type { SaveData } from './settings';
 
 export interface RaceRewards {
@@ -19,7 +20,7 @@ export interface RaceRewards {
 export function recordRace(save: SaveData, rank: number, participants: number, dailyFirst: boolean): RaceRewards {
   const st = { ...save.stats };
   st.races++;
-  if (participants > 1 && rank <= 3) st.podiums++;
+  if (isPodium(rank, participants)) st.podiums++;
   if (participants > 1 && rank === 1) st.wins++;
   if (dailyFirst) st.dailies++;
   save.stats = st;

@@ -16,6 +16,7 @@ import {
 import type { SaveData } from '../meta/settings';
 import { formatTime } from './hud';
 import { DAILY_BONUS, dailyChallenge } from '../meta/daily';
+import { PODIUM_MIN_RACERS } from '../meta/economy';
 import { isCourseUnlocked, unlockRequirement } from '../meta/progress';
 import { CollectionScreens } from './collectionScreens';
 import { ChestUI } from './chests';
@@ -262,8 +263,10 @@ export class Menus {
     document.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === this.save.mode));
     $('mode-desc').textContent = this.save.mode === 'special' ? t('modeSpecialDesc') : t('modeClassicDesc');
     const off = balance.difficulties[this.save.difficulty].ratingOffset;
-    $('prep-rivals').textContent =
+    const rivals =
       this.save.botCount === 0 ? t('solo') : `${t('rivalsRating')} : ${mooseRating(m, level) + off} (${off >= 0 ? '+' : ''}${off})`;
+    // Moins de 3 adversaires : ni podium, ni coffre, ni déblocage de circuit.
+    $('prep-rivals').textContent = this.save.botCount + 1 < PODIUM_MIN_RACERS ? `${rivals} · ${t('podiumRule')}` : rivals;
   }
 
   refreshCoins(): void {

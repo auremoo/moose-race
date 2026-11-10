@@ -109,7 +109,7 @@ l'accessoire avant l'achat. L'accessoire suit en course, à l'accueil et au podi
 
 ## Coffres
 
-Un podium (1er, 2e ou 3e, avec au moins un adversaire) rapporte un coffre ; le premier défi du jour terminé, un
+Un podium (1er, 2e ou 3e, **avec au moins 3 adversaires**) rapporte un coffre ; le premier défi du jour terminé, un
 coffre doré. Quatre emplacements sur l'accueil : s'ils sont pleins, le coffre est changé en pièces (le minimum
 qu'il contient : 12, 30, 70 ou 150). Un toucher ouvre un coffre, tout de suite, sans attente ni coût.
 **Jamais d'argent réel.** Contenu : pièces, fragments de panache et, selon le coffre, un accessoire pas encore
@@ -187,7 +187,7 @@ Rocheuses : 15 % / 20 % ; jamais de pluie sur la neige). Même graine, même mé
 ## Déblocage des circuits
 
 Les 2 premiers circuits sont ouverts ; chaque suivant se débloque avec un **podium sur le précédent** (n'importe
-quelle difficulté). Le **défi du jour** reste jouable sur n'importe quel circuit, même verrouillé (un podium au
+quelle difficulté, au moins 3 adversaires : à 1 ou 2 bots, on serait sur le podium d'office). Le **défi du jour** reste jouable sur n'importe quel circuit, même verrouillé (un podium au
 défi du jour sur un circuit verrouillé ne débloque rien). Les circuits déjà gagnés avant cette règle restent
 ouverts (sauvegarde en schéma 6).
 

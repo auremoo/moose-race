@@ -9,7 +9,7 @@ import '@fontsource/nunito/latin-900.css';
 import './ui/styles.css';
 import { accessoryById, balance, courses, trackById, tracks, type CourseDef, type DifficultyId } from './data';
 import { InputManager } from './input/input';
-import { coinsFor, FIRST_WIN_BONUS, firstWinKey } from './meta/economy';
+import { coinsFor, FIRST_WIN_BONUS, firstWinKey, isPodium } from './meta/economy';
 import { exportSave, importSave, loadSave, writeSave } from './meta/settings';
 import { trackSignature } from './sim/track';
 import { ghostPose, GhostRecorder, loadGhost, saveGhost } from './meta/ghost';
@@ -32,10 +32,14 @@ import { preloadModels } from './render/models';
 
 const save = loadSave();
 // Records enregistrés sur un ancien tracé (circuit régénéré) : écartés, avec un message plus bas.
-const staleRecords = pruneStaleRecords(save, (id) => {
-  const d = trackById(id);
-  return d ? trackSignature(d) : undefined;
-});
+const staleRecords = pruneStaleRecords(
+  save,
+  (id) => {
+    const d = trackById(id);
+    return d ? trackSignature(d) : undefined;
+  },
+  (id) => courses.find((c) => c.trackId === id)?.laps,
+);
 if (staleRecords.length) writeSave(save);
 const sound = new SoundEngine();
 sound.sfxOn = save.soundOn;
@@ -407,7 +411,7 @@ function onFinish(): void {
   // Coffre au podium, compteurs d'objectifs, accessoires débloqués.
   const rewards = recordRace(save, rank, N, dailyFirst);
   // Podium : débloque le circuit suivant (seulement si celui-ci était déjà ouvert).
-  const newCourse = N > 1 && rank <= 3 ? recordPodium(save, course.id) : null;
+  const newCourse = isPodium(rank, N) ? recordPodium(save, course.id) : null;
   if (newCourse) menus.toast(t('courseUnlocked').replace('{name}', newCourse.name));
   for (const id of rewards.unlocked) menus.toast(t('newAcc').replace('{name}', accessoryById(id).name[getLang()]));
   save.coins += coins;
@@ -420,15 +424,19 @@ function onFinish(): void {
   }));
   const bestLap = Math.min(...r.lapTimes);
   const prevBest = save.bestTimes[trackDef.id];
-  const record = prevBest === undefined || r.finishTime < prevBest;
+  // Le didacticiel se court en 1 tour : son temps ne doit pas devenir le record d'un circuit à 2 tours.
+  const official = race.laps === (courses.find((c) => c.id === course.id)?.laps ?? race.laps);
+  const record = official && (prevBest === undefined || r.finishTime < prevBest);
   const sig = trackSignature(trackDef);
   if (record) {
     save.bestTimes[trackDef.id] = r.finishTime;
     // Nouveau record : la trajectoire devient le fantôme de ce circuit (même nombre de tours).
     saveGhost(ghostRec.result(trackDef.id, race.laps, r.finishTime, r.coat, sig));
   }
-  if (save.bestLaps[trackDef.id] === undefined || bestLap < save.bestLaps[trackDef.id]) save.bestLaps[trackDef.id] = bestLap;
-  save.trackSigs[trackDef.id] = sig;
+  if (official) {
+    if (save.bestLaps[trackDef.id] === undefined || bestLap < save.bestLaps[trackDef.id]) save.bestLaps[trackDef.id] = bestLap;
+    save.trackSigs[trackDef.id] = sig;
+  }
   writeSave(save);
   resultsShown = true;
   // Podium 3D des trois premiers, puis l'écran des résultats.

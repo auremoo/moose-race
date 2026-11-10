@@ -52,3 +52,45 @@ describe('migrations non destructives', () => {
     expect(s.accessories).toEqual(['tuque-bleue']);
   });
 });
+
+describe('podium à partir de 3 adversaires', () => {
+  it('dernier sur 2 ou sur 3 : ni podium, ni coffre', async () => {
+    const { isPodium, PODIUM_MIN_RACERS } = await import('../src/meta/economy');
+    const { chestForRank } = await import('../src/meta/chests');
+    const { recordRace } = await import('../src/meta/rewards');
+    expect(PODIUM_MIN_RACERS).toBe(4);
+    expect(isPodium(2, 2)).toBe(false);
+    expect(isPodium(1, 3)).toBe(false);
+    expect(isPodium(3, 4)).toBe(true);
+    expect(isPodium(4, 4)).toBe(false);
+    for (const r of [0.1, 0.5, 0.9]) {
+      expect(chestForRank(2, 2, r)).toBeNull();
+      expect(chestForRank(3, 3, r)).toBeNull();
+      expect(chestForRank(3, 4, r)).not.toBeNull();
+    }
+    const s = defaultSave();
+    const res = recordRace(s, 1, 2, false);
+    expect(res.chest).toBeNull();
+    expect(s.stats.podiums).toBe(0);
+    // La victoire, elle, reste une victoire.
+    expect(s.stats.wins).toBe(1);
+  });
+});
+
+describe('record impossible (ancien défaut du didacticiel)', () => {
+  it('un temps total plus court que tours × meilleur tour est écarté, le meilleur tour est gardé', async () => {
+    const { pruneStaleRecords } = await import('../src/meta/records');
+    const s = defaultSave();
+    s.bestTimes = { a: 55, b: 110 };
+    s.bestLaps = { a: 54, b: 54 };
+    s.trackSigs = { a: 'x', b: 'x' };
+    const stale = pruneStaleRecords(
+      s,
+      () => 'x',
+      () => 2,
+    );
+    expect(stale).toEqual(['a']);
+    expect(s.bestTimes).toEqual({ b: 110 });
+    expect(s.bestLaps).toEqual({ a: 54, b: 54 });
+  });
+});

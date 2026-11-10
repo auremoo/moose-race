@@ -15,3 +15,11 @@ export const FIRST_WIN_BONUS = 50;
 export function firstWinKey(trackId: string, difficulty: string): string {
   return `${trackId}|${difficulty}`;
 }
+
+/** Un podium ne compte qu'à partir de 4 participants (3 adversaires) : sinon on y est d'office. */
+export const PODIUM_MIN_RACERS = 4;
+
+/** Vrai si la place est un podium qui compte (coffre, déblocage de circuit, objectifs). */
+export function isPodium(rank: number, participants: number): boolean {
+  return participants >= PODIUM_MIN_RACERS && rank >= 1 && rank <= 3;
+}

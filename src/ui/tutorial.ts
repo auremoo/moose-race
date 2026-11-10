@@ -17,7 +17,8 @@ const STEPS: Step[] = [
   { text: 'tuto3', done: (r, _c, s) => r.racers[0].moose.braking || s > 9 },
   { text: 'tuto4', done: (r, _c, s) => r.racers[0].cordeCount > 0 || s > 25 },
   { text: 'tuto5', done: (r, _c, s) => r.racers[0].moose.galloping || s > 12 },
-  { text: 'tuto6', done: (r, _c, s) => r.racers[0].moose.boostTime > 0 || s > 20 },
+  // Conseil sans geste à réussir : il s'affiche 7 s (la glissade volontaire n'existe plus).
+  { text: 'tuto6', done: (_r, _c, s) => s > 7 },
   { text: 'tuto7', done: (_r, _c, s) => s > 6 },
 ];
 

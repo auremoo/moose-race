@@ -115,3 +115,26 @@ test("un coffre prêt s'ouvre depuis l'accueil", async ({ page }) => {
   expect(s.coins).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
+
+test('le didacticiel (1 tour) ne laisse pas de record sur un circuit à 2 tours', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('panache.v1', JSON.stringify({ schema: 6 })));
+  await page.reload();
+  await page.click('.tile[data-feature="didacticiel"]', { force: true });
+  await page.keyboard.down('ArrowUp');
+  await page.waitForFunction(() => (window as unknown as PanacheWindow).panache.race.racers[0].moose.speed > 5, undefined, {
+    timeout: 60_000,
+  });
+  await page.evaluate(() => {
+    const r = (window as unknown as PanacheWindow).panache.race;
+    r.racers[0].distance = r.laps * r.track.length - 2;
+  });
+  await expect(page.locator('#results')).toBeVisible({ timeout: 10_000 });
+  const save = await page.evaluate(() => JSON.parse(localStorage.getItem('panache.v1')!));
+  expect(save.bestTimes).toEqual({});
+  expect(save.bestLaps).toEqual({});
+  expect(await page.evaluate(() => localStorage.getItem('panache.ghost.prairie-tranquille'))).toBeNull();
+  expect(errors).toEqual([]);
+});

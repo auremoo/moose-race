@@ -145,7 +145,7 @@
   "tuto3": "Green line: you'll make it. Red line: hit “Brake”!",
   "tuto4": "Aim for the green disc inside the corner: perfect apex, small speed bonus.",
   "tuto5": "On straights, hold “Gallop”. Watch the stamina ring.",
-  "tuto6": "In a corner, brake while steering hard to drift. Let go: boost!",
+  "tuto6": "Too fast into a corner and you run wide and slow down. In the rain you slip: brake earlier!",
   "tuto7": "Well done, you know it all! Finish the lap.",
   "tutoSkip": "Skip",
   "tutoDone": "Tutorial complete!",
@@ -190,5 +190,6 @@
   "skidding": "Slipping!",
   "courseUnlocked": "New track: {name}",
   "podiumNeeded": "Podium needed",
-  "unlockHint": "Finish on the podium at “{name}” to unlock this track"
+  "unlockHint": "Finish on the podium at “{name}” to unlock this track",
+  "podiumRule": "Podium and chests need at least 3 rivals"
 }
