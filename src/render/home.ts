@@ -13,7 +13,8 @@ export interface HomeScene {
   camera: THREE.PerspectiveCamera;
   /** Remplace l'orignal si son apparence a changé. */
   setMoose(look: Required<MooseLook>): void;
-  update(dt: number, aspect: number): void;
+  /** `calm` (animations réduites) : la caméra ne tourne plus autour de l'orignal. */
+  update(dt: number, aspect: number, calm?: boolean): void;
   dispose(): void;
 }
 
@@ -152,8 +153,8 @@ export function createHomeScene(): HomeScene {
       moose.root.rotation.y = -0.6;
       scene.add(moose.root);
     },
-    update(dt, aspect) {
-      time += dt;
+    update(dt, aspect, calm = false) {
+      if (!calm) time += dt;
       if (camera.aspect !== aspect) {
         camera.aspect = aspect;
         camera.updateProjectionMatrix();

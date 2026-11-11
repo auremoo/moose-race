@@ -478,7 +478,7 @@ export class GameView {
       this.home ??= createHomeScene();
       const r0 = race.racers[0];
       this.home.setMoose({ coat: r0.coat, size: r0.size, accessory: r0.accessory ?? '' });
-      this.home.update(dt, this.chase.camera.aspect);
+      this.home.update(dt, this.chase.camera.aspect, document.documentElement.classList.contains('reduce-motion'));
       this.draw(this.home.scene, this.home.camera);
       return;
     }
@@ -525,7 +525,7 @@ export class GameView {
       }
       view.update(m, dt, pose);
       if (i === 0 && this.showcaseOn) {
-        this.showcaseTime += dt;
+        if (!document.documentElement.classList.contains('reduce-motion')) this.showcaseTime += dt;
         this.chase.showcase(x, y, heading, this.showcaseTime, groundZ);
       } else if (i === 0) {
         const reduce = document.documentElement.classList.contains('reduce-motion');

@@ -1419,6 +1419,19 @@ body {
 }
 .high-contrast #minimap {
   background: #fff;
+  outline: 2px solid #1e120b;
+}
+/* Conseils en course : sur fond sombre plutôt que posés sur la scène. */
+.high-contrast #steer-hint {
+  left: 3%;
+  right: 3%;
+  transform: none;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: rgba(30, 18, 11, 0.85);
+  text-shadow: none;
 }
 .high-contrast .muted,
 .high-contrast .prep-desc,
