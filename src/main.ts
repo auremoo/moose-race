@@ -13,11 +13,11 @@ import { coinsFor, FIRST_WIN_BONUS, firstWinKey, isPodium } from './meta/economy
 import { exportSave, importSave, loadSave, writeSave } from './meta/settings';
 import { trackSignature } from './sim/track';
 import { ghostPose, GhostRecorder, loadGhost, saveGhost } from './meta/ghost';
-import { DAILY_BONUS, dailyChallenge, type DailyChallenge } from './meta/daily';
+import { DAILY_BONUS, dailyFor, dailyRewardOpen, type DailyChallenge } from './meta/daily';
 import { assistCommand } from './sim/assist';
 import { NO_COMMANDS } from './sim/moose';
 import { accessoryOf } from './meta/accessories';
-import { recordRace } from './meta/rewards';
+import { recordRace, type RaceRewards } from './meta/rewards';
 import { recordPodium } from './meta/progress';
 import { pruneStaleRecords } from './meta/records';
 import { createRace, estimatedFinishTime, raceTime, standings, stepRace, surfaceUnder, type Race } from './sim/race';
@@ -207,7 +207,7 @@ const menus = new Menus(save, {
   },
   onTutorial: () => startTutorial(),
   onDaily: () => {
-    const d = dailyChallenge();
+    const d = dailyFor(save);
     const def = trackById(d.course.trackId ?? '');
     if (!def) return;
     const changed = def.id !== trackDef.id;
@@ -411,22 +411,32 @@ function restart(trackChanged = false): void {
   last = performance.now();
 }
 
+/** Pièces du didacticiel, quelle que soit la place. */
+const TUTORIAL_COINS = 20;
+const NO_REWARDS: RaceRewards = { chest: null, chestStored: false, chestCoins: 0, unlocked: [] };
+
 function onFinish(): void {
   const r = race.racers[0];
   // Classement à l'arrivée du joueur, pièces selon la formule du cahier.
   const order = standings(race);
   const rank = order.indexOf(0) + 1;
   const N = race.racers.length;
-  let coins = coinsFor(rank, N, balance.difficulties[difficulty].coinMul, mode === 'special' ? balance.special.coinMul : 1);
+  // Le didacticiel se court en 1 tour : ce n'est pas une course officielle. Il rapporte 20 pièces, sans
+  // record, ni coffre, ni compte dans les objectifs.
+  const official = race.laps === (courses.find((c) => c.id === course.id)?.laps ?? race.laps);
+  const tutorialRace = !official;
+  let coins = tutorialRace
+    ? TUTORIAL_COINS
+    : coinsFor(rank, N, balance.difficulties[difficulty].coinMul, mode === 'special' ? balance.special.coinMul : 1);
   const key = firstWinKey(trackDef.id, difficulty);
   let bonus = 0;
   if (rank === 1) sound.brame();
-  if (rank === 1 && N > 1 && !save.firstWins.includes(key)) {
+  if (!tutorialRace && rank === 1 && N > 1 && !save.firstWins.includes(key)) {
     bonus = FIRST_WIN_BONUS;
     save.firstWins.push(key);
   }
   // Défi du jour : bonus à la première arrivée du jour.
-  const dailyFirst = !!daily && !save.dailyDone.includes(daily.key);
+  const dailyFirst = !!daily && !tutorialRace && dailyRewardOpen(save, daily.key);
   if (daily && dailyFirst) {
     bonus += DAILY_BONUS;
     save.dailyDone = [...save.dailyDone.slice(-29), daily.key];
@@ -434,9 +444,9 @@ function onFinish(): void {
   }
   coins += bonus;
   // Coffre au podium, compteurs d'objectifs, accessoires débloqués.
-  const rewards = recordRace(save, rank, N, dailyFirst);
+  const rewards = tutorialRace ? NO_REWARDS : recordRace(save, rank, N, dailyFirst);
   // Podium : débloque le circuit suivant (seulement si celui-ci était déjà ouvert).
-  const newCourse = isPodium(rank, N) ? recordPodium(save, course.id) : null;
+  const newCourse = !tutorialRace && isPodium(rank, N) ? recordPodium(save, course.id) : null;
   if (newCourse) menus.toast(t('courseUnlocked').replace('{name}', newCourse.name));
   for (const id of rewards.unlocked) menus.toast(t('newAcc').replace('{name}', accessoryById(id).name[getLang()]));
   save.coins += coins;
@@ -449,8 +459,6 @@ function onFinish(): void {
   }));
   const bestLap = Math.min(...r.lapTimes);
   const prevBest = save.bestTimes[trackDef.id];
-  // Le didacticiel se court en 1 tour : son temps ne doit pas devenir le record d'un circuit à 2 tours.
-  const official = race.laps === (courses.find((c) => c.id === course.id)?.laps ?? race.laps);
   const record = official && (prevBest === undefined || r.finishTime < prevBest);
   const sig = trackSignature(trackDef);
   if (record) {

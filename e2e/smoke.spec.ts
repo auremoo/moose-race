@@ -116,7 +116,7 @@ test("un coffre prêt s'ouvre depuis l'accueil", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('le didacticiel (1 tour) ne laisse pas de record sur un circuit à 2 tours', async ({ page }) => {
+test('le didacticiel (1 tour) rapporte 20 pièces, sans record ni course comptée', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
@@ -135,6 +135,8 @@ test('le didacticiel (1 tour) ne laisse pas de record sur un circuit à 2 tours'
   const save = await page.evaluate(() => JSON.parse(localStorage.getItem('panache.v1')!));
   expect(save.bestTimes).toEqual({});
   expect(save.bestLaps).toEqual({});
+  expect(save.coins).toBe(20);
+  expect(save.stats.races).toBe(0);
   expect(await page.evaluate(() => localStorage.getItem('panache.ghost.prairie-tranquille'))).toBeNull();
   expect(errors).toEqual([]);
 });

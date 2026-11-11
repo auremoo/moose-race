@@ -1,7 +1,7 @@
 /**
  * Fin de course côté méta : compteurs d'objectifs, coffre éventuel, accessoires débloqués.
  */
-import { chestCatalog, type ChestType } from '../data';
+import { CHEST_ORDER, chestCatalog, type ChestType } from '../data';
 import { createRng } from '../sim/rng';
 import { checkUnlocks } from './accessories';
 import { awardChest, chestForRank } from './chests';
@@ -27,8 +27,9 @@ export function recordRace(save: SaveData, rank: number, participants: number, d
   // Tirage du coffre propre à la course : même sauvegarde, même résultat.
   const r = createRng(0x51ed270b ^ (st.races * 2246822519)).next();
   let chest = chestForRank(rank, participants, r);
-  // Premier défi du jour terminé : coffre doré garanti.
-  if (dailyFirst) chest = chestCatalog.dailyChest;
+  // Premier défi du jour terminé : coffre doré garanti, ou le coffre du podium s'il est meilleur.
+  if (dailyFirst && (chest === null || CHEST_ORDER.indexOf(chest) < CHEST_ORDER.indexOf(chestCatalog.dailyChest)))
+    chest = chestCatalog.dailyChest;
   const chestStored = chest !== null && awardChest(save, chest);
   // Emplacements pleins : le coffre devient le minimum de pièces qu'il contient (rien n'est perdu,
   // mais l'ouvrir reste plus intéressant : fragments et accessoires en plus).

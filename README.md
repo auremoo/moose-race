@@ -137,7 +137,10 @@ traversée à la nage (9 m/s, gain de piste plafonné à 130 m, environ 3 s), sa
 ## Défi du jour
 
 Carte sur l'accueil : circuit, mode, difficulté et graine tirés de la date, identiques pour tous les joueurs
-le même jour (10 bots). Bonus de 100 pièces à la première arrivée du jour.
+le même jour (10 bots). Bonus de 100 pièces et coffre doré à la première arrivée du jour (ou le coffre du
+podium s'il est meilleur). La difficulté est plafonnée selon la progression : Facile tant que moins de 5 circuits
+sont ouverts, Moyen jusqu'à 9. Le jour vient de l'horloge du téléphone : une date antérieure au dernier défi
+terminé ne donne plus de bonus ; avancer l'horloge ne pourra être empêché qu'avec un serveur (#4).
 
 ## Ralenti de l'arrivée
 
@@ -268,8 +271,8 @@ nœuds de pattes `leg_FL`, `leg_FR`, `leg_RL`, `leg_RR` (animés par le code), m
 
 ## Habillage
 
-- **Didacticiel** : première course guidée (Prairie tranquille, solo, Facile), mise en avant à la première visite,
-  ignorable. Étapes : courir, diriger, freiner selon la ligne idéale, corde, galop, puis un conseil sur la vitesse en virage et la pluie.
+- **Didacticiel** : première course guidée (Prairie tranquille, 1 tour, solo, Facile), mise en avant à la première visite,
+  ignorable ; 20 pièces à l'arrivée, sans record, ni coffre, ni compte dans les objectifs. Étapes : courir, diriger, freiner selon la ligne idéale, corde, galop, puis un conseil sur la vitesse en virage et la pluie.
 - **PWA** : installable sur l'écran d'accueil (manifeste, icônes), jouable hors ligne après une première visite
   (service worker : réseau d'abord pour la page, cache pour les fichiers versionnés).
 - Téléphone en paysage : invitation à repasser en portrait. Pause automatique et son coupé en arrière-plan.

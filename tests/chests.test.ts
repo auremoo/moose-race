@@ -104,6 +104,21 @@ describe('objectifs et fin de course', () => {
     expect(s.stats.dailies).toBe(1);
   });
 
+  it('le défi du jour garde le coffre du podium quand il est meilleur que le doré', () => {
+    // Cherche une course dont le tirage de victoire donne une aurore boréale.
+    let found = false;
+    for (let k = 0; k < 2000 && !found; k++) {
+      const probe = defaultSave();
+      probe.stats = { ...probe.stats, races: k };
+      if (recordRace(probe, 1, 11, false).chest !== 'aurore') continue;
+      const s = defaultSave();
+      s.stats = { ...s.stats, races: k };
+      expect(recordRace(s, 1, 11, true).chest).toBe('aurore');
+      found = true;
+    }
+    expect(found).toBe(true);
+  });
+
   it("un objectif atteint offre l'accessoire", () => {
     const s = defaultSave();
     const blue = accessoryCatalog.accessories.find((a) => a.id === 'tuque-bleue')!;

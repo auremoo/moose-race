@@ -15,7 +15,7 @@ import {
 } from '../data';
 import type { SaveData } from '../meta/settings';
 import { formatTime } from './hud';
-import { DAILY_BONUS, dailyChallenge } from '../meta/daily';
+import { DAILY_BONUS, dailyFor, dailyRewardOpen } from '../meta/daily';
 import { PODIUM_MIN_RACERS } from '../meta/economy';
 import { isCourseUnlocked, unlockRequirement } from '../meta/progress';
 import { CollectionScreens } from './collectionScreens';
@@ -195,9 +195,9 @@ export class Menus {
   }
 
   renderHome(): void {
-    const daily = dailyChallenge();
+    const daily = dailyFor(this.save);
     $('daily-name').textContent = daily.course.name;
-    const done = this.save.dailyDone.includes(daily.key);
+    const done = !dailyRewardOpen(this.save, daily.key);
     $('daily-info').textContent =
       `${'★'.repeat(daily.course.stars)} · ${daily.mode === 'special' ? t('modeSpecial') : t('modeClassic')} · ${tk(daily.difficulty === 'difficile' ? 'hard' : daily.difficulty === 'facile' ? 'easy' : 'medium')} · ${done ? t('dailyDone') : `+${DAILY_BONUS}`}`;
     $('btn-daily').classList.toggle('done', done);
