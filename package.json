@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Panache — course d'orignaux 3D pour mobile (jalon 1 : boîte grise)",
+  "author": "Aurélien Moote - Moo - 2026",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",

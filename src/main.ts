@@ -1,3 +1,4 @@
+// Panache (Moose Race) — Auteur : Aurélien Moote - Moo - 2026 — Licence MIT
 /**
  * Point d'entrée : relie entrées → simulation (pas fixe 60 Hz) → rendu interpolé → interface.
  */

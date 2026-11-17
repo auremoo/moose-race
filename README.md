@@ -1,5 +1,8 @@
 # Panache — course d'orignaux (Moose Race en anglais)
 
+> Créé par Aurélien Moote - Moo - 2026. Logiciel libre (licence MIT) :
+> réutilisable à condition de conserver la mention de l'auteur.
+
 Jeu de course d'orignaux en 3D, au navigateur, en portrait sur mobile. Voir le cahier des charges.
 
 **État : jalons 1 à 8 et suites de l'issue #6 (V1.0 hors test graphique Meshy)** — didacticiel, PWA, décors des 3 biomes, mode Ours et castors, collection de 20 orignaux (Enclos, Comptoir, niveaux, ravitaillement, fragments), 20 circuits débloqués au fil des podiums, défi du jour, jusqu'à 10 bots, 3 difficultés, météo, dénivelé, vent, bifurcation, coffres et accessoires, fantôme, photo-finish et ralenti d'arrivée ; ligne de course, corde, galop, aspiration, surfaces, ligne idéale. Orignal provisoire. Tout tourne dans le navigateur, sans serveur.
@@ -276,3 +279,9 @@ nœuds de pattes `leg_FL`, `leg_FR`, `leg_RL`, `leg_RR` (animés par le code), m
 - **PWA** : installable sur l'écran d'accueil (manifeste, icônes), jouable hors ligne après une première visite
   (service worker : réseau d'abord pour la page, cache pour les fichiers versionnés).
 - Téléphone en paysage : invitation à repasser en portrait. Pause automatique et son coupé en arrière-plan.
+
+## Auteur & licence
+
+**Aurélien Moote - Moo - 2026**  
+Copyright (c) 2026 Aurélien Moote ("Moo")  
+Distribué sous [licence MIT](./LICENSE) — réutilisable à condition de conserver la mention de l'auteur.
